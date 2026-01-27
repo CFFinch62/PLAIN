@@ -146,6 +146,27 @@ func (v *ContinueValue) Type() string   { return "continue" }
 func (v *ContinueValue) String() string { return "<continue>" }
 func (v *ContinueValue) IsTruthy() bool { return false }
 
+// FileHandleValue represents an open file handle
+type FileHandleValue struct {
+	Path     string
+	Mode     string
+	Handle   interface{} // *os.File
+	IsBinary bool
+}
+
+func (v *FileHandleValue) Type() string   { return "file_handle" }
+func (v *FileHandleValue) String() string { return fmt.Sprintf("<file %s mode=%s>", v.Path, v.Mode) }
+func (v *FileHandleValue) IsTruthy() bool { return v.Handle != nil }
+
+// BytesValue represents binary data
+type BytesValue struct {
+	Data []byte
+}
+
+func (v *BytesValue) Type() string   { return "bytes" }
+func (v *BytesValue) String() string { return fmt.Sprintf("<bytes len=%d>", len(v.Data)) }
+func (v *BytesValue) IsTruthy() bool { return len(v.Data) > 0 }
+
 // ============================================================================
 // Helper constructors
 // ============================================================================

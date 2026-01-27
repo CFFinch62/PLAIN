@@ -3,9 +3,12 @@ package runtime
 import (
 	"bufio"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"math"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -1015,6 +1018,636 @@ func GetBuiltins() map[string]*BuiltinValue {
 				}
 				_, exists := tbl.Pairs[key.Val]
 				return NewBoolean(exists)
+			},
+		},
+
+		// ============================================================
+		// File I/O - Simple Operations
+		// ============================================================
+		"read_file": {
+			Name: "read_file",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("read_file() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("read_file() argument must be a string")
+				}
+				content, err := ioutil.ReadFile(path.Val)
+				if err != nil {
+					return NewError("read_file() failed: %s", err.Error())
+				}
+				return NewString(string(content))
+			},
+		},
+		"write_file": {
+			Name: "write_file",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("write_file() takes exactly 2 arguments")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("write_file() first argument must be a string")
+				}
+				content, ok := args[1].(*StringValue)
+				if !ok {
+					return NewError("write_file() second argument must be a string")
+				}
+				err := ioutil.WriteFile(path.Val, []byte(content.Val), 0644)
+				if err != nil {
+					return NewError("write_file() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"append_file": {
+			Name: "append_file",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("append_file() takes exactly 2 arguments")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("append_file() first argument must be a string")
+				}
+				content, ok := args[1].(*StringValue)
+				if !ok {
+					return NewError("append_file() second argument must be a string")
+				}
+				f, err := os.OpenFile(path.Val, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if err != nil {
+					return NewError("append_file() failed: %s", err.Error())
+				}
+				defer f.Close()
+				_, err = f.WriteString(content.Val)
+				if err != nil {
+					return NewError("append_file() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"read_lines": {
+			Name: "read_lines",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("read_lines() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("read_lines() argument must be a string")
+				}
+				content, err := ioutil.ReadFile(path.Val)
+				if err != nil {
+					return NewError("read_lines() failed: %s", err.Error())
+				}
+				text := strings.TrimSuffix(string(content), "\n")
+				if text == "" {
+					return &ListValue{Elements: []Value{}}
+				}
+				lines := strings.Split(text, "\n")
+				elements := make([]Value, len(lines))
+				for i, line := range lines {
+					elements[i] = NewString(line)
+				}
+				return &ListValue{Elements: elements}
+			},
+		},
+		"write_lines": {
+			Name: "write_lines",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("write_lines() takes exactly 2 arguments")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("write_lines() first argument must be a string")
+				}
+				lst, ok := args[1].(*ListValue)
+				if !ok {
+					return NewError("write_lines() second argument must be a list")
+				}
+				lines := make([]string, len(lst.Elements))
+				for i, elem := range lst.Elements {
+					lines[i] = elem.String()
+				}
+				content := strings.Join(lines, "\n") + "\n"
+				err := ioutil.WriteFile(path.Val, []byte(content), 0644)
+				if err != nil {
+					return NewError("write_lines() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"read_binary": {
+			Name: "read_binary",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("read_binary() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("read_binary() argument must be a string")
+				}
+				data, err := ioutil.ReadFile(path.Val)
+				if err != nil {
+					return NewError("read_binary() failed: %s", err.Error())
+				}
+				return &BytesValue{Data: data}
+			},
+		},
+		"write_binary": {
+			Name: "write_binary",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("write_binary() takes exactly 2 arguments")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("write_binary() first argument must be a string")
+				}
+				bytes, ok := args[1].(*BytesValue)
+				if !ok {
+					return NewError("write_binary() second argument must be bytes")
+				}
+				err := ioutil.WriteFile(path.Val, bytes.Data, 0644)
+				if err != nil {
+					return NewError("write_binary() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"append_binary": {
+			Name: "append_binary",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("append_binary() takes exactly 2 arguments")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("append_binary() first argument must be a string")
+				}
+				bytes, ok := args[1].(*BytesValue)
+				if !ok {
+					return NewError("append_binary() second argument must be bytes")
+				}
+				f, err := os.OpenFile(path.Val, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if err != nil {
+					return NewError("append_binary() failed: %s", err.Error())
+				}
+				defer f.Close()
+				_, err = f.Write(bytes.Data)
+				if err != nil {
+					return NewError("append_binary() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+
+		// ============================================================
+		// File I/O - Handle-based Operations
+		// ============================================================
+		"open": {
+			Name: "open",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("open() takes exactly 2 arguments")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("open() first argument must be a string")
+				}
+				mode, ok := args[1].(*StringValue)
+				if !ok {
+					return NewError("open() second argument must be a string")
+				}
+				var file *os.File
+				var err error
+				isBinary := false
+				switch mode.Val {
+				case "r":
+					file, err = os.Open(path.Val)
+				case "w":
+					file, err = os.Create(path.Val)
+				case "a":
+					file, err = os.OpenFile(path.Val, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				case "rb":
+					file, err = os.Open(path.Val)
+					isBinary = true
+				case "wb":
+					file, err = os.Create(path.Val)
+					isBinary = true
+				case "ab":
+					file, err = os.OpenFile(path.Val, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+					isBinary = true
+				default:
+					return NewError("open() invalid mode '%s' (use r, w, a, rb, wb, ab)", mode.Val)
+				}
+				if err != nil {
+					return NewError("open() failed: %s", err.Error())
+				}
+				return &FileHandleValue{Path: path.Val, Mode: mode.Val, Handle: file, IsBinary: isBinary}
+			},
+		},
+		"close": {
+			Name: "close",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("close() takes exactly 1 argument")
+				}
+				handle, ok := args[0].(*FileHandleValue)
+				if !ok {
+					return NewError("close() argument must be a file handle")
+				}
+				if handle.Handle == nil {
+					return NewError("close() file already closed")
+				}
+				file := handle.Handle.(*os.File)
+				err := file.Close()
+				handle.Handle = nil
+				if err != nil {
+					return NewError("close() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"read": {
+			Name: "read",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("read() takes exactly 1 argument")
+				}
+				handle, ok := args[0].(*FileHandleValue)
+				if !ok {
+					return NewError("read() argument must be a file handle")
+				}
+				if handle.Handle == nil {
+					return NewError("read() file is closed")
+				}
+				file := handle.Handle.(*os.File)
+				content, err := io.ReadAll(file)
+				if err != nil {
+					return NewError("read() failed: %s", err.Error())
+				}
+				if handle.IsBinary {
+					return &BytesValue{Data: content}
+				}
+				return NewString(string(content))
+			},
+		},
+		"read_line": {
+			Name: "read_line",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("read_line() takes exactly 1 argument")
+				}
+				handle, ok := args[0].(*FileHandleValue)
+				if !ok {
+					return NewError("read_line() argument must be a file handle")
+				}
+				if handle.Handle == nil {
+					return NewError("read_line() file is closed")
+				}
+				file := handle.Handle.(*os.File)
+				reader := bufio.NewReader(file)
+				line, err := reader.ReadString('\n')
+				if err != nil {
+					if err == io.EOF {
+						if line == "" {
+							return NULL
+						}
+						return NewString(line)
+					}
+					return NewError("read_line() failed: %s", err.Error())
+				}
+				return NewString(strings.TrimSuffix(line, "\n"))
+			},
+		},
+		"read_bytes": {
+			Name: "read_bytes",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("read_bytes() takes exactly 2 arguments")
+				}
+				handle, ok := args[0].(*FileHandleValue)
+				if !ok {
+					return NewError("read_bytes() first argument must be a file handle")
+				}
+				count, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("read_bytes() second argument must be an integer")
+				}
+				if handle.Handle == nil {
+					return NewError("read_bytes() file is closed")
+				}
+				file := handle.Handle.(*os.File)
+				buf := make([]byte, count.Val)
+				n, err := file.Read(buf)
+				if err != nil && err != io.EOF {
+					return NewError("read_bytes() failed: %s", err.Error())
+				}
+				return &BytesValue{Data: buf[:n]}
+			},
+		},
+		"write": {
+			Name: "write",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("write() takes exactly 2 arguments")
+				}
+				handle, ok := args[0].(*FileHandleValue)
+				if !ok {
+					return NewError("write() first argument must be a file handle")
+				}
+				if handle.Handle == nil {
+					return NewError("write() file is closed")
+				}
+				file := handle.Handle.(*os.File)
+				var err error
+				switch content := args[1].(type) {
+				case *StringValue:
+					_, err = file.WriteString(content.Val)
+				case *BytesValue:
+					_, err = file.Write(content.Data)
+				default:
+					return NewError("write() second argument must be string or bytes")
+				}
+				if err != nil {
+					return NewError("write() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"write_line": {
+			Name: "write_line",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("write_line() takes exactly 2 arguments")
+				}
+				handle, ok := args[0].(*FileHandleValue)
+				if !ok {
+					return NewError("write_line() first argument must be a file handle")
+				}
+				content, ok := args[1].(*StringValue)
+				if !ok {
+					return NewError("write_line() second argument must be a string")
+				}
+				if handle.Handle == nil {
+					return NewError("write_line() file is closed")
+				}
+				file := handle.Handle.(*os.File)
+				_, err := file.WriteString(content.Val + "\n")
+				if err != nil {
+					return NewError("write_line() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+
+		// ============================================================
+		// File System Operations
+		// ============================================================
+		"file_exists": {
+			Name: "file_exists",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("file_exists() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("file_exists() argument must be a string")
+				}
+				info, err := os.Stat(path.Val)
+				if os.IsNotExist(err) {
+					return NewBoolean(false)
+				}
+				if err != nil {
+					return NewBoolean(false)
+				}
+				return NewBoolean(!info.IsDir())
+			},
+		},
+		"delete_file": {
+			Name: "delete_file",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("delete_file() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("delete_file() argument must be a string")
+				}
+				err := os.Remove(path.Val)
+				if err != nil {
+					return NewError("delete_file() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"rename_file": {
+			Name: "rename_file",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("rename_file() takes exactly 2 arguments")
+				}
+				oldPath, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("rename_file() first argument must be a string")
+				}
+				newPath, ok := args[1].(*StringValue)
+				if !ok {
+					return NewError("rename_file() second argument must be a string")
+				}
+				err := os.Rename(oldPath.Val, newPath.Val)
+				if err != nil {
+					return NewError("rename_file() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"copy_file": {
+			Name: "copy_file",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("copy_file() takes exactly 2 arguments")
+				}
+				src, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("copy_file() first argument must be a string")
+				}
+				dst, ok := args[1].(*StringValue)
+				if !ok {
+					return NewError("copy_file() second argument must be a string")
+				}
+				data, err := ioutil.ReadFile(src.Val)
+				if err != nil {
+					return NewError("copy_file() failed reading source: %s", err.Error())
+				}
+				err = ioutil.WriteFile(dst.Val, data, 0644)
+				if err != nil {
+					return NewError("copy_file() failed writing destination: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"file_size": {
+			Name: "file_size",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("file_size() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("file_size() argument must be a string")
+				}
+				info, err := os.Stat(path.Val)
+				if err != nil {
+					return NewError("file_size() failed: %s", err.Error())
+				}
+				return NewInteger(info.Size())
+			},
+		},
+		"dir_exists": {
+			Name: "dir_exists",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("dir_exists() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("dir_exists() argument must be a string")
+				}
+				info, err := os.Stat(path.Val)
+				if os.IsNotExist(err) {
+					return NewBoolean(false)
+				}
+				if err != nil {
+					return NewBoolean(false)
+				}
+				return NewBoolean(info.IsDir())
+			},
+		},
+		"create_dir": {
+			Name: "create_dir",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("create_dir() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("create_dir() argument must be a string")
+				}
+				err := os.Mkdir(path.Val, 0755)
+				if err != nil {
+					return NewError("create_dir() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"delete_dir": {
+			Name: "delete_dir",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("delete_dir() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("delete_dir() argument must be a string")
+				}
+				err := os.Remove(path.Val)
+				if err != nil {
+					return NewError("delete_dir() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"list_dir": {
+			Name: "list_dir",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("list_dir() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("list_dir() argument must be a string")
+				}
+				entries, err := ioutil.ReadDir(path.Val)
+				if err != nil {
+					return NewError("list_dir() failed: %s", err.Error())
+				}
+				elements := make([]Value, len(entries))
+				for i, entry := range entries {
+					elements[i] = NewString(entry.Name())
+				}
+				return &ListValue{Elements: elements}
+			},
+		},
+
+		// ============================================================
+		// Path Operations
+		// ============================================================
+		"join_path": {
+			Name: "join_path",
+			Fn: func(args ...Value) Value {
+				if len(args) < 1 {
+					return NewError("join_path() requires at least 1 argument")
+				}
+				parts := make([]string, len(args))
+				for i, arg := range args {
+					str, ok := arg.(*StringValue)
+					if !ok {
+						return NewError("join_path() all arguments must be strings")
+					}
+					parts[i] = str.Val
+				}
+				return NewString(filepath.Join(parts...))
+			},
+		},
+		"split_path": {
+			Name: "split_path",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("split_path() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("split_path() argument must be a string")
+				}
+				dir, file := filepath.Split(path.Val)
+				// Remove trailing separator from dir
+				dir = strings.TrimSuffix(dir, string(filepath.Separator))
+				return &ListValue{Elements: []Value{NewString(dir), NewString(file)}}
+			},
+		},
+		"get_extension": {
+			Name: "get_extension",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("get_extension() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("get_extension() argument must be a string")
+				}
+				return NewString(filepath.Ext(path.Val))
+			},
+		},
+		"absolute_path": {
+			Name: "absolute_path",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("absolute_path() takes exactly 1 argument")
+				}
+				path, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("absolute_path() argument must be a string")
+				}
+				abs, err := filepath.Abs(path.Val)
+				if err != nil {
+					return NewError("absolute_path() failed: %s", err.Error())
+				}
+				return NewString(abs)
 			},
 		},
 	}
