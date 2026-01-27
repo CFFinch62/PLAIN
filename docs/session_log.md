@@ -2,7 +2,7 @@
 
 **Purpose:** Track progress across AI assistance sessions
 **Started:** January 6, 2026
-**Current Phase:** Phase 7 - File I/O (COMPLETE)
+**Current Phase:** Phase 8 - Events & Timers (COMPLETE)
 
 ---
 
@@ -415,11 +415,44 @@ Today I want to: [SPECIFIC GOAL]
 - 8 comprehensive tests covering all file I/O functionality
 - All 110+ tests across project pass
 
+**Git Commit:** `c0b0d5c` - Phase 7: File I/O - implement 28 functions
+
+---
+
+### Session 7: January 27, 2026 (Phase 8: Events & Timers)
+
+**Goal:** Implement Phase 8 - Events & Timers
+
+**Completed:**
+- [x] Basic timing: sleep(milliseconds)
+- [x] Timer creation: create_timer(), create_timeout()
+- [x] Timer control: start_timer(), stop_timer(), cancel_timer()
+- [x] Event loop: wait_for_events(), run_events(), stop_events()
+- [x] TimerValue type for timer handles
+- [x] EventLoop manager in events.go
+- [x] Evaluator integration for callback execution
+- [x] Created builtins_events_test.go with 7 unit tests
+- [x] Created examples/events_test.plain demonstrating all functions
+
+**Files Created:**
+- `internal/runtime/events.go`: EventLoop manager (~240 lines)
+- `internal/runtime/builtins_events_test.go`: 7 unit tests
+- `examples/events_test.plain`: Demo file
+
+**Files Modified:**
+- `internal/runtime/builtins.go`: Added 9 functions (~130 lines)
+- `internal/runtime/value.go`: Added TimerValue type
+- `internal/runtime/evaluator.go`: Added callTask and output methods, EventLoop registration
+
+**Tests Added:**
+- 7 comprehensive tests for event functions
+- All 120+ tests across project pass
+
 **Git Commit:** [Pending]
 
 **Next Session Focus:**
-- [ ] Commit Phase 7 changes
-- [ ] Begin Phase 8: Events & Timers
+- [ ] Commit Phase 8 changes
+- [ ] Begin Phase 9: REPL
 
 ---
 
@@ -614,37 +647,43 @@ Today I want to: [SPECIFIC GOAL]
 
 ---
 
-### Phase 8: Events & Timers ✓ / ⏳ / ○
+### Phase 8: Events & Timers ✓
 
 **Basic Timing:**
-- [ ] sleep()
+- [x] sleep()
 
 **Timers:**
-- [ ] create_timer(), create_timeout()
-- [ ] start_timer(), stop_timer(), cancel_timer()
+- [x] create_timer(), create_timeout()
+- [x] start_timer(), stop_timer(), cancel_timer()
 
 **Event Loop:**
-- [ ] wait_for_events()
-- [ ] run_events()
-- [ ] stop_events()
+- [x] wait_for_events()
+- [x] run_events()
+- [x] stop_events()
 
 **Callback Handling:**
-- [ ] Simple callback (no params)
-- [ ] Callback with (timer, elapsed)
+- [x] Simple callback (no params)
+- [x] Callback with (timer, elapsed)
 
 **Error Handling:**
-- [ ] Timer abortion on callback error
-- [ ] Error notification
+- [x] Timer abortion on callback error
+- [x] Error notification
 
 **Tests:**
-- [ ] Timer creation and control
-- [ ] Event loop behavior
-- [ ] Callback execution
-- [ ] Error handling
+- [x] Timer creation and control
+- [x] Event loop behavior
+- [x] Callback execution
+- [x] Error handling
 
-**Status:** [NOT STARTED / IN PROGRESS / COMPLETE]  
-**Blockers:** [Any issues]  
-**Notes:** [Important points]
+**Status:** COMPLETE  
+**Blockers:** None  
+**Notes:**
+- 9 functions in builtins.go
+- TimerValue type in value.go
+- EventLoop manager in events.go
+- 7 unit tests in builtins_events_test.go
+- Demo file events_test.plain
+
 
 ---
 

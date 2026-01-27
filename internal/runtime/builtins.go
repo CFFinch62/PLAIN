@@ -1650,6 +1650,134 @@ func GetBuiltins() map[string]*BuiltinValue {
 				return NewString(abs)
 			},
 		},
+
+		// ============================================================
+		// Events & Timers
+		// ============================================================
+		"sleep": {
+			Name: "sleep",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("sleep() takes exactly 1 argument")
+				}
+				ms, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("sleep() argument must be an integer (milliseconds)")
+				}
+				time.Sleep(time.Duration(ms.Val) * time.Millisecond)
+				return NULL
+			},
+		},
+		"create_timer": {
+			Name: "create_timer",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("create_timer() takes exactly 2 arguments")
+				}
+				intervalMs, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("create_timer() first argument must be an integer (milliseconds)")
+				}
+				callback, ok := args[1].(*TaskValue)
+				if !ok {
+					return NewError("create_timer() second argument must be a task")
+				}
+				return GetEventLoop().CreateTimer(intervalMs.Val, callback)
+			},
+		},
+		"create_timeout": {
+			Name: "create_timeout",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("create_timeout() takes exactly 2 arguments")
+				}
+				delayMs, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("create_timeout() first argument must be an integer (milliseconds)")
+				}
+				callback, ok := args[1].(*TaskValue)
+				if !ok {
+					return NewError("create_timeout() second argument must be a task")
+				}
+				return GetEventLoop().CreateTimeout(delayMs.Val, callback)
+			},
+		},
+		"start_timer": {
+			Name: "start_timer",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("start_timer() takes exactly 1 argument")
+				}
+				timer, ok := args[0].(*TimerValue)
+				if !ok {
+					return NewError("start_timer() argument must be a timer")
+				}
+				GetEventLoop().StartTimer(timer)
+				return NULL
+			},
+		},
+		"stop_timer": {
+			Name: "stop_timer",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("stop_timer() takes exactly 1 argument")
+				}
+				timer, ok := args[0].(*TimerValue)
+				if !ok {
+					return NewError("stop_timer() argument must be a timer")
+				}
+				GetEventLoop().StopTimer(timer)
+				return NULL
+			},
+		},
+		"cancel_timer": {
+			Name: "cancel_timer",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("cancel_timer() takes exactly 1 argument")
+				}
+				timer, ok := args[0].(*TimerValue)
+				if !ok {
+					return NewError("cancel_timer() argument must be a timer")
+				}
+				GetEventLoop().CancelTimer(timer)
+				return NULL
+			},
+		},
+		"wait_for_events": {
+			Name: "wait_for_events",
+			Fn: func(args ...Value) Value {
+				if len(args) != 0 {
+					return NewError("wait_for_events() takes no arguments")
+				}
+				GetEventLoop().WaitForEvents()
+				return NULL
+			},
+		},
+		"run_events": {
+			Name: "run_events",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("run_events() takes exactly 1 argument")
+				}
+				durationMs, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("run_events() argument must be an integer (milliseconds)")
+				}
+				GetEventLoop().RunEvents(durationMs.Val)
+				return NULL
+			},
+		},
+		"stop_events": {
+			Name: "stop_events",
+			Fn: func(args ...Value) Value {
+				if len(args) != 0 {
+					return NewError("stop_events() takes no arguments")
+				}
+				GetEventLoop().StopEvents()
+				return NULL
+			},
+		},
 	}
 }
 

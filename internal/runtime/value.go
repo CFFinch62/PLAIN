@@ -167,6 +167,20 @@ func (v *BytesValue) Type() string   { return "bytes" }
 func (v *BytesValue) String() string { return fmt.Sprintf("<bytes len=%d>", len(v.Data)) }
 func (v *BytesValue) IsTruthy() bool { return len(v.Data) > 0 }
 
+// TimerValue represents a timer handle
+type TimerValue struct {
+	ID        int
+	Interval  int64       // milliseconds
+	Callback  interface{} // *TaskValue
+	IsOneShot bool        // true for timeout, false for repeating timer
+	Running   bool
+	Cancelled bool
+}
+
+func (v *TimerValue) Type() string   { return "timer" }
+func (v *TimerValue) String() string { return fmt.Sprintf("<timer id=%d>", v.ID) }
+func (v *TimerValue) IsTruthy() bool { return !v.Cancelled }
+
 // ============================================================================
 // Helper constructors
 // ============================================================================

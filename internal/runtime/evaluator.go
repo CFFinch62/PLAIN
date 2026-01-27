@@ -12,9 +12,12 @@ type Evaluator struct {
 
 // New creates a new Evaluator
 func New() *Evaluator {
-	return &Evaluator{
+	e := &Evaluator{
 		builtins: GetBuiltins(),
 	}
+	// Register with event loop for timer callbacks
+	GetEventLoop().SetEvaluator(e)
+	return e
 }
 
 // Eval evaluates an AST node and returns a runtime value
@@ -910,4 +913,24 @@ func Run(code string) (Value, error) {
 	// Import lexer and parser
 	// This creates a circular dependency, so we'll need the caller to do parsing
 	return nil, fmt.Errorf("use Eval with parsed AST instead")
+}
+
+// callTask is used by the event system to invoke timer callbacks
+func (e *Evaluator) callTask(task *TaskValue, args []Value) Value {
+	// Adjust args to match parameter count if needed
+	if len(args) > len(task.Parameters) {
+		args = args[:len(task.Parameters)]
+	}
+	if len(args) < len(task.Parameters) {
+		// Pad with nulls if fewer args (shouldn't normally happen)
+		for len(args) < len(task.Parameters) {
+			args = append(args, NULL)
+		}
+	}
+	return e.applyFunction(task, args)
+}
+
+// output prints text (used by event system for error messages)
+func (e *Evaluator) output(msg string) {
+	fmt.Print(msg)
 }
