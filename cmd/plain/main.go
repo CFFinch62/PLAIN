@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"plain/internal/analyzer"
 	"plain/internal/lexer"
 	"plain/internal/parser"
 	"plain/internal/token"
@@ -12,8 +13,9 @@ func main() {
 	if len(os.Args) < 2 {
 		fmt.Println("PLAIN Language Interpreter")
 		fmt.Println("Usage: plain <file.plain>")
-		fmt.Println("       plain -lex <file.plain>    (show tokens)")
-		fmt.Println("       plain -parse <file.plain>  (show AST)")
+		fmt.Println("       plain -lex <file.plain>     (show tokens)")
+		fmt.Println("       plain -parse <file.plain>   (show AST)")
+		fmt.Println("       plain -analyze <file.plain> (run semantic analysis)")
 		os.Exit(1)
 	}
 
@@ -37,8 +39,18 @@ func main() {
 		return
 	}
 
+	// Check for -analyze flag to run semantic analysis
+	if os.Args[1] == "-analyze" {
+		if len(os.Args) < 3 {
+			fmt.Println("Error: -analyze requires a filename")
+			os.Exit(1)
+		}
+		analyzeFile(os.Args[2])
+		return
+	}
+
 	// Normal execution (not yet implemented)
-	fmt.Println("Interpreter not yet implemented. Use -lex or -parse to analyze code.")
+	fmt.Println("Interpreter not yet implemented. Use -lex, -parse, or -analyze to analyze code.")
 }
 
 func showTokens(filename string) {
@@ -64,13 +76,14 @@ func showTokens(filename string) {
 
 		// Format literal for display
 		literal := tok.Literal
-		if tok.Type == token.NEWLINE {
+		switch tok.Type {
+		case token.NEWLINE:
 			literal = "\\n"
-		} else if tok.Type == token.INDENT {
+		case token.INDENT:
 			literal = "<INDENT>"
-		} else if tok.Type == token.DEDENT {
+		case token.DEDENT:
 			literal = "<DEDENT>"
-		} else if tok.Type == token.EOF {
+		case token.EOF:
 			literal = "<EOF>"
 		}
 
@@ -113,4 +126,48 @@ func parseFile(filename string) {
 	fmt.Println(program.String())
 	fmt.Println("=====================================")
 	fmt.Printf("Successfully parsed %d statements\n", len(program.Statements))
+}
+
+func analyzeFile(filename string) {
+	// Read the file
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Printf("Error reading file: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Create lexer and parser
+	l := lexer.New(string(content))
+	p := parser.New(l)
+
+	// Parse the program
+	program := p.ParseProgram()
+
+	// Check for parser errors
+	if len(p.Errors()) > 0 {
+		fmt.Printf("Parser errors for: %s\n", filename)
+		fmt.Println("=====================================")
+		for _, msg := range p.Errors() {
+			fmt.Printf("ERROR: %s\n", msg)
+		}
+		os.Exit(1)
+	}
+
+	// Run semantic analysis
+	a := analyzer.New()
+	errors := a.Analyze(program)
+
+	if len(errors) > 0 {
+		fmt.Printf("Semantic errors for: %s\n", filename)
+		fmt.Println("=====================================")
+		for _, msg := range errors {
+			fmt.Printf("ERROR: %s\n", msg)
+		}
+		os.Exit(1)
+	}
+
+	fmt.Printf("Analysis for: %s\n", filename)
+	fmt.Println("=====================================")
+	fmt.Printf("Successfully analyzed %d statements\n", len(program.Statements))
+	fmt.Println("No semantic errors found.")
 }
