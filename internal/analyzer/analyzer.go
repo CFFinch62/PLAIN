@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"plain/internal/ast"
 	"plain/internal/scope"
+	"plain/internal/types"
 )
 
 // Analyzer performs semantic analysis on the AST
@@ -59,11 +60,19 @@ func (a *Analyzer) exitScope() {
 
 // defineSymbol attempts to define a symbol in the current scope
 func (a *Analyzer) defineSymbol(name string, mutable bool, line, column int) {
+	a.defineSymbolWithType(name, mutable, nil, line, column)
+}
+
+// defineSymbolWithType attempts to define a symbol with a specific type
+func (a *Analyzer) defineSymbolWithType(name string, mutable bool, symType *types.Type, line, column int) {
 	sym := &scope.Symbol{
 		Name:    name,
 		Mutable: mutable,
 		Line:    line,
 		Column:  column,
+	}
+	if symType != nil {
+		sym.Type = symType.String()
 	}
 
 	if err := a.currentScope.Define(sym); err != nil {
@@ -114,12 +123,45 @@ func (a *Analyzer) analyzeStatement(stmt ast.Statement) {
 // analyzeVarStatement handles: var name = value
 func (a *Analyzer) analyzeVarStatement(stmt *ast.VarStatement) {
 	// First analyze the value expression (it may reference existing variables)
+	var valueType *types.Type
 	if stmt.Value != nil {
 		a.analyzeExpression(stmt.Value)
+		valueType = a.inferType(stmt.Value)
 	}
 
-	// Then define the new variable
-	a.defineSymbol(stmt.Name.Value, true, stmt.Token.Line, stmt.Token.Column)
+	// Infer type from prefix if available
+	prefixType := types.InferFromPrefix(stmt.Name.Value)
+
+	// Check explicit type if provided
+	var explicitType *types.Type
+	if stmt.TypeName != nil {
+		explicitType = types.TypeFromName(stmt.TypeName.Value)
+	}
+
+	// Determine the final type (explicit > prefix > inferred from value)
+	var finalType *types.Type
+	if explicitType != nil {
+		finalType = explicitType
+		// Check that value type is compatible with explicit type
+		if valueType != nil && !types.CanAssign(explicitType, valueType) {
+			a.addError(stmt.Token.Line, stmt.Token.Column,
+				"cannot assign %s to variable of type %s",
+				valueType.String(), explicitType.String())
+		}
+	} else if prefixType != nil {
+		finalType = prefixType
+		// Check that value type is compatible with prefix type
+		if valueType != nil && !types.CanAssign(prefixType, valueType) {
+			a.addError(stmt.Token.Line, stmt.Token.Column,
+				"cannot assign %s to %s variable '%s'",
+				valueType.String(), prefixType.String(), stmt.Name.Value)
+		}
+	} else {
+		finalType = valueType
+	}
+
+	// Define the variable with its type
+	a.defineSymbolWithType(stmt.Name.Value, true, finalType, stmt.Token.Line, stmt.Token.Column)
 }
 
 // analyzeFxdStatement handles: fxd name = value
@@ -404,4 +446,79 @@ func (a *Analyzer) analyzeCallExpression(call *ast.CallExpression) {
 	for _, arg := range call.Arguments {
 		a.analyzeExpression(arg)
 	}
+}
+
+// inferType infers the type of an expression
+func (a *Analyzer) inferType(expr ast.Expression) *types.Type {
+	if expr == nil {
+		return types.UnknownType
+	}
+
+	switch e := expr.(type) {
+	case *ast.IntegerLiteral:
+		return types.IntegerType
+	case *ast.FloatLiteral:
+		return types.FloatType
+	case *ast.StringLiteral:
+		return types.StringType
+	case *ast.InterpolatedString:
+		return types.StringType
+	case *ast.BooleanLiteral:
+		return types.BooleanType
+	case *ast.NullLiteral:
+		return types.NullType
+	case *ast.ListLiteral:
+		if len(e.Elements) > 0 {
+			elemType := a.inferType(e.Elements[0])
+			return types.NewListType(elemType)
+		}
+		return types.NewListType(nil)
+	case *ast.TableLiteral:
+		for key, value := range e.Pairs {
+			keyType := a.inferType(key)
+			valueType := a.inferType(value)
+			return types.NewTableType(keyType, valueType)
+		}
+		return types.NewTableType(nil, nil)
+	case *ast.RecordLiteral:
+		if e.Type != nil {
+			return types.NewRecordType(e.Type.Value)
+		}
+		return types.UnknownType
+	case *ast.Identifier:
+		// Look up the symbol's type
+		if sym, found := a.currentScope.Resolve(e.Value); found {
+			if sym.Type != "" {
+				return types.TypeFromName(sym.Type)
+			}
+		}
+		return types.UnknownType
+	case *ast.InfixExpression:
+		leftType := a.inferType(e.Left)
+		rightType := a.inferType(e.Right)
+		resultType, _ := types.AreCompatible(leftType, rightType, e.Operator)
+		if resultType != nil {
+			return resultType
+		}
+		return types.UnknownType
+	case *ast.PrefixExpression:
+		operandType := a.inferType(e.Right)
+		resultType, _ := types.UnaryResultType(operandType, e.Operator)
+		if resultType != nil {
+			return resultType
+		}
+		return types.UnknownType
+	case *ast.CallExpression:
+		// Function return types would need to be tracked
+		// For now, return unknown
+		return types.UnknownType
+	case *ast.IndexExpression:
+		// Could infer element type from collection type
+		return types.UnknownType
+	case *ast.DotExpression:
+		// Would need record field type info
+		return types.UnknownType
+	}
+
+	return types.UnknownType
 }

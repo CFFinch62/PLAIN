@@ -277,6 +277,81 @@ counter *= 2`
 	}
 }
 
+// ============== TYPE CHECKING TESTS ==============
+
+func TestPrefixTypeInference(t *testing.T) {
+	// Valid prefix type assignments
+	input := `var intCount = 42
+var fltTemp = 98.6
+var strName = "Chuck"
+var blnActive = true
+var lstItems = [1, 2, 3]
+var tblScores = {"alice": 95}`
+
+	errors := analyzeSource(input)
+	if len(errors) > 0 {
+		t.Errorf("unexpected errors: %v", errors)
+	}
+}
+
+func TestPrefixTypeMismatch(t *testing.T) {
+	input := `var intCount = "hello"`
+
+	errors := analyzeSource(input)
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 error, got %d: %v", len(errors), errors)
+	}
+	if !strings.Contains(errors[0], "cannot assign") {
+		t.Errorf("expected type mismatch error, got: %s", errors[0])
+	}
+}
+
+func TestPrefixTypeFloatToInt(t *testing.T) {
+	// Assigning float to int prefix should error
+	input := `var intCount = 3.14`
+
+	errors := analyzeSource(input)
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 error, got %d: %v", len(errors), errors)
+	}
+	if !strings.Contains(errors[0], "cannot assign") {
+		t.Errorf("expected type mismatch error, got: %s", errors[0])
+	}
+}
+
+func TestPrefixTypeIntToFloat(t *testing.T) {
+	// Assigning int to float prefix should be OK (widening)
+	input := `var fltValue = 42`
+
+	errors := analyzeSource(input)
+	if len(errors) > 0 {
+		t.Errorf("unexpected errors: %v", errors)
+	}
+}
+
+func TestExplicitTypeMismatch(t *testing.T) {
+	input := `var name as integer = "Chuck"`
+
+	errors := analyzeSource(input)
+	if len(errors) != 1 {
+		t.Fatalf("expected 1 error, got %d: %v", len(errors), errors)
+	}
+	if !strings.Contains(errors[0], "cannot assign") {
+		t.Errorf("expected type mismatch error, got: %s", errors[0])
+	}
+}
+
+func TestExplicitTypeValid(t *testing.T) {
+	input := `var age as integer = 63
+var temp as float = 98.6
+var name as string = "Chuck"`
+
+	errors := analyzeSource(input)
+	if len(errors) > 0 {
+		t.Errorf("unexpected errors: %v", errors)
+	}
+}
+
 // Helper function to parse and analyze source code
 func analyzeSource(input string) []string {
 	l := lexer.New(input)
