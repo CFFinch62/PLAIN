@@ -6,7 +6,9 @@ import (
 	"plain/internal/analyzer"
 	"plain/internal/lexer"
 	"plain/internal/parser"
+	"plain/internal/runtime"
 	"plain/internal/token"
+	"strings"
 )
 
 func main() {
@@ -49,8 +51,14 @@ func main() {
 		return
 	}
 
-	// Normal execution (not yet implemented)
-	fmt.Println("Interpreter not yet implemented. Use -lex, -parse, or -analyze to analyze code.")
+	// Normal execution - run the PLAIN file
+	if strings.HasSuffix(os.Args[1], ".plain") || !strings.HasPrefix(os.Args[1], "-") {
+		runFile(os.Args[1])
+		return
+	}
+
+	fmt.Printf("Unknown option: %s\n", os.Args[1])
+	os.Exit(1)
 }
 
 func showTokens(filename string) {
@@ -170,4 +178,55 @@ func analyzeFile(filename string) {
 	fmt.Println("=====================================")
 	fmt.Printf("Successfully analyzed %d statements\n", len(program.Statements))
 	fmt.Println("No semantic errors found.")
+}
+
+func runFile(filename string) {
+	// Read the file
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Printf("Error reading file: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Create lexer and parser
+	l := lexer.New(string(content))
+	p := parser.New(l)
+
+	// Parse the program
+	program := p.ParseProgram()
+
+	// Check for parser errors
+	if len(p.Errors()) > 0 {
+		fmt.Printf("Parser errors for: %s\n", filename)
+		fmt.Println("=====================================")
+		for _, msg := range p.Errors() {
+			fmt.Printf("ERROR: %s\n", msg)
+		}
+		os.Exit(1)
+	}
+
+	// Run semantic analysis (optional - could be skipped for performance)
+	a := analyzer.New()
+	errors := a.Analyze(program)
+
+	if len(errors) > 0 {
+		fmt.Printf("Semantic errors for: %s\n", filename)
+		fmt.Println("=====================================")
+		for _, msg := range errors {
+			fmt.Printf("ERROR: %s\n", msg)
+		}
+		os.Exit(1)
+	}
+
+	// Create runtime evaluator and execute
+	eval := runtime.New()
+	env := runtime.NewEnvironment()
+
+	result := eval.Eval(program, env)
+
+	// Check for runtime errors
+	if errVal, ok := result.(*runtime.ErrorValue); ok {
+		fmt.Printf("Runtime error: %s\n", errVal.Message)
+		os.Exit(1)
+	}
 }
