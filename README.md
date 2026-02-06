@@ -111,11 +111,6 @@ Go - chosen for its simplicity, performance, and excellent tooling.
 
 ## Author
 
-Chuck - January 2026
+Chuck Finch - Fragillidae Software (c) 2026
 
 ---
-
-**Current Phase:** Parser (Complete)
-**Next Phase:** Type System & Scope Management
-**Test Coverage:** Lexer 82.8%, Parser 100% (all tests passing)
-

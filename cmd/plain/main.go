@@ -3,22 +3,33 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"plain/internal/analyzer"
 	"plain/internal/lexer"
 	"plain/internal/parser"
+	"plain/internal/repl"
 	"plain/internal/runtime"
 	"plain/internal/token"
 	"strings"
 )
 
 func main() {
+	// No arguments - start REPL
 	if len(os.Args) < 2 {
-		fmt.Println("PLAIN Language Interpreter")
-		fmt.Println("Usage: plain <file.plain>")
-		fmt.Println("       plain -lex <file.plain>     (show tokens)")
-		fmt.Println("       plain -parse <file.plain>   (show AST)")
-		fmt.Println("       plain -analyze <file.plain> (run semantic analysis)")
-		os.Exit(1)
+		repl.StartDefault()
+		return
+	}
+
+	// Check for -repl flag to explicitly start REPL
+	if os.Args[1] == "-repl" || os.Args[1] == "-i" {
+		repl.StartDefault()
+		return
+	}
+
+	// Check for -help flag
+	if os.Args[1] == "-help" || os.Args[1] == "-h" || os.Args[1] == "--help" {
+		printUsage()
+		return
 	}
 
 	// Check for -lex flag to show tokens
@@ -58,7 +69,21 @@ func main() {
 	}
 
 	fmt.Printf("Unknown option: %s\n", os.Args[1])
+	printUsage()
 	os.Exit(1)
+}
+
+func printUsage() {
+	fmt.Println("PLAIN Language Interpreter")
+	fmt.Println("")
+	fmt.Println("Usage:")
+	fmt.Println("  plain                          Start interactive REPL")
+	fmt.Println("  plain <file.plain>             Run a PLAIN program")
+	fmt.Println("  plain -repl, -i                Start interactive REPL")
+	fmt.Println("  plain -lex <file.plain>        Show tokens (lexer output)")
+	fmt.Println("  plain -parse <file.plain>      Show AST (parser output)")
+	fmt.Println("  plain -analyze <file.plain>    Run semantic analysis")
+	fmt.Println("  plain -help, -h                Show this help message")
 }
 
 func showTokens(filename string) {
@@ -218,8 +243,9 @@ func runFile(filename string) {
 		os.Exit(1)
 	}
 
-	// Create runtime evaluator and execute
-	eval := runtime.New()
+	// Create runtime evaluator and execute with base directory for module resolution
+	baseDir := filepath.Dir(filename)
+	eval := runtime.NewWithBaseDir(baseDir)
 	env := runtime.NewEnvironment()
 
 	result := eval.Eval(program, env)

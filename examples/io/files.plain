@@ -1,0 +1,9 @@
+rem: IO Files module for testing imports
+
+task ReadBinary with (filename)
+    display(v"Reading binary from {filename}")
+    deliver "binary-data"
+
+task WriteBinary with (filename, data)
+    display(v"Writing binary to {filename}")
+    deliver true

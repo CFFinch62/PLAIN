@@ -1,0 +1,4 @@
+rem: Math module
+
+task Square with (n)
+    deliver n * n

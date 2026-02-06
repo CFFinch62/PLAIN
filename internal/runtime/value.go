@@ -182,6 +182,44 @@ func (v *TimerValue) String() string { return fmt.Sprintf("<timer id=%d>", v.ID)
 func (v *TimerValue) IsTruthy() bool { return !v.Cancelled }
 
 // ============================================================================
+// Record Values
+// ============================================================================
+
+// RecordFieldDef defines a field in a record type
+type RecordFieldDef struct {
+	Name         string
+	TypeName     string
+	DefaultValue Value // nil for required fields
+	Required     bool
+}
+
+// RecordTypeValue represents a record type definition (schema)
+type RecordTypeValue struct {
+	Name   string
+	Fields []*RecordFieldDef
+}
+
+func (v *RecordTypeValue) Type() string   { return "record_type" }
+func (v *RecordTypeValue) String() string { return fmt.Sprintf("<record type %s>", v.Name) }
+func (v *RecordTypeValue) IsTruthy() bool { return true }
+
+// RecordValue represents an instance of a record
+type RecordValue struct {
+	TypeName string
+	Fields   map[string]Value
+}
+
+func (v *RecordValue) Type() string { return "record" }
+func (v *RecordValue) String() string {
+	pairs := make([]string, 0, len(v.Fields))
+	for key, val := range v.Fields {
+		pairs = append(pairs, fmt.Sprintf("%s: %s", key, val.String()))
+	}
+	return fmt.Sprintf("%s(%s)", v.TypeName, strings.Join(pairs, ", "))
+}
+func (v *RecordValue) IsTruthy() bool { return true }
+
+// ============================================================================
 // Helper constructors
 // ============================================================================
 

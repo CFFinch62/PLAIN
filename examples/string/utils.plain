@@ -1,0 +1,4 @@
+rem: String utilities
+
+task Capitalize with (s)
+    deliver s

@@ -486,11 +486,156 @@ Should show:
 Format should be [HUMAN-READABLE/STRUCTURED]
 ```
 
-### IDE Support (Future)
-- Syntax highlighting definition
-- Language server protocol
-- Autocomplete
-- Error checking
+---
+
+## Phase 11: PLAIN IDE
+
+**Goal:** Create a desktop IDE for PLAIN based on the Steps IDE architecture
+
+**Reference Implementation:** Steps IDE at `/Steps/src/steps_ide/`
+
+### IDE Architecture Overview
+
+The PLAIN IDE will be a PyQt6-based desktop application with the following components:
+
+```
+plain_ide/
+├── main.py                 # Application entry point
+├── __init__.py
+├── app/
+│   ├── __init__.py
+│   ├── main_window.py      # Main application window
+│   ├── editor.py           # Code editor with PLAIN syntax
+│   ├── file_browser.py     # Project file tree
+│   ├── terminal.py         # Integrated terminal/output
+│   ├── syntax.py           # PLAIN syntax highlighter
+│   ├── themes.py           # Color themes (light/dark)
+│   ├── settings.py         # User preferences
+│   ├── debug_panel.py      # Debugger interface
+│   ├── debug_thread.py     # Background debug execution
+│   └── widgets/
+│       ├── __init__.py
+│       ├── variables_view.py   # Variable inspector
+│       └── call_stack_view.py  # Call stack display
+├── editor/
+│   ├── __init__.py
+│   ├── buffer_manager.py   # Multi-file editing
+│   └── plain_syntax.py     # PLAIN-specific syntax rules
+└── shared/
+    └── config/
+        ├── __init__.py
+        ├── loader.py       # Configuration loading
+        ├── session.py      # Session state
+        └── settings.py     # Settings schema
+```
+
+### Key Features
+
+**Editor Features:**
+- PLAIN syntax highlighting (keywords, types, strings, comments)
+- Auto-indentation (Python-style blocks)
+- Line numbers and current line highlighting
+- Multiple file tabs
+- Find/Replace functionality
+- Code folding for blocks
+
+**Project Management:**
+- File browser with project tree
+- Create/rename/delete files and folders
+- Recent projects list
+- Project-level settings
+
+**Execution & Debugging:**
+- Run current file
+- Integrated output terminal
+- Breakpoint support
+- Step through execution
+- Variable inspection
+- Call stack view
+
+**User Experience:**
+- Light and dark themes
+- Customizable font size
+- Keyboard shortcuts
+- Session persistence (open files, window position)
+
+### Implementation Phases
+
+**Phase 11.1: Core Application**
+- [ ] Set up PyQt6 project structure
+- [ ] Create main window with menu bar
+- [ ] Implement basic code editor
+- [ ] Add PLAIN syntax highlighting
+- [ ] File open/save functionality
+
+**Phase 11.2: Project Management**
+- [ ] File browser widget
+- [ ] Multi-tab editor
+- [ ] Recent files/projects
+- [ ] New file/project wizards
+
+**Phase 11.3: Execution**
+- [ ] Run button/menu
+- [ ] Output terminal panel
+- [ ] Error display with line linking
+- [ ] Stop execution button
+
+**Phase 11.4: Debugging**
+- [ ] Breakpoint markers
+- [ ] Debug mode execution
+- [ ] Step over/into/out
+- [ ] Variable inspector
+- [ ] Call stack view
+
+**Phase 11.5: Polish**
+- [ ] Theme support (light/dark)
+- [ ] Settings dialog
+- [ ] Keyboard shortcuts
+- [ ] Session persistence
+- [ ] Help/documentation
+
+### Prompt Template
+```
+I'm implementing the PLAIN IDE based on the Steps IDE.
+
+Component: [COMPONENT NAME]
+Reference: Steps IDE [FILE PATH]
+
+Features needed:
+- [FEATURE 1]
+- [FEATURE 2]
+
+Adaptations for PLAIN:
+- [PLAIN-SPECIFIC CHANGE]
+- [PLAIN-SPECIFIC CHANGE]
+
+Please help me implement [SPECIFIC FUNCTIONALITY].
+```
+
+### PLAIN-Specific Adaptations
+
+When adapting from Steps IDE:
+
+1. **Syntax Highlighting:**
+   - PLAIN keywords: task, deliver, var, fxd, if, else, choose, choice, loop, from, to, step, in, attempt, handle, ensure, record, use, etc.
+   - Type prefixes: int, flt, str, bln, lst, tbl
+   - Comments: rem: (single-line), note: (multi-line)
+   - String interpolation: v"..."
+
+2. **Execution:**
+   - Call Go-based PLAIN interpreter
+   - Parse PLAIN error messages for line linking
+
+3. **Debugging:**
+   - Integrate with PLAIN's attempt/handle/ensure
+   - Show PLAIN-specific value types
+
+### Dependencies
+
+```
+PyQt6>=6.4.0
+PyQt6-QScintilla>=2.13.0  # For advanced editor features
+```
 
 ---
 
