@@ -37,3 +37,7 @@ Thumbs.db
 *.tmp
 *.log
 
+__pycache__/
+*.pyc
+*.pyo
+.plain_ide_settings.json
