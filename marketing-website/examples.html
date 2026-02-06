@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examples - PLAIN Programming Language</title>
+    <meta name="description"
+        content="Explore real-world examples of PLAIN code. See how clear, capable code looks in practice.">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <span class="logo-icon">📝</span>
+                <span class="logo-text">PLAIN</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="features.html">Features</a></li>
+                <li><a href="getting-started.html">Getting Started</a></li>
+                <li><a href="examples.html" class="active">Examples</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1>PLAIN Code Examples</h1>
+            <p>See how clear, capable code looks in practice</p>
+        </div>
+    </header>
+
+    <section class="examples-intro">
+        <div class="container">
+            <p class="intro-text">
+                These examples demonstrate PLAIN's natural syntax, clear structure, and powerful features.
+                Each example is complete and runnable - copy, paste, and try them yourself!
+            </p>
+        </div>
+    </section>
+
+    <section class="feature-detail">
+        <div class="container">
+            <div class="example-header">
+                <h2>Hello World</h2>
+                <span class="difficulty-badge beginner">Beginner</span>
+            </div>
+            <p class="example-description">
+                The classic first program. Notice how natural the syntax is - it reads like instructions.
+            </p>
+            <div class="code-window">
+                <div class="code-header">
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-title">hello.plain</span>
+                </div>
+                <pre class="code-content"><code><span class="comment">rem: Simple Hello World program in PLAIN</span>
+
+<span class="keyword">task</span> Main()
+    <span class="keyword">var</span> strName = <span class="string">"World"</span>
+    <span class="keyword">var</span> greeting = v<span class="string">"Hello, {strName}!"</span>
+    display(greeting)</code></pre>
+            </div>
+            <div class="example-takeaway">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li><code>task Main()</code> is the entry point</li>
+                    <li><code>var</code> declares new variables</li>
+                    <li><code>v"..."</code> enables string interpolation</li>
+                    <li><code>display()</code> outputs to console</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail alternate">
+        <div class="container">
+            <div class="example-header">
+                <h2>Fibonacci Sequence</h2>
+                <span class="difficulty-badge beginner">Beginner</span>
+            </div>
+            <p class="example-description">
+                Recursive function demonstrating tasks, parameters, and return values.
+            </p>
+            <div class="code-window">
+                <div class="code-header">
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-title">fibonacci.plain</span>
+                </div>
+                <pre class="code-content"><code><span class="comment">rem: Calculate Fibonacci numbers</span>
+
+<span class="keyword">task</span> Fibonacci <span class="keyword">using</span> (intN)
+    <span class="keyword">if</span> intN <= <span class="number">1</span>
+        <span class="keyword">deliver</span> intN
+    
+    <span class="keyword">var</span> a = Fibonacci(intN - <span class="number">1</span>)
+    <span class="keyword">var</span> b = Fibonacci(intN - <span class="number">2</span>)
+    <span class="keyword">deliver</span> a + b
+
+<span class="keyword">task</span> Main()
+    <span class="keyword">var</span> intCount = <span class="number">10</span>
+    
+    <span class="keyword">loop</span> i <span class="keyword">from</span> <span class="number">0</span> <span class="keyword">to</span> intCount
+        <span class="keyword">var</span> result = Fibonacci(i)
+        display(v<span class="string">"Fibonacci({i}) = {result}"</span>)</code></pre>
+            </div>
+            <div class="example-takeaway">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li><code>using</code> declares parameters</li>
+                    <li><code>deliver</code> returns values</li>
+                    <li><code>loop from/to</code> creates numeric ranges</li>
+                    <li>Recursion works naturally</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail">
+        <div class="container">
+            <div class="example-header">
+                <h2>Working with Lists</h2>
+                <span class="difficulty-badge beginner">Beginner</span>
+            </div>
+            <p class="example-description">
+                Demonstrates list operations, iteration, and the standard library.
+            </p>
+            <div class="code-window">
+                <div class="code-header">
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-title">lists.plain</span>
+                </div>
+                <pre class="code-content"><code><span class="keyword">task</span> Main()
+    <span class="comment">rem: Create and populate a list</span>
+    <span class="keyword">var</span> lstNumbers = [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>]
+    
+    <span class="comment">rem: Add items</span>
+    append(lstNumbers, <span class="number">6</span>)
+    append(lstNumbers, <span class="number">7</span>)
+    
+    <span class="comment">rem: Iterate and process</span>
+    <span class="keyword">var</span> total = <span class="number">0</span>
+    <span class="keyword">loop</span> num <span class="keyword">in</span> lstNumbers
+        total = total + num
+    
+    <span class="keyword">var</span> average = total / length(lstNumbers)
+    
+    display(v<span class="string">"Total: {total}"</span>)
+    display(v<span class="string">"Average: {average}"</span>)
+    display(v<span class="string">"Count: {length(lstNumbers)}"</span>)</code></pre>
+            </div>
+            <div class="example-takeaway">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li>Lists use square bracket syntax <code>[]</code></li>
+                    <li><code>loop in</code> iterates over collections</li>
+                    <li>Standard library functions like <code>append()</code> and <code>length()</code></li>
+                    <li>Variables can be reassigned without <code>var</code></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail alternate">
+        <div class="container">
+            <div class="example-header">
+                <h2>Error Handling</h2>
+                <span class="difficulty-badge intermediate">Intermediate</span>
+            </div>
+            <p class="example-description">
+                Shows PLAIN's built-in error handling with attempt/handle/ensure blocks.
+            </p>
+            <div class="code-window">
+                <div class="code-header">
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-title">error_handling.plain</span>
+                </div>
+                <pre class="code-content"><code><span class="keyword">task</span> SafeDivide <span class="keyword">using</span> (a, b)
+    <span class="keyword">attempt</span>
+        <span class="keyword">var</span> result = a / b
+        <span class="keyword">deliver</span> result
+    <span class="keyword">handle</span>
+        display(<span class="string">"Error: Division failed"</span>)
+        <span class="keyword">deliver</span> <span class="keyword">null</span>
+    <span class="keyword">ensure</span>
+        display(<span class="string">"Division operation completed"</span>)
+
+<span class="keyword">task</span> Main()
+    <span class="comment">rem: Test with valid division</span>
+    <span class="keyword">var</span> result1 = SafeDivide(<span class="number">10</span>, <span class="number">2</span>)
+    display(v<span class="string">"10 / 2 = {result1}"</span>)
+
+    <span class="comment">rem: Test with division by zero</span>
+    <span class="keyword">var</span> result2 = SafeDivide(<span class="number">10</span>, <span class="number">0</span>)
+
+    <span class="keyword">if</span> result2 == <span class="keyword">null</span>
+        display(<span class="string">"Division was not possible"</span>)</code></pre>
+            </div>
+            <div class="example-takeaway">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li><code>attempt</code> block contains code that might fail</li>
+                    <li><code>handle</code> block runs if an error occurs</li>
+                    <li><code>ensure</code> block always runs (like finally)</li>
+                    <li>Error handling is built into the language</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail">
+        <div class="container">
+            <div class="example-header">
+                <h2>Records (Custom Types)</h2>
+                <span class="difficulty-badge intermediate">Intermediate</span>
+            </div>
+            <p class="example-description">
+                Define custom data structures with records and use them in type-safe collections.
+            </p>
+            <div class="code-window">
+                <div class="code-header">
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-title">records.plain</span>
+                </div>
+                <pre class="code-content"><code><span class="comment">rem: Define a Person record</span>
+<span class="keyword">record</span> Person:
+    name <span class="keyword">as</span> string
+    age <span class="keyword">as</span> integer = <span class="number">0</span>
+    email <span class="keyword">as</span> string = <span class="string">""</span>
+
+<span class="keyword">task</span> Main()
+    <span class="comment">rem: Create person instances</span>
+    <span class="keyword">var</span> alice = Person(
+        name: <span class="string">"Alice"</span>,
+        age: <span class="number">25</span>,
+        email: <span class="string">"alice@example.com"</span>
+    )
+
+    <span class="keyword">var</span> bob = Person(
+        name: <span class="string">"Bob"</span>,
+        age: <span class="number">30</span>,
+        email: <span class="string">"bob@example.com"</span>
+    )
+
+    <span class="comment">rem: Type-safe list of people</span>
+    <span class="keyword">var</span> people <span class="keyword">as</span> list <span class="keyword">of</span> Person = [alice, bob]
+
+    <span class="comment">rem: Iterate and display</span>
+    <span class="keyword">loop</span> person <span class="keyword">in</span> people
+        display(v<span class="string">"{person.name} is {person.age} years old"</span>)</code></pre>
+            </div>
+            <div class="example-takeaway">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li><code>record</code> defines custom data types</li>
+                    <li>Fields can have default values</li>
+                    <li>Named parameters make construction clear</li>
+                    <li>Type-safe collections with <code>list of Type</code></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail alternate">
+        <div class="container">
+            <div class="example-header">
+                <h2>Loop with Step</h2>
+                <span class="difficulty-badge beginner">Beginner</span>
+            </div>
+            <p class="example-description">
+                Demonstrates the <code>step</code> keyword for custom loop increments.
+            </p>
+            <div class="code-window">
+                <div class="code-header">
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-dot"></span>
+                    <span class="code-title">loop_step.plain</span>
+                </div>
+                <pre class="code-content"><code><span class="keyword">task</span> Main()
+    <span class="comment">rem: Count by 5s</span>
+    display(<span class="string">"Count by 5s from 0 to 50:"</span>)
+    <span class="keyword">loop</span> i <span class="keyword">from</span> <span class="number">0</span> <span class="keyword">to</span> <span class="number">50</span> <span class="keyword">step</span> <span class="number">5</span>
+        display(v<span class="string">"  {i}"</span>)
+
+    <span class="comment">rem: Countdown with negative step</span>
+    display(<span class="string">"Countdown by 2s from 10 to 0:"</span>)
+    <span class="keyword">loop</span> i <span class="keyword">from</span> <span class="number">10</span> <span class="keyword">to</span> <span class="number">0</span> <span class="keyword">step</span> <span class="number">-2</span>
+        display(v<span class="string">"  {i}"</span>)
+
+    <span class="comment">rem: Even numbers only</span>
+    display(<span class="string">"Even numbers from 2 to 20:"</span>)
+    <span class="keyword">loop</span> i <span class="keyword">from</span> <span class="number">2</span> <span class="keyword">to</span> <span class="number">20</span> <span class="keyword">step</span> <span class="number">2</span>
+        display(v<span class="string">"  {i}"</span>)</code></pre>
+            </div>
+            <div class="example-takeaway">
+                <h3>Key Takeaways</h3>
+                <ul>
+                    <li><code>step</code> keyword controls loop increment</li>
+                    <li>Negative steps create countdown loops</li>
+                    <li>Ranges are inclusive (include both start and end)</li>
+                    <li>Natural syntax: <code>loop i from 0 to 10 step 2</code></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Write Your Own PLAIN Code?</h2>
+            <p>Get started and try these examples yourself</p>
+            <div class="cta-buttons">
+                <a href="getting-started.html" class="btn btn-primary btn-large">Get Started</a>
+                <a href="features.html" class="btn btn-secondary btn-large">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>PLAIN Programming Language</h3>
+                    <p>Programming Language - Able, Intuitive, and Natural</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="features.html">Features</a></li>
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="examples.html">Examples</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="docs/language_spec.html">Language Specification</a></li>
+                        <li><a href="docs/quick_reference.html">Quick Reference</a></li>
+                        <li><a href="../README.md">GitHub</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p><strong>Chuck Finch</strong><br>
+                        Fragillidæ Software</p>
+                    <p>Email: <a href="mailto:info@fragillidaesoftware.com">info@fragillidaesoftware.com</a></p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 Fragillidæ Software. Licensed under MIT License.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
+

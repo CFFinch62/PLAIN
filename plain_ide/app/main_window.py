@@ -18,16 +18,18 @@ from plain_ide.app.editor import CodeEditor
 from plain_ide.app.file_browser import FileBrowserWidget
 from plain_ide.app.terminal import TerminalWidget
 from plain_ide.app.debug_panel import DebugPanel
+from plain_ide.app.debug_manager import DebugManager
 
 
 class PlainIDEMainWindow(QMainWindow):
     """Main window for the PLAIN IDE"""
-    
+
     def __init__(self, settings: SettingsManager, theme_manager: ThemeManager):
         super().__init__()
         self.settings = settings
         self.theme_manager = theme_manager
         self.editors = {}  # path -> CodeEditor
+        self.debug_manager = DebugManager(self)
         self.current_project_path = None
         
         self._setup_ui()
@@ -88,6 +90,13 @@ class PlainIDEMainWindow(QMainWindow):
         self.debug_panel.step_over_clicked.connect(self._debug_step_over)
         self.debug_panel.stop_clicked.connect(self._debug_stop)
         self.main_splitter.addWidget(self.debug_panel)
+
+        # Connect debug manager signals
+        self.debug_manager.stopped.connect(self._on_debug_stopped)
+        self.debug_manager.terminated.connect(self._on_debug_terminated)
+        self.debug_manager.variables_received.connect(self._on_debug_variables)
+        self.debug_manager.output_received.connect(self._on_debug_output)
+        self.debug_manager.error_received.connect(self._on_debug_error)
 
         self.main_splitter.setSizes([250, 750, 0])
         
@@ -657,7 +666,7 @@ class PlainIDEMainWindow(QMainWindow):
         self._run_with_trace(editor.file_path, editor.get_breakpoints())
 
     def _run_with_trace(self, file_path: str, breakpoints: set):
-        """Run file with trace output for debugging"""
+        """Run file in debug mode with step-through debugging"""
         self.terminal.clear()
         self.terminal.write_line(f"🐛 Debug: {file_path}",
                                  self.theme_manager.get_current_theme().info)
@@ -665,33 +674,90 @@ class PlainIDEMainWindow(QMainWindow):
             self.terminal.write_line(f"   Breakpoints: lines {sorted(breakpoints)}")
         self.terminal.write_line("-" * 50)
 
-        # For now, run normally - full step debugging would require runtime modifications
-        self.terminal.run_plain_file(file_path)
+        # Start debug session
+        self.debug_panel.add_trace(f"Starting debug: {file_path}")
+        if not self.debug_manager.start_debug(file_path, breakpoints):
+            self.terminal.write_line("❌ Failed to start debug session",
+                                    self.theme_manager.get_current_theme().error)
+            self.debug_panel.set_debugging_active(False)
+            return
 
-        # Note: Full step-by-step debugging would require modifying the Go runtime
-        # to support debug hooks. This is a simplified version that shows breakpoints
-        # and runs the program with output.
-        self.debug_panel.add_trace(f"Started debugging: {file_path}")
+        self.debug_panel.add_trace("Waiting for debugger...")
 
     def _debug_continue(self):
-        """Continue execution (placeholder for full debugging)"""
+        """Continue execution until next breakpoint"""
         self.debug_panel.add_trace("Continue...")
-        self.debug_panel.set_paused(False)
+        self.debug_panel.set_paused(False, "Running...")
+        self.debug_manager.continue_execution()
+        # Clear debug line while running
+        editor = self.tab_widget.currentWidget()
+        if isinstance(editor, CodeEditor):
+            editor.clear_debug_line()
 
     def _debug_step_into(self):
-        """Step into (placeholder for full debugging)"""
+        """Step into the next statement"""
         self.debug_panel.add_trace("Step into...")
+        self.debug_manager.step_into()
 
     def _debug_step_over(self):
-        """Step over (placeholder for full debugging)"""
+        """Step over the next statement"""
         self.debug_panel.add_trace("Step over...")
+        self.debug_manager.step_over()
 
     def _debug_stop(self):
         """Stop debugging"""
-        self.terminal.stop_execution()
+        self.debug_manager.stop_debug()
         self.debug_panel.set_debugging_active(False)
+        self.debug_panel.add_trace("Debug session stopped.")
+        self.terminal.write_line("\n⏹ Debug session terminated.",
+                                self.theme_manager.get_current_theme().warning)
 
         # Clear debug line in all editors
         for editor in self.editors.values():
             editor.clear_debug_line()
+
+    # Debug event handlers
+    def _on_debug_stopped(self, line: int, reason: str, call_stack: list):
+        """Handle debugger stopped event"""
+        self.debug_panel.set_paused(True, f"line {line}")
+        self.debug_panel.add_trace(f"Stopped at line {line} ({reason})")
+
+        # Highlight the current line in the editor
+        editor = self.tab_widget.currentWidget()
+        if isinstance(editor, CodeEditor):
+            editor.set_debug_line(line)
+            # Scroll to the debug line
+            cursor = editor.textCursor()
+            block = editor.document().findBlockByLineNumber(line - 1)
+            cursor.setPosition(block.position())
+            editor.setTextCursor(cursor)
+            editor.centerCursor()
+
+        # Update call stack display in trace
+        if call_stack:
+            self.debug_panel.add_trace(f"Call stack: {' -> '.join(f['name'] for f in call_stack)}")
+
+    def _on_debug_terminated(self):
+        """Handle debugger terminated event"""
+        self.debug_panel.set_debugging_active(False)
+        self.debug_panel.add_trace("Program terminated.")
+        self.terminal.write_line("\n✓ Debug session finished.",
+                                self.theme_manager.get_current_theme().success)
+
+        # Clear debug line in all editors
+        for editor in self.editors.values():
+            editor.clear_debug_line()
+
+    def _on_debug_variables(self, variables: dict):
+        """Handle variables received from debugger"""
+        self.debug_panel.update_variables(variables)
+
+    def _on_debug_output(self, output: str):
+        """Handle output from debugger"""
+        self.terminal.write(output)
+
+    def _on_debug_error(self, error: str):
+        """Handle error from debugger"""
+        self.terminal.write_line(error, self.theme_manager.get_current_theme().error)
+        self.debug_panel.add_trace(f"Error: {error}")
 

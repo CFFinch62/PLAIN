@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - PLAIN Programming Language</title>
+    <meta name="description"
+        content="Get started with PLAIN in minutes. Install, write your first program, and start coding clearly.">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <span class="logo-icon">📝</span>
+                <span class="logo-text">PLAIN</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="features.html">Features</a></li>
+                <li><a href="getting-started.html" class="active">Getting Started</a></li>
+                <li><a href="examples.html">Examples</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1>Getting Started with PLAIN</h1>
+            <p>Install PLAIN and write your first program in minutes</p>
+        </div>
+    </header>
+
+    <section class="feature-detail">
+        <div class="container">
+            <h2>Prerequisites</h2>
+            <div class="prerequisites">
+                <p>Before you begin, make sure you have:</p>
+                <ul class="checklist">
+                    <li><strong>Go 1.21 or later</strong> - PLAIN is implemented in Go</li>
+                    <li><strong>Git</strong> - To clone the repository</li>
+                    <li><strong>A text editor</strong> - Any editor will work (VS Code, Sublime, Vim, etc.)</li>
+                    <li><strong>Terminal/Command Line</strong> - Basic familiarity recommended</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail alternate">
+        <div class="container">
+            <h2>Installation</h2>
+            
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Clone the Repository</h3>
+                    <p>First, clone the PLAIN repository from GitHub:</p>
+                    <pre class="install-code"><code>git clone https://github.com/yourusername/PLAIN.git
+cd PLAIN</code></pre>
+                    <p class="step-note">Replace <code>yourusername</code> with the actual repository location.</p>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Build the Interpreter</h3>
+                    <p>Build the PLAIN interpreter using Go:</p>
+                    <pre class="install-code"><code>go build -o plain cmd/plain/main.go</code></pre>
+                    <p class="step-note">This creates a <code>plain</code> executable in the current directory.</p>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Verify Installation</h3>
+                    <p>Test that PLAIN is working:</p>
+                    <pre class="install-code"><code>./plain --version</code></pre>
+                    <p class="success">✓ If you see version information, you're ready to go!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail">
+        <div class="container">
+            <h2>Your First PLAIN Program</h2>
+            
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Create a New File</h3>
+                    <p>Create a file named <code>hello.plain</code> with the following content:</p>
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-title">hello.plain</span>
+                        </div>
+                        <pre class="code-content"><code><span class="comment">rem: My first PLAIN program</span>
+
+<span class="keyword">task</span> Main()
+    <span class="keyword">var</span> strName = <span class="string">"World"</span>
+    <span class="keyword">var</span> greeting = v<span class="string">"Hello, {strName}!"</span>
+    display(greeting)
+    display(<span class="string">"Welcome to PLAIN programming!"</span>)</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Run Your Program</h3>
+                    <p>Execute your program with the PLAIN interpreter:</p>
+                    <pre class="install-code"><code>./plain run hello.plain</code></pre>
+                    <p>You should see:</p>
+                    <pre class="output-block"><code>Hello, World!
+Welcome to PLAIN programming!</code></pre>
+                    <p class="success">✓ Congratulations! You've written and run your first PLAIN program!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail alternate">
+        <div class="container">
+            <h2>Next Steps</h2>
+            
+            <div class="path-steps">
+                <div class="path-step">
+                    <div class="path-icon">📚</div>
+                    <h3>Explore Examples</h3>
+                    <p>Check out the <a href="examples.html">examples page</a> to see more PLAIN code in action. Learn about loops, functions, error handling, and more.</p>
+                </div>
+
+                <div class="path-step">
+                    <div class="path-icon">🎯</div>
+                    <h3>Learn the Features</h3>
+                    <p>Visit the <a href="features.html">features page</a> to understand PLAIN's unique capabilities like no shadowing, type prefixes, and built-in error handling.</p>
+                </div>
+
+                <div class="path-step">
+                    <div class="path-icon">📖</div>
+                    <h3>Read the Documentation</h3>
+                    <p>Dive into the <a href="../docs/language_spec.md">language specification</a> for complete details on syntax, semantics, and the standard library.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail">
+        <div class="container">
+            <h2>Quick Tips</h2>
+
+            <div class="tip-cards">
+                <div class="tip-card">
+                    <h3>💡 Use Type Prefixes</h3>
+                    <p>Start variable names with type prefixes (<code>intAge</code>, <code>strName</code>) to make your code self-documenting.</p>
+                </div>
+
+                <div class="tip-card">
+                    <h3>📝 Comment Your Code</h3>
+                    <p>Use <code>rem:</code> for single-line comments and <code>note:</code> for multi-line comment blocks.</p>
+                </div>
+
+                <div class="tip-card">
+                    <h3>🎯 One Task, One Purpose</h3>
+                    <p>Keep tasks focused on a single responsibility. Break complex logic into smaller, named tasks.</p>
+                </div>
+
+                <div class="tip-card">
+                    <h3>🔍 Read Error Messages</h3>
+                    <p>PLAIN's error messages are designed to be helpful. They explain what went wrong and how to fix it.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail alternate">
+        <div class="container">
+            <h2>Common Issues</h2>
+
+            <div class="trouble-item">
+                <h3>Build fails with "Go not found"</h3>
+                <p><strong>Solution:</strong> Install Go from <a href="https://golang.org/dl/" target="_blank">golang.org/dl</a> and make sure it's in your PATH.</p>
+            </div>
+
+            <div class="trouble-item">
+                <h3>Program won't run - "Main task not found"</h3>
+                <p><strong>Solution:</strong> Every PLAIN program needs a <code>task Main()</code> as the entry point. Make sure you've defined it.</p>
+            </div>
+
+            <div class="trouble-item">
+                <h3>Indentation errors</h3>
+                <p><strong>Solution:</strong> PLAIN uses indentation to define blocks (like Python). Use consistent spaces (4 spaces recommended) for indentation.</p>
+            </div>
+
+            <div class="trouble-item">
+                <h3>Variable shadowing error</h3>
+                <p><strong>Solution:</strong> PLAIN doesn't allow variable shadowing. If you see this error, you're trying to redeclare a variable that already exists in an outer scope. Use a different name or assign to the existing variable without <code>var</code>.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Build Something?</h2>
+            <p>You have everything you need to start coding in PLAIN</p>
+            <div class="cta-buttons">
+                <a href="examples.html" class="btn btn-primary btn-large">View Examples</a>
+                <a href="features.html" class="btn btn-secondary btn-large">Learn Features</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>PLAIN Programming Language</h3>
+                    <p>Programming Language - Able, Intuitive, and Natural</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="features.html">Features</a></li>
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="examples.html">Examples</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="docs/language_spec.html">Language Specification</a></li>
+                        <li><a href="docs/quick_reference.html">Quick Reference</a></li>
+                        <li><a href="../README.md">GitHub</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p><strong>Chuck Finch</strong><br>
+                        Fragillidæ Software</p>
+                    <p>Email: <a href="mailto:info@fragillidaesoftware.com">info@fragillidaesoftware.com</a></p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 Fragillidæ Software. Licensed under MIT License.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

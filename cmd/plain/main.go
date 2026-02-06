@@ -10,6 +10,7 @@ import (
 	"plain/internal/repl"
 	"plain/internal/runtime"
 	"plain/internal/token"
+	"strconv"
 	"strings"
 )
 
@@ -62,6 +63,25 @@ func main() {
 		return
 	}
 
+	// Check for --debug flag for debug mode
+	if os.Args[1] == "--debug" {
+		if len(os.Args) < 3 {
+			fmt.Println("Error: --debug requires a filename")
+			os.Exit(1)
+		}
+		// Parse optional breakpoints
+		var breakpoints []int
+		filename := os.Args[2]
+		for i := 3; i < len(os.Args); i++ {
+			if strings.HasPrefix(os.Args[i], "--breakpoints=") {
+				bpStr := strings.TrimPrefix(os.Args[i], "--breakpoints=")
+				breakpoints = parseBreakpoints(bpStr)
+			}
+		}
+		runFileDebug(filename, breakpoints)
+		return
+	}
+
 	// Normal execution - run the PLAIN file
 	if strings.HasSuffix(os.Args[1], ".plain") || !strings.HasPrefix(os.Args[1], "-") {
 		runFile(os.Args[1])
@@ -83,7 +103,11 @@ func printUsage() {
 	fmt.Println("  plain -lex <file.plain>        Show tokens (lexer output)")
 	fmt.Println("  plain -parse <file.plain>      Show AST (parser output)")
 	fmt.Println("  plain -analyze <file.plain>    Run semantic analysis")
+	fmt.Println("  plain --debug <file.plain>     Run in debug mode (for IDE integration)")
 	fmt.Println("  plain -help, -h                Show this help message")
+	fmt.Println("")
+	fmt.Println("Debug options:")
+	fmt.Println("  --breakpoints=1,5,10           Set initial breakpoints at lines 1, 5, 10")
 }
 
 func showTokens(filename string) {
@@ -249,6 +273,78 @@ func runFile(filename string) {
 	env := runtime.NewEnvironment()
 
 	result := eval.Eval(program, env)
+
+	// Check for runtime errors
+	if errVal, ok := result.(*runtime.ErrorValue); ok {
+		fmt.Printf("Runtime error: %s\n", errVal.Message)
+		os.Exit(1)
+	}
+}
+
+// parseBreakpoints parses a comma-separated list of line numbers
+func parseBreakpoints(s string) []int {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	lines := make([]int, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if line, err := strconv.Atoi(p); err == nil && line > 0 {
+			lines = append(lines, line)
+		}
+	}
+	return lines
+}
+
+// runFileDebug runs a PLAIN file in debug mode
+func runFileDebug(filename string, breakpoints []int) {
+	// Read the file
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Printf("Error reading file: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Create lexer and parser
+	l := lexer.New(string(content))
+	p := parser.New(l)
+
+	// Parse the program
+	program := p.ParseProgram()
+
+	// Check for parser errors
+	if len(p.Errors()) > 0 {
+		fmt.Printf("Parser errors for: %s\n", filename)
+		for _, msg := range p.Errors() {
+			fmt.Printf("ERROR: %s\n", msg)
+		}
+		os.Exit(1)
+	}
+
+	// Run semantic analysis
+	a := analyzer.New()
+	errors := a.Analyze(program)
+
+	if len(errors) > 0 {
+		fmt.Printf("Semantic errors for: %s\n", filename)
+		for _, msg := range errors {
+			fmt.Printf("ERROR: %s\n", msg)
+		}
+		os.Exit(1)
+	}
+
+	// Create runtime evaluator and debugger
+	baseDir := filepath.Dir(filename)
+	eval := runtime.NewWithBaseDir(baseDir)
+	env := runtime.NewEnvironment()
+
+	// Create debugger with breakpoints
+	debugger := runtime.NewDebugger(eval)
+	debugger.SetBreakpoints(breakpoints)
+
+	// Run the program in debug mode
+	result := debugger.Run(program, env)
 
 	// Check for runtime errors
 	if errVal, ok := result.(*runtime.ErrorValue); ok {

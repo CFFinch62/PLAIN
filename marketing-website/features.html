@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - PLAIN Programming Language</title>
+    <meta name="description"
+        content="Discover the powerful features that make PLAIN an able, intuitive, and natural programming language.">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <span class="logo-icon">📝</span>
+                <span class="logo-text">PLAIN</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="features.html" class="active">Features</a></li>
+                <li><a href="getting-started.html">Getting Started</a></li>
+                <li><a href="examples.html">Examples</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1>Features That Make PLAIN Unique</h1>
+            <p>Designed for clarity without sacrificing capability</p>
+        </div>
+    </header>
+
+    <section class="feature-detail">
+        <div class="container">
+            <div class="feature-row">
+                <div class="feature-text">
+                    <h2>📖 Natural, Readable Syntax</h2>
+                    <p class="feature-lead">Code that reads like plain English instructions</p>
+                    <p>PLAIN uses natural language keywords that make code immediately understandable. Instead of cryptic symbols and abbreviations, you write code that reads like instructions you'd give to another person.</p>
+                    <ul class="feature-list">
+                        <li><strong>task</strong> - Define functions with clear purpose</li>
+                        <li><strong>deliver</strong> - Return values explicitly</li>
+                        <li><strong>attempt/handle/ensure</strong> - Error handling that makes sense</li>
+                        <li><strong>loop from/to/in</strong> - Iteration that reads naturally</li>
+                    </ul>
+                    <p>No more wondering what <code>def</code>, <code>fn</code>, or <code>func</code> means - it's just <code>task</code>.</p>
+                </div>
+                <div class="feature-visual">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-title">natural_syntax.plain</span>
+                        </div>
+                        <pre class="code-content"><code><span class="keyword">task</span> CalculateAverage <span class="keyword">using</span> (numbers)
+    <span class="keyword">var</span> total = <span class="number">0</span>
+    
+    <span class="keyword">loop</span> num <span class="keyword">in</span> numbers
+        total = total + num
+    
+    <span class="keyword">var</span> average = total / length(numbers)
+    <span class="keyword">deliver</span> average
+
+<span class="keyword">task</span> Main()
+    <span class="keyword">var</span> scores = [<span class="number">95</span>, <span class="number">87</span>, <span class="number">92</span>, <span class="number">88</span>]
+    <span class="keyword">var</span> avg = CalculateAverage(scores)
+    display(v<span class="string">"Average: {avg}"</span>)</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail alternate">
+        <div class="container">
+            <div class="feature-row">
+                <div class="feature-visual">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-title">explicit_vars.plain</span>
+                        </div>
+                        <pre class="code-content"><code><span class="keyword">task</span> Example()
+    <span class="keyword">var</span> counter = <span class="number">0</span>    <span class="comment">rem: declares new variable</span>
+    
+    <span class="keyword">loop</span> i <span class="keyword">from</span> <span class="number">1</span> <span class="keyword">to</span> <span class="number">10</span>
+        counter = counter + <span class="number">1</span>  <span class="comment">rem: assigns to existing</span>
+    
+    display(counter)  <span class="comment">rem: 10</span>
+
+<span class="comment">rem: This would be an ERROR:</span>
+<span class="keyword">task</span> BadExample()
+    <span class="keyword">var</span> x = <span class="number">5</span>
+    
+    <span class="keyword">if</span> x > <span class="number">0</span>
+        <span class="keyword">var</span> x = <span class="number">10</span>  <span class="comment">rem: ERROR! No shadowing</span></code></pre>
+                    </div>
+                </div>
+                <div class="feature-text">
+                    <h2>🎯 Explicit Over Implicit</h2>
+                    <p class="feature-lead">No surprises, no hidden behavior</p>
+                    <p>PLAIN makes everything explicit. <code>var</code> declares a new variable, no <code>var</code> assigns to an existing one. This simple rule eliminates entire classes of bugs.</p>
+                    <ul class="feature-list">
+                        <li><strong>No shadowing</strong> - Can't redeclare variables in inner scopes</li>
+                        <li><strong>Clear declarations</strong> - Always know when you're creating vs. modifying</li>
+                        <li><strong>Explicit types</strong> - Optional but available when you need them</li>
+                        <li><strong>No implicit conversions</strong> - Types don't change behind your back</li>
+                    </ul>
+                    <p>Code that's explicit is code that's maintainable.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail">
+        <div class="container">
+            <div class="feature-row">
+                <div class="feature-text">
+                    <h2>🏷️ Self-Documenting Type Prefixes</h2>
+                    <p class="feature-lead">Optional prefixes that make code crystal clear</p>
+                    <p>PLAIN supports Hungarian-style type prefixes that make variable types immediately obvious. They're optional, but when you use them, your code becomes self-documenting.</p>
+                    <ul class="feature-list">
+                        <li><strong>int</strong> - Integer values (intAge, intCount)</li>
+                        <li><strong>flt</strong> - Floating point numbers (fltPrice, fltTemperature)</li>
+                        <li><strong>str</strong> - Strings (strName, strMessage)</li>
+                        <li><strong>bln</strong> - Booleans (blnActive, blnIsReady)</li>
+                        <li><strong>lst</strong> - Lists (lstItems, lstScores)</li>
+                        <li><strong>tbl</strong> - Tables/Dictionaries (tblData, tblConfig)</li>
+                    </ul>
+                    <p>One glance tells you everything you need to know about a variable.</p>
+                </div>
+                <div class="feature-visual">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-title">type_prefixes.plain</span>
+                        </div>
+                        <pre class="code-content"><code><span class="keyword">task</span> ProcessOrder()
+    <span class="keyword">var</span> intOrderId = <span class="number">12345</span>
+    <span class="keyword">var</span> strCustomer = <span class="string">"Alice"</span>
+    <span class="keyword">var</span> fltTotal = <span class="number">99.99</span>
+    <span class="keyword">var</span> blnPaid = <span class="boolean">false</span>
+    <span class="keyword">var</span> lstItems = [<span class="string">"Book"</span>, <span class="string">"Pen"</span>]
+    <span class="keyword">var</span> tblPrices = {
+        <span class="string">"Book"</span>: <span class="number">89.99</span>,
+        <span class="string">"Pen"</span>: <span class="number">9.99</span>
+    }
+    
+    <span class="comment">rem: Types are obvious at a glance!</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail alternate">
+        <div class="container">
+            <div class="feature-row">
+                <div class="feature-visual">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-title">error_handling.plain</span>
+                        </div>
+                        <pre class="code-content"><code><span class="keyword">task</span> SafeDivide <span class="keyword">using</span> (a, b)
+    <span class="keyword">attempt</span>
+        <span class="keyword">var</span> result = a / b
+        <span class="keyword">deliver</span> result
+    <span class="keyword">handle</span>
+        display(<span class="string">"Error: Division failed"</span>)
+        <span class="keyword">deliver</span> <span class="keyword">null</span>
+    <span class="keyword">ensure</span>
+        display(<span class="string">"Operation completed"</span>)
+
+<span class="keyword">task</span> Main()
+    <span class="keyword">var</span> result = SafeDivide(<span class="number">10</span>, <span class="number">0</span>)
+
+    <span class="keyword">if</span> result == <span class="keyword">null</span>
+        display(<span class="string">"Division was not possible"</span>)</code></pre>
+                    </div>
+                </div>
+                <div class="feature-text">
+                    <h2>🛡️ Built-in Error Handling</h2>
+                    <p class="feature-lead">First-class error handling that makes sense</p>
+                    <p>PLAIN includes error handling as a core language feature with <code>attempt</code>, <code>handle</code>, and <code>ensure</code> blocks. No exceptions to catch, no try-catch confusion.</p>
+                    <ul class="feature-list">
+                        <li><strong>attempt</strong> - Try code that might fail</li>
+                        <li><strong>handle</strong> - Deal with errors gracefully</li>
+                        <li><strong>ensure</strong> - Code that always runs (like finally)</li>
+                        <li><strong>Clear flow</strong> - Error paths are explicit and obvious</li>
+                    </ul>
+                    <p>Error handling that's built into the language, not bolted on.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail">
+        <div class="container">
+            <div class="feature-row">
+                <div class="feature-text">
+                    <h2>📝 String Interpolation</h2>
+                    <p class="feature-lead">Natural string formatting without the hassle</p>
+                    <p>Format strings naturally with the <code>v"..."</code> syntax. No printf formats to memorize, no string concatenation chains to debug.</p>
+                    <ul class="feature-list">
+                        <li><strong>Simple syntax</strong> - Just <code>v"Hello {name}!"</code></li>
+                        <li><strong>Any expression</strong> - Put calculations right in strings</li>
+                        <li><strong>Readable</strong> - See exactly what the output will look like</li>
+                        <li><strong>No escaping</strong> - Regular strings use normal quotes</li>
+                    </ul>
+                    <p>String formatting that just works.</p>
+                </div>
+                <div class="feature-visual">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-title">interpolation.plain</span>
+                        </div>
+                        <pre class="code-content"><code><span class="keyword">task</span> Main()
+    <span class="keyword">var</span> strName = <span class="string">"Alice"</span>
+    <span class="keyword">var</span> intAge = <span class="number">25</span>
+    <span class="keyword">var</span> fltScore = <span class="number">95.5</span>
+
+    <span class="comment">rem: Simple interpolation</span>
+    display(v<span class="string">"Hello, {strName}!"</span>)
+
+    <span class="comment">rem: Multiple values</span>
+    display(v<span class="string">"{strName} is {intAge} years old"</span>)
+
+    <span class="comment">rem: Expressions work too</span>
+    display(v<span class="string">"Score: {fltScore * 2}"</span>)
+
+    <span class="comment">rem: No concatenation needed!</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail alternate">
+        <div class="container">
+            <div class="feature-row">
+                <div class="feature-visual">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-title">records.plain</span>
+                        </div>
+                        <pre class="code-content"><code><span class="keyword">record</span> Person:
+    name <span class="keyword">as</span> string
+    age <span class="keyword">as</span> integer = <span class="number">0</span>
+    email <span class="keyword">as</span> string = <span class="string">""</span>
+
+<span class="keyword">task</span> Main()
+    <span class="keyword">var</span> alice = Person(
+        name: <span class="string">"Alice"</span>,
+        age: <span class="number">25</span>,
+        email: <span class="string">"alice@example.com"</span>
+    )
+
+    display(alice.name)
+    display(alice.age)
+
+    <span class="comment">rem: Type-safe collections</span>
+    <span class="keyword">var</span> people <span class="keyword">as</span> list <span class="keyword">of</span> Person = []
+    people.append(alice)</code></pre>
+                    </div>
+                </div>
+                <div class="feature-text">
+                    <h2>🔧 Records & Custom Types</h2>
+                    <p class="feature-lead">Define your own data structures</p>
+                    <p>Create custom data types with records. Define fields with types and default values. Build type-safe collections that hold exactly what you expect.</p>
+                    <ul class="feature-list">
+                        <li><strong>Clear syntax</strong> - Define fields with types and defaults</li>
+                        <li><strong>Type safety</strong> - Collections can be constrained to specific types</li>
+                        <li><strong>Named parameters</strong> - Create instances with clear field names</li>
+                        <li><strong>Dot notation</strong> - Access fields naturally</li>
+                    </ul>
+                    <p>Build complex data structures without complexity.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-detail">
+        <div class="container">
+            <div class="feature-row">
+                <div class="feature-text">
+                    <h2>📦 Clear Module System</h2>
+                    <p class="feature-lead">Organize code with packages, assemblies, and modules</p>
+                    <p>PLAIN's module system is hierarchical and explicit. Import exactly what you need with clear declarations.</p>
+                    <ul class="feature-list">
+                        <li><strong>Packages</strong> - Top-level organization</li>
+                        <li><strong>Assemblies</strong> - Collections of related modules</li>
+                        <li><strong>Modules</strong> - Individual code files</li>
+                        <li><strong>Selective imports</strong> - Import specific tasks or whole modules</li>
+                    </ul>
+                    <p>Code organization that scales from small scripts to large projects.</p>
+                </div>
+                <div class="feature-visual">
+                    <div class="code-window">
+                        <div class="code-header">
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-dot"></span>
+                            <span class="code-title">imports.plain</span>
+                        </div>
+                        <pre class="code-content"><code><span class="keyword">use:</span>
+    <span class="keyword">assemblies:</span>
+        System
+        System.Collections
+    <span class="keyword">modules:</span>
+        io
+        io.files
+        math
+        string.utils
+    <span class="keyword">tasks:</span>
+        io.files.ReadBinary
+        math.advanced.CalculatePI
+
+<span class="keyword">task</span> Main()
+    <span class="keyword">var</span> data = ReadBinary(<span class="string">"data.bin"</span>)
+    <span class="keyword">var</span> pi = CalculatePI(<span class="number">100</span>)
+    display(pi)</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Experience PLAIN?</h2>
+            <p>See these features in action</p>
+            <div class="cta-buttons">
+                <a href="getting-started.html" class="btn btn-primary btn-large">Get Started</a>
+                <a href="examples.html" class="btn btn-secondary btn-large">View Examples</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>PLAIN Programming Language</h3>
+                    <p>Programming Language - Able, Intuitive, and Natural</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="features.html">Features</a></li>
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="examples.html">Examples</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="docs/language_spec.html">Language Specification</a></li>
+                        <li><a href="docs/quick_reference.html">Quick Reference</a></li>
+                        <li><a href="../README.md">GitHub</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p><strong>Chuck Finch</strong><br>
+                        Fragillidæ Software</p>
+                    <p>Email: <a href="mailto:info@fragillidaesoftware.com">info@fragillidaesoftware.com</a></p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 Fragillidæ Software. Licensed under MIT License.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLAIN Programming Language - Able, Intuitive, and Natural</title>
+    <meta name="description"
+        content="PLAIN is a programming language designed to be approachable without sacrificing competence. Clear thinking over clever syntax.">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <span class="logo-icon">📝</span>
+                <span class="logo-text">PLAIN</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="features.html">Features</a></li>
+                <li><a href="getting-started.html">Getting Started</a></li>
+                <li><a href="examples.html">Examples</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">Programming That's <span class="highlight">Able, Intuitive, and Natural</span></h1>
+                <p class="hero-subtitle">A programming language designed for clarity without sacrificing capability</p>
+                <div class="hero-buttons">
+                    <a href="getting-started.html" class="btn btn-primary">Get Started</a>
+                    <a href="examples.html" class="btn btn-secondary">See Examples</a>
+                </div>
+            </div>
+            <div class="hero-code">
+                <div class="code-window">
+                    <div class="code-header">
+                        <span class="code-dot"></span>
+                        <span class="code-dot"></span>
+                        <span class="code-dot"></span>
+                        <span class="code-title">hello.plain</span>
+                    </div>
+                    <pre class="code-content"><code><span class="keyword">task</span> Main()
+    <span class="keyword">var</span> strName = <span class="string">"World"</span>
+    <span class="keyword">var</span> greeting = v<span class="string">"{strName}!"</span>
+    display(greeting)</code></pre>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="why-plain">
+        <div class="container">
+            <h2 class="section-title">Why PLAIN?</h2>
+            <p class="section-subtitle">Clear thinking over clever syntax. Natural readability over terse notation.</p>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📖</div>
+                    <h3>Natural Syntax</h3>
+                    <p>Code that reads like plain English. Use <code>task</code>, <code>deliver</code>, <code>attempt</code>, and <code>handle</code> instead of cryptic symbols.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Explicit Over Implicit</h3>
+                    <p><code>var</code> declares new variables, no <code>var</code> assigns to existing ones. No shadowing allowed - clarity always wins.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🏷️</div>
+                    <h3>Type Prefixes</h3>
+                    <p>Optional type prefixes make code self-documenting: <code>intAge</code>, <code>strName</code>, <code>lstItems</code>, <code>tblData</code>.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Built-in Error Handling</h3>
+                    <p>First-class error handling with <code>attempt</code>/<code>handle</code>/<code>ensure</code> blocks. No exceptions to catch.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="code-philosophy">
+        <div class="container">
+            <h2 class="section-title">The PLAIN Philosophy</h2>
+            <p class="section-subtitle">Programming Language - Able, Intuitive, and Natural</p>
+
+            <div class="philosophy-content">
+                <div class="philosophy-visual">
+                    <div class="philosophy-diagram">
+                        <div class="philosophy-item">
+                            <div class="philosophy-icon">💪</div>
+                            <h4>Able</h4>
+                            <p>Capable of real work without unnecessary complexity</p>
+                        </div>
+                        <div class="philosophy-item">
+                            <div class="philosophy-icon">💡</div>
+                            <h4>Intuitive</h4>
+                            <p>Code that makes sense at first glance</p>
+                        </div>
+                        <div class="philosophy-item">
+                            <div class="philosophy-icon">🌿</div>
+                            <h4>Natural</h4>
+                            <p>Reads like instructions, not incantations</p>
+                        </div>
+                        <div class="philosophy-item">
+                            <div class="philosophy-icon">✨</div>
+                            <h4>Honest</h4>
+                            <p>No hidden behavior or surprising side effects</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="philosophy-explanation">
+                    <h3>Designed for Clarity</h3>
+                    <ul class="benefits-list">
+                        <li><strong>Clear over clever</strong> - Readable code beats terse code every time</li>
+                        <li><strong>Explicit over implicit</strong> - No magic, no surprises, no hidden behavior</li>
+                        <li><strong>Natural over cryptic</strong> - English keywords instead of symbols</li>
+                        <li><strong>Capable over simple</strong> - Approachable doesn't mean limited</li>
+                    </ul>
+                    <p class="philosophy-note">PLAIN is for getting real work done with straightforward, understandable code.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="code-comparison">
+        <div class="container">
+            <h2 class="section-title">Clear, Readable Syntax</h2>
+            <p class="section-subtitle">Code that reads like instructions</p>
+
+            <div class="comparison-grid">
+                <div class="comparison-item">
+                    <h3>Variables & Types</h3>
+                    <pre class="code-example"><code><span class="keyword">var</span> intAge = <span class="number">25</span>
+<span class="keyword">var</span> strName = <span class="string">"Alice"</span>
+<span class="keyword">var</span> blnActive = <span class="boolean">true</span>
+<span class="keyword">var</span> lstScores = [<span class="number">95</span>, <span class="number">87</span>, <span class="number">92</span>]
+<span class="keyword">fxd</span> MAX_COUNT <span class="keyword">as</span> int = <span class="number">100</span></code></pre>
+                </div>
+
+                <div class="comparison-item">
+                    <h3>Conditions</h3>
+                    <pre class="code-example"><code><span class="comment">rem: Binary choice</span>
+<span class="keyword">if</span> age >= <span class="number">18</span>
+    display(<span class="string">"Adult"</span>)
+<span class="keyword">else</span>
+    display(<span class="string">"Minor"</span>)
+
+<span class="comment">rem: Multiple choices</span>
+<span class="keyword">choose</span> grade
+    <span class="keyword">choice</span> <span class="string">"A"</span>
+        celebrate()
+    <span class="keyword">choice</span> <span class="string">"B"</span>
+        smile()
+    <span class="keyword">default</span>
+        study()</code></pre>
+                </div>
+
+                <div class="comparison-item">
+                    <h3>Loops</h3>
+                    <pre class="code-example"><code><span class="keyword">loop</span> i <span class="keyword">from</span> <span class="number">1</span> <span class="keyword">to</span> <span class="number">10</span>
+    display(i)
+
+<span class="keyword">loop</span> item <span class="keyword">in</span> lstItems
+    process(item)</code></pre>
+                </div>
+
+                <div class="comparison-item">
+                    <h3>Tasks (Functions)</h3>
+                    <pre class="code-example"><code><span class="keyword">task</span> CalculateTax <span class="keyword">using</span> (amount, rate)
+    <span class="keyword">var</span> tax = amount * rate
+    <span class="keyword">deliver</span> tax
+
+<span class="keyword">task</span> Main()
+    <span class="keyword">var</span> result = CalculateTax(<span class="number">100</span>, <span class="number">0.08</span>)
+    display(result)</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="key-features">
+        <div class="container">
+            <h2 class="section-title">Key Features</h2>
+            <p class="section-subtitle">Everything you need for real programming</p>
+
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <h3>🎯 No Shadowing</h3>
+                    <p>Variables can't be redeclared in inner scopes. Once a name is used, it stays consistent throughout its scope. No confusion, no bugs.</p>
+                </div>
+
+                <div class="benefit-item">
+                    <h3>📝 String Interpolation</h3>
+                    <p>Natural string formatting with <code>v"Hello {name}!"</code> syntax. No printf formats to memorize, no concatenation chains.</p>
+                </div>
+
+                <div class="benefit-item">
+                    <h3>🔧 Records & Types</h3>
+                    <p>Define custom data structures with records. Type-safe collections with <code>list of integer</code> and <code>table of string to float</code>.</p>
+                </div>
+
+                <div class="benefit-item">
+                    <h3>📦 Module System</h3>
+                    <p>Organize code with packages, assemblies, and modules. Import exactly what you need with clear, explicit declarations.</p>
+                </div>
+
+                <div class="benefit-item">
+                    <h3>🛠️ Standard Library</h3>
+                    <p>Comprehensive built-in functions for strings, lists, files, math, and more. Everything uses clear, descriptive names.</p>
+                </div>
+
+                <div class="benefit-item">
+                    <h3>🐍 Python-like Blocks</h3>
+                    <p>Indentation-based syntax keeps code clean and readable. No curly braces to match, no semicolons to remember.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="getting-started-preview">
+        <div class="container">
+            <h2 class="section-title">Get Started in Minutes</h2>
+            <p class="section-subtitle">Install PLAIN and start writing clear, capable code today</p>
+
+            <div class="install-steps">
+                <div class="install-step">
+                    <div class="step-number">1</div>
+                    <h3>Clone & Build</h3>
+                    <pre class="install-code"><code>git clone &lt;repository-url&gt;
+cd PLAIN
+go build -o plain cmd/plain/main.go</code></pre>
+                </div>
+
+                <div class="install-step">
+                    <div class="step-number">2</div>
+                    <h3>Write Your First Program</h3>
+                    <pre class="install-code"><code>rem: hello.plain
+task Main()
+    display("Hello, PLAIN!")</code></pre>
+                </div>
+
+                <div class="install-step">
+                    <div class="step-number">3</div>
+                    <h3>Run It!</h3>
+                    <pre class="install-code"><code>./plain run hello.plain
+
+# Output: Hello, PLAIN!</code></pre>
+                </div>
+            </div>
+
+            <div class="cta-center">
+                <a href="getting-started.html" class="btn btn-large">Full Installation Guide</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="use-cases">
+        <div class="container">
+            <h2 class="section-title">Perfect For</h2>
+
+            <div class="use-cases-grid">
+                <div class="use-case-card">
+                    <div class="use-case-icon">🎓</div>
+                    <h3>Learning Programming</h3>
+                    <p>Students can focus on concepts without fighting syntax. Clear error messages that teach, not frustrate.</p>
+                </div>
+
+                <div class="use-case-card">
+                    <div class="use-case-icon">📚</div>
+                    <h3>Teaching CS Fundamentals</h3>
+                    <p>Educators get a language that makes program structure explicit. Students learn good practices from day one.</p>
+                </div>
+
+                <div class="use-case-card">
+                    <div class="use-case-icon">⚡</div>
+                    <h3>Scripting & Automation</h3>
+                    <p>Write maintainable scripts that others can understand. Self-documenting code that stays clear over time.</p>
+                </div>
+
+                <div class="use-case-card">
+                    <div class="use-case-icon">🔧</div>
+                    <h3>General Development</h3>
+                    <p>Build applications with clear, maintainable code. From small utilities to larger projects.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Write Clear, Capable Code?</h2>
+            <p>Join developers who value clarity and competence</p>
+            <div class="cta-buttons">
+                <a href="getting-started.html" class="btn btn-primary btn-large">Get Started Now</a>
+                <a href="examples.html" class="btn btn-secondary btn-large">Explore Examples</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact-section" id="contact">
+        <div class="container">
+            <h2>Get in Touch</h2>
+            <p class="section-subtitle">Have questions about PLAIN? We'd love to hear from you.</p>
+
+            <div class="contact-info">
+                <div class="contact-card">
+                    <div class="contact-icon">👤</div>
+                    <h3>Developer</h3>
+                    <p><strong>Chuck Finch</strong></p>
+                </div>
+
+                <div class="contact-card">
+                    <div class="contact-icon">🏢</div>
+                    <h3>Company</h3>
+                    <p><strong>Fragillidæ Software</strong><br>
+                        221 Walden Court<br>
+                        East Moriches, NY 11940</p>
+                </div>
+
+                <div class="contact-card">
+                    <div class="contact-icon">📞</div>
+                    <h3>Phone</h3>
+                    <p><a href="tel:+16312769068">(631) 276-9068</a></p>
+                </div>
+
+                <div class="contact-card">
+                    <div class="contact-icon">✉️</div>
+                    <h3>Email</h3>
+                    <p><a href="mailto:info@fragillidaesoftware.com">info@fragillidaesoftware.com</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>PLAIN Programming Language</h3>
+                    <p>Programming Language - Able, Intuitive, and Natural</p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="features.html">Features</a></li>
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="examples.html">Examples</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="docs/language_spec.html">Language Specification</a></li>
+                        <li><a href="docs/quick_reference.html">Quick Reference</a></li>
+                        <li><a href="../README.md">GitHub</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p><strong>Chuck Finch</strong><br>
+                        Fragillidæ Software</p>
+                    <p>221 Walden Court<br>
+                        East Moriches, NY 11940</p>
+                    <p>Phone: <a href="tel:+16312769068">(631) 276-9068</a><br>
+                        Email: <a href="mailto:info@fragillidaesoftware.com">info@fragillidaesoftware.com</a></p>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 Fragillidæ Software. Licensed under MIT License.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
