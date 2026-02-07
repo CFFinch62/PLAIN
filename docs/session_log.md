@@ -2,7 +2,7 @@
 
 **Purpose:** Track progress across AI assistance sessions
 **Started:** January 6, 2026
-**Current Phase:** Phase 11.4 Complete - Debugging UI Implemented
+**Current Phase:** Phase 11.5 Complete - IDE Polish
 **Total Phases:** 11 (added Phase 11: IDE)
 
 ---
@@ -616,6 +616,32 @@ Today I want to: [SPECIFIC GOAL]
 
 ---
 
+### Phase 11.5: Polish (Completed)
+
+**Features Added:**
+- Bookmarks: Sidebar section above file tree for quick folder navigation
+  - Add/remove bookmarks via "+" button or right-click context menu
+  - Persistent across IDE restarts via settings.json
+- Session Persistence: Remembers open files, active tab, and project folder
+- Find/Replace: Ctrl+F/Ctrl+H with regex, case-sensitive, whole word options
+- 4 New Themes: Monokai, Nord, Dracula, Solarized Dark (6 total)
+- Settings Dialog: Ctrl+, opens preferences with Editor, Theme, Terminal, Shortcuts tabs
+- Keyboard Shortcuts Reference: Read-only table in Settings > Shortcuts tab
+- Help Viewer: F1 opens PLAIN Quick Reference with search
+
+**Files Modified:**
+- `plain_ide/app/settings.py` - BookmarkSettings, SessionSettings, bookmark methods
+- `plain_ide/app/file_browser.py` - Bookmarks section, context menu enhancements
+- `plain_ide/app/main_window.py` - Session restore, find/replace, preferences, help
+- `plain_ide/app/themes.py` - Added Monokai, Nord, Dracula, Solarized themes
+
+**Files Created:**
+- `plain_ide/app/find_replace.py` - Find/Replace widget
+- `plain_ide/app/settings_dialog.py` - Preferences dialog
+- `plain_ide/app/help_viewer.py` - Help documentation viewer
+
+---
+
 ## Overall Progress Tracker
 
 ### Phase 1: Lexer ✓
@@ -905,17 +931,17 @@ Today I want to: [SPECIFIC GOAL]
 - [x] Phase 11.2: Project Management (file browser, multi-tab, recent files)
 - [x] Phase 11.3: Execution (run button, output terminal, error display)
 - [x] Phase 11.4: Debugging (breakpoints, step execution, variable inspector)
-- [ ] Phase 11.5: Polish (themes, settings, keyboard shortcuts, session persistence)
+- [x] Phase 11.5: Polish (themes, settings, keyboard shortcuts, session persistence, help viewer)
 
 **Key Components:**
 - [x] Main window with menu bar
 - [x] PLAIN syntax highlighter
 - [x] Code editor with breakpoints and debug line highlighting
-- [ ] File browser widget
-- [ ] Integrated terminal/output
-- [ ] Debug panel with variable inspector
-- [ ] Light/dark theme support
-- [ ] Settings dialog
+- [x] File browser widget
+- [x] Integrated terminal/output
+- [x] Debug panel with variable inspector
+- [x] Light/dark theme support
+- [x] Settings dialog
 
 **Reference:** Steps IDE at `/Steps/src/steps_ide/`
 
@@ -1058,8 +1084,8 @@ Today I want to: [SPECIFIC GOAL]
 **Lines of Code:** ~13,000+ (Go) + ~2,000+ (Python IDE)
 **Test Coverage:** ~78% overall
 **Passing Tests:** 150+
-**Current Phase:** Phase 11.4 Complete - Debugging UI
-**% Complete:** ~95% (Phase 11.4 of 11.5 complete)
+**Current Phase:** Phase 11.5 Complete - IDE Polish
+**% Complete:** 100% (All phases complete)
 
 **Completed Phases:**
 - ✅ Phase 1: Lexer
@@ -1073,9 +1099,10 @@ Today I want to: [SPECIFIC GOAL]
 - ✅ Phase 9: REPL
 - ✅ Phase 10: Integration & Testing
 - ✅ Phase 10.5: Complete Missing Features (Imports, Records, Float Exponent)
+- ✅ Phase 11: PLAIN IDE (all sub-phases 11.1-11.5 complete)
 
 **Remaining Phases:**
-- ○ Phase 11.5: Polish (themes, session persistence, preferences)
+- None - all phases complete!
 
 ---
 
@@ -1123,5 +1150,5 @@ If you lose context completely, restore from these:
 
 ---
 
-**Last Updated:** February 6, 2026
-**By:** Session 10 - Phase 11.4 PLAIN IDE Debugging UI Complete
+**Last Updated:** February 7, 2026
+**By:** Session 11 - Phase 11.5 PLAIN IDE Polish Complete

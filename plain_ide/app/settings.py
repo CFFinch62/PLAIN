@@ -57,6 +57,14 @@ class TerminalSettings:
 
 
 @dataclass
+class SessionSettings:
+    """Session state for persistence across restarts"""
+    open_files: List[str] = field(default_factory=list)
+    active_file: str = ""
+    project_path: str = ""
+
+
+@dataclass
 class Settings:
     """All IDE settings"""
     editor: EditorSettings = field(default_factory=EditorSettings)
@@ -64,6 +72,8 @@ class Settings:
     window: WindowSettings = field(default_factory=WindowSettings)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     recent_files: List[str] = field(default_factory=list)
+    bookmarks: List[str] = field(default_factory=list)
+    session: SessionSettings = field(default_factory=SessionSettings)
 
 
 class SettingsManager:
@@ -98,7 +108,11 @@ class SettingsManager:
             settings.terminal = TerminalSettings(**data['terminal'])
         if 'recent_files' in data:
             settings.recent_files = data['recent_files']
-        
+        if 'bookmarks' in data:
+            settings.bookmarks = data['bookmarks']
+        if 'session' in data:
+            settings.session = SessionSettings(**data['session'])
+
         return settings
     
     def save(self):
@@ -108,7 +122,9 @@ class SettingsManager:
             'theme': asdict(self.settings.theme),
             'window': asdict(self.settings.window),
             'terminal': asdict(self.settings.terminal),
-            'recent_files': self.settings.recent_files[:20]  # Keep last 20
+            'recent_files': self.settings.recent_files[:20],  # Keep last 20
+            'bookmarks': self.settings.bookmarks,
+            'session': asdict(self.settings.session),
         }
         
         try:
@@ -124,4 +140,16 @@ class SettingsManager:
         self.settings.recent_files.insert(0, filepath)
         self.settings.recent_files = self.settings.recent_files[:20]
         self.save()
+
+    def add_bookmark(self, path: str):
+        """Add a folder to bookmarks"""
+        if path not in self.settings.bookmarks:
+            self.settings.bookmarks.append(path)
+            self.save()
+
+    def remove_bookmark(self, path: str):
+        """Remove a folder from bookmarks"""
+        if path in self.settings.bookmarks:
+            self.settings.bookmarks.remove(path)
+            self.save()
 

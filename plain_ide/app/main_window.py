@@ -19,6 +19,9 @@ from plain_ide.app.file_browser import FileBrowserWidget
 from plain_ide.app.terminal import TerminalWidget
 from plain_ide.app.debug_panel import DebugPanel
 from plain_ide.app.debug_manager import DebugManager
+from plain_ide.app.find_replace import FindReplaceWidget
+from plain_ide.app.settings_dialog import SettingsDialog
+from plain_ide.app.help_viewer import HelpViewer
 
 
 class PlainIDEMainWindow(QMainWindow):
@@ -38,6 +41,7 @@ class PlainIDEMainWindow(QMainWindow):
         self._setup_statusbar()
         self._apply_settings()
         self._apply_theme()
+        self._restore_session()
     
     def _setup_ui(self):
         """Set up the main UI layout"""
@@ -53,13 +57,23 @@ class PlainIDEMainWindow(QMainWindow):
         # Main horizontal splitter (file browser | editor + terminal)
         self.main_splitter = QSplitter(Qt.Orientation.Horizontal)
         
-        # File browser
-        self.file_browser = FileBrowserWidget(theme=self.theme_manager.get_current_theme())
+        # File browser (with bookmarks)
+        self.file_browser = FileBrowserWidget(
+            theme=self.theme_manager.get_current_theme(),
+            settings=self.settings
+        )
         self.file_browser.file_double_clicked.connect(self.open_file)
+        self.file_browser.bookmark_navigated.connect(self._on_bookmark_navigated)
         self.main_splitter.addWidget(self.file_browser)
         
         # Middle: editor + terminal/debug in vertical splitter
         self.middle_splitter = QSplitter(Qt.Orientation.Vertical)
+
+        # Editor area: tabs + find/replace bar
+        editor_container = QWidget()
+        editor_layout = QVBoxLayout(editor_container)
+        editor_layout.setContentsMargins(0, 0, 0, 0)
+        editor_layout.setSpacing(0)
 
         # Tab widget for editors
         self.tab_widget = QTabWidget()
@@ -67,7 +81,13 @@ class PlainIDEMainWindow(QMainWindow):
         self.tab_widget.setMovable(True)
         self.tab_widget.tabCloseRequested.connect(self.close_tab)
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
-        self.middle_splitter.addWidget(self.tab_widget)
+        editor_layout.addWidget(self.tab_widget)
+
+        # Find/Replace bar (hidden by default)
+        self.find_replace = FindReplaceWidget(theme=self.theme_manager.get_current_theme())
+        editor_layout.addWidget(self.find_replace)
+
+        self.middle_splitter.addWidget(editor_container)
 
         # Terminal
         self.terminal = TerminalWidget(
@@ -173,6 +193,25 @@ class PlainIDEMainWindow(QMainWindow):
         paste_action.triggered.connect(self._paste)
         edit_menu.addAction(paste_action)
 
+        edit_menu.addSeparator()
+
+        find_action = QAction("Find...", self)
+        find_action.setShortcut("Ctrl+F")
+        find_action.triggered.connect(self._show_find)
+        edit_menu.addAction(find_action)
+
+        replace_action = QAction("Replace...", self)
+        replace_action.setShortcut("Ctrl+H")
+        replace_action.triggered.connect(self._show_replace)
+        edit_menu.addAction(replace_action)
+
+        edit_menu.addSeparator()
+
+        prefs_action = QAction("Preferences...", self)
+        prefs_action.setShortcut("Ctrl+,")
+        prefs_action.triggered.connect(self._show_preferences)
+        edit_menu.addAction(prefs_action)
+
         # View menu
         view_menu = menubar.addMenu("&View")
 
@@ -254,6 +293,13 @@ class PlainIDEMainWindow(QMainWindow):
         # Help menu
         help_menu = menubar.addMenu("&Help")
 
+        quick_ref_action = QAction("PLAIN Quick Reference", self)
+        quick_ref_action.setShortcut("F1")
+        quick_ref_action.triggered.connect(self._show_quick_reference)
+        help_menu.addAction(quick_ref_action)
+
+        help_menu.addSeparator()
+
         about_action = QAction("About PLAIN IDE", self)
         about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
@@ -325,10 +371,31 @@ class PlainIDEMainWindow(QMainWindow):
         self.file_browser.apply_theme(theme)
         self.terminal.apply_theme(theme)
         self.debug_panel.apply_theme(theme)
+        self.find_replace.apply_theme(theme)
 
         # Apply to all open editors
         for editor in self.editors.values():
             editor.apply_theme(theme)
+
+    def _restore_session(self):
+        """Restore previous session state (open files, project folder)"""
+        session = self.settings.settings.session
+
+        # Restore project folder
+        if session.project_path and Path(session.project_path).exists():
+            self.file_browser.set_root_path(session.project_path)
+            self.current_project_path = session.project_path
+
+        # Restore open files
+        for file_path in session.open_files:
+            if Path(file_path).exists():
+                self.open_file(file_path)
+
+        # Restore active tab
+        if session.active_file and session.active_file in self.editors:
+            idx = self.tab_widget.indexOf(self.editors[session.active_file])
+            if idx >= 0:
+                self.tab_widget.setCurrentIndex(idx)
 
     def _set_theme(self, name: str):
         """Set and apply a new theme"""
@@ -485,6 +552,9 @@ class PlainIDEMainWindow(QMainWindow):
         else:
             self.file_label.setText("No file open")
         self._update_cursor_position()
+        # Update find/replace to target the new editor
+        if isinstance(editor, CodeEditor) and self.find_replace.isVisible():
+            self.find_replace.set_editor(editor)
 
     def _on_file_modified(self, path: str, modified: bool):
         """Handle file modification"""
@@ -541,6 +611,38 @@ class PlainIDEMainWindow(QMainWindow):
         """Toggle terminal visibility"""
         self.terminal.setVisible(not self.terminal.isVisible())
 
+    def _on_bookmark_navigated(self, path: str):
+        """Handle bookmark navigation - update project path"""
+        self.current_project_path = path
+
+    # Find/Replace operations
+    def _show_find(self):
+        """Show the find bar"""
+        editor = self.tab_widget.currentWidget()
+        if isinstance(editor, CodeEditor):
+            self.find_replace.set_editor(editor)
+            self.find_replace.show_find()
+
+    def _show_replace(self):
+        """Show the find and replace bar"""
+        editor = self.tab_widget.currentWidget()
+        if isinstance(editor, CodeEditor):
+            self.find_replace.set_editor(editor)
+            self.find_replace.show_find_replace()
+
+    def _show_preferences(self):
+        """Show the preferences/settings dialog"""
+        dialog = SettingsDialog(self.settings, self.theme_manager, parent=self)
+        if dialog.exec():
+            # Apply changed settings to all editors
+            for editor in self.editors.values():
+                editor.apply_settings()
+
+            # Apply theme if changed
+            new_theme = dialog.get_selected_theme()
+            if new_theme != self.theme_manager.get_current_theme().name.lower():
+                self._set_theme(new_theme)
+
     # Run operations
     def run_current_file(self):
         """Run the current PLAIN file"""
@@ -574,6 +676,12 @@ class PlainIDEMainWindow(QMainWindow):
         # Run the file
         self.terminal.run_plain_file(editor.file_path)
 
+    def _show_quick_reference(self):
+        """Show the PLAIN quick reference help viewer"""
+        viewer = HelpViewer(parent=self, theme=self.theme_manager.get_current_theme())
+        viewer.apply_theme(self.theme_manager.get_current_theme())
+        viewer.exec()
+
     def _show_about(self):
         """Show about dialog"""
         QMessageBox.about(
@@ -604,6 +712,20 @@ class PlainIDEMainWindow(QMainWindow):
         ws.width = self.width()
         ws.height = self.height()
         ws.maximized = self.isMaximized()
+
+        # Save session state
+        session = self.settings.settings.session
+        session.open_files = [
+            path for path, editor in self.editors.items()
+            if path and Path(path).exists()
+        ]
+        current_editor = self.tab_widget.currentWidget()
+        if isinstance(current_editor, CodeEditor) and current_editor.file_path:
+            session.active_file = current_editor.file_path
+        else:
+            session.active_file = ""
+        session.project_path = self.current_project_path or ""
+
         self.settings.save()
 
         event.accept()
