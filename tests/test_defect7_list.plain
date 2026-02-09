@@ -1,0 +1,4 @@
+task Main()
+    var nums = [10, 20, 30]
+    display(v"First: {nums[0]}, Second: {nums[1]}")
+    display(v"Sum: {nums[0] + nums[1]}")

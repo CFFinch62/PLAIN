@@ -185,7 +185,7 @@ func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
 
 // skipNewlines skips over NEWLINE tokens
 func (p *Parser) skipNewlines() {
-	for p.curTokenIs(token.NEWLINE) {
+	for p.curTokenIs(token.NEWLINE) || p.curTokenIs(token.INDENT) || p.curTokenIs(token.DEDENT) {
 		p.nextToken()
 	}
 }
@@ -377,33 +377,51 @@ func (p *Parser) parseListLiteral() ast.Expression {
 func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 	list := []ast.Expression{}
 
-	if p.peekTokenIs(end) {
-		p.nextToken()
+	p.nextToken()
+	p.skipNewlines() // Allow newline and indent after opening bracket/paren
+
+	if p.curTokenIs(end) {
 		return list
 	}
 
-	p.nextToken()
 	list = append(list, p.parseExpression(LOWEST))
 
-	for p.peekTokenIs(token.COMMA) {
+	for {
+		// Move past the expression and skip any newlines/indents
 		p.nextToken()
-		p.nextToken()
+		p.skipNewlines()
+
+		// Check if we've reached the end
+		if p.curTokenIs(end) {
+			return list
+		}
+
+		// Expect a comma
+		if !p.curTokenIs(token.COMMA) {
+			p.addError(fmt.Sprintf("Expected next token to be COMMA or %s, got %s instead", end, p.curToken.Type))
+			return nil
+		}
+
+		p.nextToken() // move past comma
+		p.skipNewlines() // Allow newline and indent after comma
+
 		list = append(list, p.parseExpression(LOWEST))
 	}
-
-	if !p.expectPeek(end) {
-		return nil
-	}
-
-	return list
 }
 
 func (p *Parser) parseTableLiteral() ast.Expression {
 	table := &ast.TableLiteral{Token: p.curToken}
 	table.Pairs = make(map[ast.Expression]ast.Expression)
 
-	for !p.peekTokenIs(token.RBRACE) {
-		p.nextToken()
+	p.nextToken()
+	p.skipNewlines() // Allow newline and indent after opening brace
+
+	// Check for empty table
+	if p.curTokenIs(token.RBRACE) {
+		return table
+	}
+
+	for {
 		key := p.parseExpression(LOWEST)
 
 		if !p.expectPeek(token.COLON) {
@@ -415,16 +433,24 @@ func (p *Parser) parseTableLiteral() ast.Expression {
 
 		table.Pairs[key] = value
 
-		if !p.peekTokenIs(token.RBRACE) && !p.expectPeek(token.COMMA) {
+		// Move past the value and skip any newlines/indents
+		p.nextToken()
+		p.skipNewlines()
+
+		// Check if we've reached the end
+		if p.curTokenIs(token.RBRACE) {
+			return table
+		}
+
+		// Expect a comma
+		if !p.curTokenIs(token.COMMA) {
+			p.addError(fmt.Sprintf("Expected next token to be COMMA or RBRACE, got %s instead", p.curToken.Type))
 			return nil
 		}
-	}
 
-	if !p.expectPeek(token.RBRACE) {
-		return nil
+		p.nextToken() // move past comma
+		p.skipNewlines() // Allow newline and indent after comma
 	}
-
-	return table
 }
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
@@ -500,6 +526,7 @@ func (p *Parser) parseRecordLiteralFields(typeExpr ast.Expression) ast.Expressio
 		Fields: make(map[string]ast.Expression),
 	}
 
+	p.skipNewlines() // Allow newline after opening paren
 	// Parse field: value pairs
 	for !p.curTokenIs(token.RPAREN) && !p.curTokenIs(token.EOF) {
 		if !p.curTokenIs(token.IDENT) {
@@ -519,8 +546,9 @@ func (p *Parser) parseRecordLiteralFields(typeExpr ast.Expression) ast.Expressio
 		lit.Fields[fieldName] = value
 
 		if p.peekTokenIs(token.COMMA) {
-			p.nextToken() // consume comma
-			p.nextToken() // move to next field name
+			p.nextToken()    // consume comma
+			p.skipNewlines() // Allow newline after comma
+			p.nextToken()    // move to next field name
 		} else if p.peekTokenIs(token.RPAREN) {
 			break
 		} else {
@@ -529,6 +557,7 @@ func (p *Parser) parseRecordLiteralFields(typeExpr ast.Expression) ast.Expressio
 		}
 	}
 
+	p.skipNewlines() // Allow newline before closing paren
 	if !p.expectPeek(token.RPAREN) {
 		return nil
 	}

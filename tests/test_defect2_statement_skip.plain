@@ -1,0 +1,8 @@
+task Main()
+    display("before")
+    attempt
+        display("  in attempt")
+    handle
+        display("  in handle")
+    display("THIS SHOULD PRINT")
+    display("this too")

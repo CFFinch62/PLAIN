@@ -1,0 +1,8 @@
+task Main()
+    rem: Multi-line list literal
+    var colors = [
+        "red",
+        "green",
+        "blue"
+    ]
+    display(colors)

@@ -5,13 +5,45 @@ import (
 	"plain/internal/token"
 )
 
-// parseIfStatement parses: if condition ... else ...
+// parseIfStatement parses: if condition ... else ... or if condition then statement
 func (p *Parser) parseIfStatement() ast.Statement {
 	stmt := &ast.IfStatement{Token: p.curToken}
 
 	p.nextToken()
 	stmt.Condition = p.parseExpression(LOWEST)
 
+	// Check for single-line form: if condition then statement
+	if p.peekTokenIs(token.THEN) {
+		p.nextToken() // consume THEN
+		p.nextToken() // move to statement
+
+		// Parse a single statement and wrap it in a block
+		singleStmt := p.parseStatement()
+		if singleStmt == nil {
+			return nil
+		}
+		stmt.Consequence = &ast.BlockStatement{
+			Statements: []ast.Statement{singleStmt},
+		}
+
+		// Check for single-line else: else statement
+		if p.peekTokenIs(token.ELSE) {
+			p.nextToken() // consume ELSE
+			p.nextToken() // move to statement
+
+			singleElse := p.parseStatement()
+			if singleElse == nil {
+				return nil
+			}
+			stmt.Alternative = &ast.BlockStatement{
+				Statements: []ast.Statement{singleElse},
+			}
+		}
+
+		return stmt
+	}
+
+	// Block form: if condition\n    statements
 	stmt.Consequence = p.parseBlockStatement()
 	if stmt.Consequence == nil {
 		return nil
@@ -217,13 +249,13 @@ func (p *Parser) parseAttemptStatement() ast.Statement {
 		return nil
 	}
 
-	// Move past DEDENT
-	if p.curTokenIs(token.DEDENT) {
-		p.nextToken()
-	}
+	// After parseBlockStatement, we're at DEDENT
+	// Don't consume it - let parseBlockStatement in the caller handle it
+	// This matches the behavior of parseIfStatement
 
 	// Parse handle clauses
-	for p.curTokenIs(token.HANDLE) {
+	for p.peekTokenIs(token.HANDLE) {
+		p.nextToken() // move to HANDLE
 		handler := &ast.HandleClause{Token: p.curToken}
 
 		// Check if there's a pattern (string literal or identifier)
@@ -235,13 +267,18 @@ func (p *Parser) parseAttemptStatement() ast.Statement {
 			// Check for error variable name: handle err as string
 			if p.peekTokenIs(token.AS) {
 				p.nextToken() // consume AS
-				if !p.expectPeek(token.IDENT) {
+				p.nextToken() // move to type
+
+				// Accept type keywords (string, integer, etc.) or IDENT
+				if p.isTypeKeyword() || p.curTokenIs(token.IDENT) {
+					// The pattern becomes the error name
+					if ident, ok := handler.Pattern.(*ast.Identifier); ok {
+						handler.ErrorName = ident
+						handler.Pattern = nil
+					}
+				} else {
+					p.addError("Expected type name after 'as' in handle clause")
 					return nil
-				}
-				// The pattern becomes the error name
-				if ident, ok := handler.Pattern.(*ast.Identifier); ok {
-					handler.ErrorName = ident
-					handler.Pattern = nil
 				}
 			}
 		}
@@ -255,23 +292,19 @@ func (p *Parser) parseAttemptStatement() ast.Statement {
 		stmt.Handlers = append(stmt.Handlers, handler)
 
 		// After parseBlockStatement, we're at DEDENT
-		// Move past it to check for more handlers or ensure
-		if p.curTokenIs(token.DEDENT) {
-			p.nextToken()
-		}
+		// Don't consume it - check for more handlers or ensure by peeking
 	}
 
 	// Check for ensure clause
-	if p.curTokenIs(token.ENSURE) {
+	if p.peekTokenIs(token.ENSURE) {
+		p.nextToken() // move to ENSURE
 		stmt.Ensure = p.parseBlockStatement()
 		if stmt.Ensure == nil {
 			return nil
 		}
 
-		// Move past DEDENT
-		if p.curTokenIs(token.DEDENT) {
-			p.nextToken()
-		}
+		// After parseBlockStatement, we're at DEDENT
+		// Don't consume it - let the caller handle it
 	}
 
 	return stmt

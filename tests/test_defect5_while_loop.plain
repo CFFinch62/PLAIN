@@ -1,0 +1,6 @@
+task Main()
+    var count = 0
+    loop count < 5
+        display(count)
+        count = count + 1
+    display("Done")

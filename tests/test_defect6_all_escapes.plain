@@ -1,0 +1,7 @@
+task Main()
+    var tab = "Name\tAge\tGrade"
+    display(tab)
+    var path = "C:\\Users\\file.txt"
+    display(path)
+    var quote = "He said \"hello\""
+    display(quote)

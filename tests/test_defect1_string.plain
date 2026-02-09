@@ -1,0 +1,5 @@
+task Main()
+    var result = ""
+    loop i from 1 to 3
+        result &= "x"
+    display(result)

@@ -1,0 +1,13 @@
+task Main()
+    display("start")
+    TaskA()
+    TaskB()
+
+task TaskA()
+    attempt
+        display("A")
+    handle
+        display("error")
+
+task TaskB()
+    display("B")

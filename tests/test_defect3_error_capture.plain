@@ -1,0 +1,6 @@
+task Main()
+    attempt
+        abort "something bad"
+    handle err as string
+        display("caught: " & err)
+    display("done")

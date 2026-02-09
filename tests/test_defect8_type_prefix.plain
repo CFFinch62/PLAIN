@@ -1,0 +1,6 @@
+task GetName using ()
+    deliver "Alice"
+
+task Main()
+    var strName = GetName()
+    display(strName)

@@ -7,6 +7,7 @@ import (
 	"plain/internal/ast"
 	"plain/internal/lexer"
 	"plain/internal/parser"
+	"plain/internal/token"
 )
 
 // Evaluator executes PLAIN programs
@@ -188,9 +189,78 @@ func (e *Evaluator) evalFxdStatement(stmt *ast.FxdStatement, env *Environment) V
 
 // evalAssignStatement handles assignments
 func (e *Evaluator) evalAssignStatement(stmt *ast.AssignStatement, env *Environment) Value {
-	val := e.Eval(stmt.Value, env)
-	if IsError(val) {
-		return val
+	// For compound assignments (+=, -=, etc.), we need to:
+	// 1. Get the current value
+	// 2. Evaluate the right-hand side
+	// 3. Perform the operation
+	// 4. Assign the result
+
+	var val Value
+
+	// Check if this is a compound assignment
+	isCompound := false
+	var operator string
+
+	switch stmt.Token.Type {
+	case token.PLUS_EQ:
+		isCompound = true
+		operator = "+"
+	case token.MINUS_EQ:
+		isCompound = true
+		operator = "-"
+	case token.TIMES_EQ:
+		isCompound = true
+		operator = "*"
+	case token.DIV_EQ:
+		isCompound = true
+		operator = "/"
+	case token.MOD_EQ:
+		isCompound = true
+		operator = "%"
+	case token.CONCAT_EQ:
+		isCompound = true
+		operator = "&"
+	}
+
+	if isCompound {
+		// Get the current value of the variable
+		var currentVal Value
+		switch target := stmt.Name.(type) {
+		case *ast.Identifier:
+			var ok bool
+			currentVal, ok = env.Get(target.Value)
+			if !ok {
+				return NewError("undefined variable: %s", target.Value)
+			}
+		case *ast.IndexExpression:
+			currentVal = e.Eval(target, env)
+			if IsError(currentVal) {
+				return currentVal
+			}
+		case *ast.DotExpression:
+			currentVal = e.Eval(target, env)
+			if IsError(currentVal) {
+				return currentVal
+			}
+		}
+
+		// Evaluate the right-hand side
+		rightVal := e.Eval(stmt.Value, env)
+		if IsError(rightVal) {
+			return rightVal
+		}
+
+		// Perform the operation
+		val = e.evalBinaryOperation(currentVal, operator, rightVal)
+		if IsError(val) {
+			return val
+		}
+	} else {
+		// Regular assignment - just evaluate the right-hand side
+		val = e.Eval(stmt.Value, env)
+		if IsError(val) {
+			return val
+		}
 	}
 
 	switch target := stmt.Name.(type) {
@@ -1385,35 +1455,81 @@ func (e *Evaluator) parseModule(source string) (*ast.Program, error) {
 
 // evalInterpolatedString handles v"..." strings
 func (e *Evaluator) evalInterpolatedString(str *ast.InterpolatedString, env *Environment) Value {
-	// For now, just return the string as-is
-	// Full interpolation would require parsing the {expr} parts
 	result := str.Value
 
-	// Simple variable interpolation: replace {varname} with value
-	// This is a simplified implementation
+	// Parse and evaluate expressions in {expr} format
 	for {
 		start := -1
 		end := -1
+		braceDepth := 0
+
+		// Find the next {expr} to interpolate
 		for i, ch := range result {
 			if ch == '{' {
-				start = i
+				if start < 0 {
+					start = i
+					braceDepth = 1
+				} else {
+					braceDepth++
+				}
 			} else if ch == '}' && start >= 0 {
-				end = i
-				break
+				braceDepth--
+				if braceDepth == 0 {
+					end = i
+					break
+				}
 			}
 		}
+
 		if start < 0 || end < 0 {
 			break
 		}
 
-		varName := result[start+1 : end]
-		val, ok := env.Get(varName)
-		if ok {
-			result = result[:start] + val.String() + result[end+1:]
-		} else {
-			result = result[:start] + "{" + varName + "}" + result[end+1:]
+		exprStr := result[start+1 : end]
+
+		// Parse the expression by wrapping it in a minimal program
+		// We create "task Main()\n    display(expr)" and extract the expression from the AST
+		programStr := "task Main()\n    display(" + exprStr + ")"
+		lex := lexer.New(programStr)
+		p := parser.New(lex)
+		program := p.ParseProgram()
+
+		if len(p.Errors()) > 0 || len(program.Statements) == 0 {
+			// If parsing failed, leave it as literal text
+			result = result[:start] + "{" + exprStr + "}" + result[end+1:]
 			break
 		}
+
+		// Extract the expression from the display() call
+		var expr ast.Expression
+		if taskStmt, ok := program.Statements[0].(*ast.TaskStatement); ok {
+			if len(taskStmt.Body.Statements) > 0 {
+				if exprStmt, ok := taskStmt.Body.Statements[0].(*ast.ExpressionStatement); ok {
+					if callExpr, ok := exprStmt.Expression.(*ast.CallExpression); ok {
+						if len(callExpr.Arguments) > 0 {
+							expr = callExpr.Arguments[0]
+						}
+					}
+				}
+			}
+		}
+
+		if expr == nil {
+			// Couldn't extract expression, leave as literal
+			result = result[:start] + "{" + exprStr + "}" + result[end+1:]
+			break
+		}
+
+		// Evaluate the expression
+		val := e.Eval(expr, env)
+		if IsError(val) {
+			// If evaluation failed, leave it as literal text
+			result = result[:start] + "{" + exprStr + "}" + result[end+1:]
+			break
+		}
+
+		// Replace {expr} with the string representation of the value
+		result = result[:start] + val.String() + result[end+1:]
 	}
 
 	return NewString(result)

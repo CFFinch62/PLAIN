@@ -1,0 +1,5 @@
+task Main()
+    var colors = ["red", "green", "blue"]
+    display(v"First color: {colors[0]}")
+    var name = "Alice"
+    display(v"Hello {name}")

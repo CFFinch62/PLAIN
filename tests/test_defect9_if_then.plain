@@ -1,0 +1,10 @@
+task Main()
+    var x = 10
+    if x > 5 then display("big")
+    
+    var y = 3
+    if y > 5 then display("big") else display("small")
+    
+    rem: Block form should still work
+    if x > 5
+        display("x is big")

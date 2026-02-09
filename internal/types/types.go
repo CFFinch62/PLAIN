@@ -233,6 +233,12 @@ func CanAssign(target, value *Type) bool {
 		return true // Unknown types - allow for now
 	}
 
+	// Unknown value type (e.g., from function call) can be assigned to any target
+	// Type checking will be deferred to runtime
+	if value.Kind == TypeUnknown {
+		return true
+	}
+
 	// Any type accepts anything
 	if target.Kind == TypeAny || value.Kind == TypeAny {
 		return true

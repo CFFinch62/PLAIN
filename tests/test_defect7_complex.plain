@@ -1,0 +1,6 @@
+task Main()
+    var person = {name: "Bob", age: 30}
+    display(v"Name: {person[\"name\"]}, Age: {person[\"age\"]}")
+    
+    var nums = [10, 20, 30]
+    display(v"Sum: {nums[0] + nums[1] + nums[2]}")

@@ -1,0 +1,21 @@
+task Main()
+    rem: Multi-line list literal
+    var colors = [
+        "red",
+        "green",
+        "blue"
+    ]
+    display(colors)
+    
+    rem: Multi-line table literal
+    var person = {
+        "name": "Alice",
+        "age": 30,
+        "city": "NYC"
+    }
+    display(person)
+    
+    rem: Multi-line function call
+    display(
+        "This is a long message"
+    )

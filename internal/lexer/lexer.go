@@ -155,11 +155,10 @@ func (l *Lexer) makeToken(tokenType token.TokenType) token.Token {
 
 // readString reads a string literal
 func (l *Lexer) readString() (string, bool) {
-	position := l.position + 1 // skip opening quote
+	var result []byte
+	l.readChar() // skip opening quote
 
 	for {
-		l.readChar()
-
 		if l.ch == 0 {
 			// Unterminated string
 			return "", false
@@ -171,18 +170,41 @@ func (l *Lexer) readString() (string, bool) {
 
 		// Handle escape sequences
 		if l.ch == '\\' {
-			l.readChar() // skip escaped character
+			l.readChar() // move to escaped character
+
+			switch l.ch {
+			case 'n':
+				result = append(result, '\n')
+			case 't':
+				result = append(result, '\t')
+			case 'r':
+				result = append(result, '\r')
+			case '\\':
+				result = append(result, '\\')
+			case '"':
+				result = append(result, '"')
+			case '\'':
+				result = append(result, '\'')
+			default:
+				// Unknown escape sequence - keep the backslash and character
+				result = append(result, '\\')
+				result = append(result, l.ch)
+			}
+			l.readChar()
+			continue
 		}
 
-		// Track newlines in strings
+		// Track newlines in strings (for multi-line strings)
 		if l.ch == '\n' {
 			l.line++
 			l.column = 0
 		}
+
+		result = append(result, l.ch)
+		l.readChar()
 	}
 
-	str := l.input[position:l.position]
-	return str, true
+	return string(result), true
 }
 
 // readInterpolatedString reads a v"..." interpolated string

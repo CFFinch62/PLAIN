@@ -1,0 +1,42 @@
+task Main()
+    rem: Test single-line if...then with nested multi-line lists
+    var items = [
+        "apple",
+        "banana",
+        "cherry"
+    ]
+    display(items)
+
+    var count = 3
+    if count > 2 then display("Many items")
+
+    rem: Test multi-line table without trailing comma
+    var config = {
+        "debug": true,
+        "timeout": 30
+    }
+    display(config)
+
+    rem: Test nested multi-line structures
+    var nested = [
+        {
+            "name": "Alice",
+            "age": 25
+        },
+        {
+            "name": "Bob",
+            "age": 30
+        }
+    ]
+    display(nested)
+
+    rem: Test single-line if...then...else with conditions
+    var x = 5
+    if x > 10 then display("large") else display("small")
+
+    rem: Test empty multi-line list
+    var empty = [
+
+    ]
+    display("Empty list:")
+    display(empty)
