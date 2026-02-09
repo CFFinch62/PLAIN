@@ -642,6 +642,58 @@ Today I want to: [SPECIFIC GOAL]
 
 ---
 
+### Session 12: February 7-8, 2026
+
+**Goal:** Phase 12 - User Documentation & Teaching Curriculum
+
+**Completed:**
+- [x] Created 18 tutorial example programs in `examples/tutorial/`
+  - All lessons verified running correctly with `go run ./cmd/plain/`
+  - Discovered and documented 10 interpreter defects during testing
+  - Applied workarounds in all tutorial code (expanded `+=` to `x = x + y`, etc.)
+- [x] Wrote `docs/user/TUTORIAL.md` (~25KB, 18 progressive hands-on lessons)
+- [x] Wrote `docs/user/USER-GUIDE.md` (~20KB, 16 sections covering all tools and concepts)
+- [x] Wrote `docs/user/LANGUAGE-REFERENCE.md` (~25KB, complete formal specification for users)
+- [x] Wrote `docs/user/STDLIB.md` (~15KB, all 80+ built-in functions documented with examples)
+- [x] Wrote `docs/user/CURRICULUM.md` (~15KB, 12-week educator's guide with rubrics)
+- [x] Wrote `docs/defects_found_during_tutorial_creation.md` (10 defects cataloged)
+
+**Defects Found During Tutorial Creation:**
+1. **Critical:** Compound assignment operators (`+=`, `&=`) broken inside loop bodies
+2. **Critical:** `attempt/handle/ensure` consumes extra DEDENT, skips following statement
+3. **High:** `handle error` cannot capture error message in a variable
+4. **High:** `exit` inside infinite `loop` exits the `if` block, not the loop
+5. **High:** `loop` with condition (while-style) doesn't work at runtime
+6. **Medium:** `\n` and other escape sequences not processed in string literals
+7. **Medium:** String interpolation `v"..."` fails with index expressions in braces
+8. **Medium:** Type-prefixed variables can't be assigned from function return values
+9. **Low:** `if ... then ...` single-line form doesn't parse
+10. **Low:** Multi-line literals cause parse errors
+
+**Files Created:**
+- `docs/user/TUTORIAL.md` - 18 progressive hands-on lessons
+- `docs/user/USER-GUIDE.md` - Complete getting started and reference guide
+- `docs/user/LANGUAGE-REFERENCE.md` - Formal language specification for users
+- `docs/user/STDLIB.md` - Standard library API reference (80+ functions)
+- `docs/user/CURRICULUM.md` - 12-week educator's guide
+- `docs/defects_found_during_tutorial_creation.md` - Defect catalog
+- `examples/tutorial/lesson_01_hello.plain` through `lesson_18_timers.plain`
+
+**Workarounds Applied in Tutorial Code:**
+- Replaced all `x += y` with `x = x + y` in loop bodies (Defect 1)
+- Added sacrificial `display("")` after every `attempt/handle` block (Defect 2)
+- Used `handle` (no variable) instead of `handle error` (Defect 3)
+- Avoided infinite `loop` + `exit` patterns (Defect 4)
+- Used `write_lines()` instead of `write_file()` with `\n` (Defect 6)
+- Used `&` concatenation instead of `v"..."` for index expressions (Defect 7)
+- Used un-prefixed variable names for function return values (Defect 8)
+
+**Next Session Focus:**
+- [ ] Fix the 10 cataloged interpreter defects before first release
+- [ ] Re-verify all tutorials after defect fixes (remove workarounds)
+
+---
+
 ## Overall Progress Tracker
 
 ### Phase 1: Lexer ✓
@@ -1080,11 +1132,11 @@ Today I want to: [SPECIFIC GOAL]
 
 ## Quick Stats
 
-**Total Sessions:** 10+
-**Lines of Code:** ~13,000+ (Go) + ~2,000+ (Python IDE)
+**Total Sessions:** 12
+**Lines of Code:** ~13,000+ (Go) + ~2,000+ (Python IDE) + ~100KB (Documentation)
 **Test Coverage:** ~78% overall
 **Passing Tests:** 150+
-**Current Phase:** Phase 11.5 Complete - IDE Polish
+**Current Phase:** Phase 12 Complete - User Documentation
 **% Complete:** 100% (All phases complete)
 
 **Completed Phases:**
@@ -1100,9 +1152,10 @@ Today I want to: [SPECIFIC GOAL]
 - ✅ Phase 10: Integration & Testing
 - ✅ Phase 10.5: Complete Missing Features (Imports, Records, Float Exponent)
 - ✅ Phase 11: PLAIN IDE (all sub-phases 11.1-11.5 complete)
+- ✅ Phase 12: User Documentation & Teaching Curriculum
 
-**Remaining Phases:**
-- None - all phases complete!
+**Remaining Work:**
+- Fix 10 interpreter defects cataloged in `docs/defects_found_during_tutorial_creation.md`
 
 ---
 
@@ -1142,6 +1195,15 @@ If you lose context completely, restore from these:
 - Runtime coverage improved: 46.8% → 57.8%
 - All example programs verified working
 
+### Restore Point February 8, 2026 (Phase 12)
+**State:** Phase 12 complete - User Documentation & Teaching Curriculum
+**Commit:** See git log for latest commit
+**Notes:** All user-facing documentation written; 10 interpreter defects cataloged
+**Key Changes:**
+- 5 user documentation files in `docs/user/` (TUTORIAL, USER-GUIDE, LANGUAGE-REFERENCE, STDLIB, CURRICULUM)
+- 18 tutorial example programs in `examples/tutorial/`
+- Defect catalog in `docs/defects_found_during_tutorial_creation.md`
+
 ### Restore Point January 27, 2026
 **State:** Phase 8 complete - Events & Timers implemented
 **Commit:** See git log for latest commit
@@ -1150,5 +1212,5 @@ If you lose context completely, restore from these:
 
 ---
 
-**Last Updated:** February 7, 2026
-**By:** Session 11 - Phase 11.5 PLAIN IDE Polish Complete
+**Last Updated:** February 8, 2026
+**By:** Session 12 - Phase 12 User Documentation Complete
