@@ -91,6 +91,15 @@ for platform in "${PLATFORMS[@]}"; do
         find examples -name "*.plain" -exec cp {} "releases/${PACKAGE}/examples/" \;
     fi
 
+    # Copy IDE
+    if [ -d "plain_ide" ]; then
+        echo "     Including IDE..."
+        cp -r plain_ide "releases/${PACKAGE}/"
+        # Remove pycache and other unnecessary files
+        find "releases/${PACKAGE}/plain_ide" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+        find "releases/${PACKAGE}/plain_ide" -name "*.pyc" -delete 2>/dev/null || true
+    fi
+
     # Create archive
     cd releases
     if [ $GOOS = "windows" ]; then
@@ -127,6 +136,13 @@ if [ -f "releases/plain-darwin-universal" ]; then
     if [ -d "examples" ]; then
         mkdir -p "releases/${PACKAGE}/examples"
         find examples -name "*.plain" -exec cp {} "releases/${PACKAGE}/examples/" \;
+    fi
+
+    # Copy IDE
+    if [ -d "plain_ide" ]; then
+        cp -r plain_ide "releases/${PACKAGE}/"
+        find "releases/${PACKAGE}/plain_ide" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+        find "releases/${PACKAGE}/plain_ide" -name "*.pyc" -delete 2>/dev/null || true
     fi
 
     cd releases
