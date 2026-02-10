@@ -76,6 +76,7 @@ for platform in "${PLATFORMS[@]}"; do
     # Copy documentation
     cp README.md "releases/${PACKAGE}/"
     [ -f LICENSE ] && cp LICENSE "releases/${PACKAGE}/"
+    [ -f INSTALLATION.md ] && cp INSTALLATION.md "releases/${PACKAGE}/"
     [ -f CHANGELOG.md ] && cp CHANGELOG.md "releases/${PACKAGE}/"
 
     # Copy user documentation
@@ -126,6 +127,7 @@ if [ -f "releases/plain-darwin-universal" ]; then
 
     cp README.md "releases/${PACKAGE}/"
     [ -f LICENSE ] && cp LICENSE "releases/${PACKAGE}/"
+    [ -f INSTALLATION.md ] && cp INSTALLATION.md "releases/${PACKAGE}/"
     [ -f CHANGELOG.md ] && cp CHANGELOG.md "releases/${PACKAGE}/"
 
     mkdir -p "releases/${PACKAGE}/docs"
