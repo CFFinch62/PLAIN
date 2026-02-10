@@ -197,7 +197,7 @@ You may NOT:
 - Use for commercial purposes without a license
 - Reverse engineer or decompile
 
-For commercial licensing inquiries, contact: chuckcodes4cash@gmail.com
+For commercial licensing inquiries, contact: info@fragillidaesoftware.com
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 ```

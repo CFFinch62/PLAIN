@@ -40,11 +40,15 @@ for platform in "${PLATFORMS[@]}"; do
     GOOS=$GOOS GOARCH=$GOARCH go build -ldflags="-s -w" -o "releases/${OUTPUT}" cmd/plain/main.go
 done
 
-# Create universal macOS binary if both arm64 and amd64 exist
+# Create universal macOS binary if both arm64 and amd64 exist (macOS only)
 if [ -f "releases/plain-darwin-amd64" ] && [ -f "releases/plain-darwin-arm64" ]; then
-    echo "  → Creating universal macOS binary..."
-    lipo -create releases/plain-darwin-amd64 releases/plain-darwin-arm64 \
-         -output releases/plain-darwin-universal
+    if command -v lipo &> /dev/null; then
+        echo "  → Creating universal macOS binary..."
+        lipo -create releases/plain-darwin-amd64 releases/plain-darwin-arm64 \
+             -output releases/plain-darwin-universal
+    else
+        echo "  → Skipping universal macOS binary (lipo not available on this platform)"
+    fi
 fi
 
 echo ""
