@@ -1,5 +1,0 @@
-202e8eaab95e7211c2c98e55574db04f9409eb5c4f31d7680cb1a642a968b363  plain-v1.0.0-beta1-darwin-amd64.tar.gz
-940cc094926c08b292c6909094d0efa77167a53ce3a212309fb5aa708b8c51ae  plain-v1.0.0-beta1-darwin-arm64.tar.gz
-7414eec6d4d7816ec1bdd0f6594d0d5b6441e9ca139a531de1bfa66f472763cb  plain-v1.0.0-beta1-linux-amd64.tar.gz
-9bae864a109cfb8190033d8f6e75598be5a63cce4146ac8facb60ffcefd6d450  plain-v1.0.0-beta1-linux-arm64.tar.gz
-79629e5c93925b8316ab047fbe04ddb325242a18a2ade75b35ee510d4157e5a0  plain-v1.0.0-beta1-windows-amd64.zip

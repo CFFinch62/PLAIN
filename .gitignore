@@ -21,6 +21,7 @@ go.work
 /plain
 /bin/
 /dist/
+/releases/
 
 # IDE specific files
 .vscode/
