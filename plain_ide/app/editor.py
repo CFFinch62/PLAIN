@@ -87,9 +87,14 @@ class CodeEditor(QPlainTextEdit):
             self.setFont(font)
             self.setTabStopDistance(s.tab_width * self.fontMetrics().horizontalAdvance(' '))
             self.setLineWrapMode(
-                QPlainTextEdit.LineWrapMode.WidgetWidth if s.word_wrap 
+                QPlainTextEdit.LineWrapMode.WidgetWidth if s.word_wrap
                 else QPlainTextEdit.LineWrapMode.NoWrap
             )
+            # Update line number visibility
+            self.line_number_area.setVisible(s.show_line_numbers)
+            self.update_line_number_area_width(0)
+            # Re-highlight current line based on settings
+            self.highlight_current_line()
     
     def apply_theme(self, theme: Theme):
         """Apply theme to editor"""
@@ -188,12 +193,111 @@ class CodeEditor(QPlainTextEdit):
             top = bottom
             bottom = top + round(self.blockBoundingRect(block).height())
             block_number += 1
-    
-    def highlight_current_line(self):
-        """Highlight the current line"""
+
+    def _get_bracket_matches(self):
+        """Find and highlight matching brackets"""
         extra_selections = []
-        
-        if not self.isReadOnly() and self.theme:
+
+        if not self.theme:
+            return extra_selections
+
+        cursor = self.textCursor()
+        text = self.toPlainText()
+        pos = cursor.position()
+
+        # Check if cursor is next to a bracket
+        bracket_pairs = {
+            '(': ')', ')': '(',
+            '[': ']', ']': '[',
+            '{': '}', '}': '{'
+        }
+
+        # Check character before cursor
+        char_before = text[pos - 1] if pos > 0 else ''
+        # Check character at cursor
+        char_at = text[pos] if pos < len(text) else ''
+
+        bracket_char = None
+        bracket_pos = None
+        is_opening = False
+
+        if char_before in bracket_pairs:
+            bracket_char = char_before
+            bracket_pos = pos - 1
+            is_opening = char_before in '([{'
+        elif char_at in bracket_pairs:
+            bracket_char = char_at
+            bracket_pos = pos
+            is_opening = char_at in '([{'
+
+        if bracket_char and bracket_pos is not None:
+            # Find matching bracket
+            match_pos = self._find_matching_bracket(text, bracket_pos, bracket_char, is_opening)
+
+            if match_pos is not None:
+                # Highlight both brackets
+                bracket_color = QColor(self.theme.editor_foreground)
+                bracket_color.setAlpha(200)
+
+                # Highlight the bracket at cursor
+                selection1 = QTextEdit.ExtraSelection()
+                selection1.format.setBackground(QColor("#555555"))
+                selection1.format.setForeground(QColor("#FFD700"))  # Gold color
+                cursor1 = QTextCursor(self.document())
+                cursor1.setPosition(bracket_pos)
+                cursor1.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor)
+                selection1.cursor = cursor1
+                extra_selections.append(selection1)
+
+                # Highlight the matching bracket
+                selection2 = QTextEdit.ExtraSelection()
+                selection2.format.setBackground(QColor("#555555"))
+                selection2.format.setForeground(QColor("#FFD700"))  # Gold color
+                cursor2 = QTextCursor(self.document())
+                cursor2.setPosition(match_pos)
+                cursor2.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor)
+                selection2.cursor = cursor2
+                extra_selections.append(selection2)
+
+        return extra_selections
+
+    def _find_matching_bracket(self, text, pos, bracket, is_opening):
+        """Find the position of the matching bracket"""
+        bracket_pairs = {
+            '(': ')', ')': '(',
+            '[': ']', ']': '[',
+            '{': '}', '}': '{'
+        }
+
+        target = bracket_pairs[bracket]
+        direction = 1 if is_opening else -1
+        depth = 0
+
+        i = pos
+        while 0 <= i < len(text):
+            char = text[i]
+
+            if char == bracket:
+                depth += 1
+            elif char == target:
+                depth -= 1
+                if depth == 0:
+                    return i
+
+            i += direction
+
+        return None
+
+    def highlight_current_line(self):
+        """Highlight the current line and matching brackets"""
+        extra_selections = []
+
+        # Check if highlighting is enabled in settings
+        should_highlight = True
+        if self.settings and self.settings.settings.editor:
+            should_highlight = self.settings.settings.editor.highlight_current_line
+
+        if not self.isReadOnly() and self.theme and should_highlight:
             selection = QTextEdit.ExtraSelection()
             line_color = QColor(self.theme.editor_line_highlight)
             selection.format.setBackground(line_color)
@@ -201,7 +305,12 @@ class CodeEditor(QPlainTextEdit):
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             extra_selections.append(selection)
-        
+
+        # Add bracket matching highlights
+        if self.settings and self.settings.settings.editor.bracket_matching:
+            bracket_selections = self._get_bracket_matches()
+            extra_selections.extend(bracket_selections)
+
         self.setExtraSelections(extra_selections)
     
     def _on_text_changed(self):

@@ -638,6 +638,9 @@ class PlainIDEMainWindow(QMainWindow):
             for editor in self.editors.values():
                 editor.apply_settings()
 
+            # Apply terminal settings
+            self.terminal.apply_settings()
+
             # Apply theme if changed
             new_theme = dialog.get_selected_theme()
             if new_theme != self.theme_manager.get_current_theme().name.lower():

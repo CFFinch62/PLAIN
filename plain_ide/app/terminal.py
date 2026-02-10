@@ -66,6 +66,14 @@ class TerminalWidget(QWidget):
         
         layout.addWidget(self.output)
     
+    def apply_settings(self):
+        """Apply terminal settings (font)"""
+        if self.settings:
+            font = QFont(self.settings.settings.terminal.font_family,
+                        self.settings.settings.terminal.font_size)
+            font.setStyleHint(QFont.StyleHint.Monospace)
+            self.output.setFont(font)
+
     def apply_theme(self, theme: Theme):
         """Apply theme to terminal"""
         self.theme = theme
@@ -77,7 +85,7 @@ class TerminalWidget(QWidget):
                 padding: 8px;
             }}
         """)
-        
+
         self.setStyleSheet(f"""
             QWidget {{
                 background-color: {theme.panel_background};

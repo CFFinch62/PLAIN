@@ -7,9 +7,10 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
     QLabel, QSpinBox, QCheckBox, QComboBox, QLineEdit,
     QPushButton, QGroupBox, QFormLayout, QTreeWidget, QTreeWidgetItem,
-    QHeaderView
+    QHeaderView, QFontComboBox
 )
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFontDatabase
 
 from plain_ide.app.settings import SettingsManager
 from plain_ide.app.themes import ThemeManager, Theme
@@ -106,7 +107,8 @@ class SettingsDialog(QDialog):
         font_group = QGroupBox("Font")
         font_layout = QFormLayout()
 
-        self.font_family_input = QLineEdit()
+        self.font_family_input = QFontComboBox()
+        self.font_family_input.setFontFilters(QFontComboBox.FontFilter.MonospacedFonts)
         font_layout.addRow("Font Family:", self.font_family_input)
 
         self.font_size_spin = QSpinBox()
@@ -181,7 +183,8 @@ class SettingsDialog(QDialog):
         font_group = QGroupBox("Terminal Font")
         font_layout = QFormLayout()
 
-        self.terminal_font_input = QLineEdit()
+        self.terminal_font_input = QFontComboBox()
+        self.terminal_font_input.setFontFilters(QFontComboBox.FontFilter.MonospacedFonts)
         font_layout.addRow("Font Family:", self.terminal_font_input)
 
         self.terminal_font_size_spin = QSpinBox()
@@ -222,7 +225,7 @@ class SettingsDialog(QDialog):
         s = self.settings_manager.settings
 
         # Editor
-        self.font_family_input.setText(s.editor.font_family)
+        self.font_family_input.setCurrentText(s.editor.font_family)
         self.font_size_spin.setValue(s.editor.font_size)
         self.tab_width_spin.setValue(s.editor.tab_width)
         self.word_wrap_check.setChecked(s.editor.word_wrap)
@@ -236,7 +239,7 @@ class SettingsDialog(QDialog):
             self.theme_combo.setCurrentIndex(idx)
 
         # Terminal
-        self.terminal_font_input.setText(s.terminal.font_family)
+        self.terminal_font_input.setCurrentText(s.terminal.font_family)
         self.terminal_font_size_spin.setValue(s.terminal.font_size)
 
     def _update_preview(self):
@@ -265,7 +268,7 @@ class SettingsDialog(QDialog):
         s = self.settings_manager.settings
 
         # Editor
-        s.editor.font_family = self.font_family_input.text()
+        s.editor.font_family = self.font_family_input.currentText()
         s.editor.font_size = self.font_size_spin.value()
         s.editor.tab_width = self.tab_width_spin.value()
         s.editor.word_wrap = self.word_wrap_check.isChecked()
@@ -279,7 +282,7 @@ class SettingsDialog(QDialog):
             s.theme.current_theme = new_theme
 
         # Terminal
-        s.terminal.font_family = self.terminal_font_input.text()
+        s.terminal.font_family = self.terminal_font_input.currentText()
         s.terminal.font_size = self.terminal_font_size_spin.value()
 
         self.settings_manager.save()
