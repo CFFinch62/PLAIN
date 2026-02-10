@@ -6,13 +6,15 @@ A programming language designed to be approachable without sacrificing competenc
 
 ## Status
 
-🚧 **In Development** - Phase 2 (Parser) Complete
+🔒 **Private Beta** - All Core Features Complete
 
 - ✅ Lexer with full tokenization support
 - ✅ Parser with complete AST construction
-- ⏳ Type system & scope management (next phase)
-- ⏳ Runtime/Interpreter
-- ⏳ Standard library
+- ✅ Type system & scope management
+- ✅ Runtime/Interpreter with full language support
+- ✅ Standard library (core modules)
+- ✅ Integrated IDE with debugging support
+- ✅ Comprehensive documentation and curriculum
 
 ## Features
 
@@ -107,7 +109,11 @@ Go - chosen for its simplicity, performance, and excellent tooling.
 
 ## License
 
-[To be determined]
+**Proprietary - Private Beta**
+
+This is confidential beta software. See [LICENSE](LICENSE) for terms.
+
+For licensing inquiries: chuckcodes4cash@gmail.com
 
 ## Author
 

@@ -12,14 +12,14 @@
 
 | # | Severity | Component | Description |
 |---|----------|-----------|-------------|
-| 1 | **Critical** | Runtime/Evaluator | Compound assignment operators (`+=`, `&=`, etc.) don't accumulate inside loop bodies |
-| 2 | **Critical** | Parser | `attempt/handle/ensure` consumes extra DEDENT, silently skips following statement |
-| 3 | **High** | Parser/Runtime | `handle error` — no way to capture the error message in a variable |
-| 4 | **High** | Runtime | `exit` (break) inside infinite `loop` exits the `if` block, not the loop |
-| 5 | **High** | Runtime | `loop` with condition (while-style) doesn't work at runtime |
-| 6 | **Medium** | Lexer | `\n` and other escape sequences in string literals are not processed |
-| 7 | **Medium** | Parser | String interpolation `v"..."` fails with index/key expressions inside braces |
-| 8 | **Medium** | Analyzer | Type-prefixed variables can't be assigned from function return values |
+| 1 | ~~**Critical**~~ **FIXED** | Runtime/Evaluator | Compound assignment operators (`+=`, `&=`, etc.) don't accumulate inside loop bodies |
+| 2 | ~~**Critical**~~ **FIXED** | Parser | `attempt/handle/ensure` consumes extra DEDENT, silently skips following statement |
+| 3 | ~~**High**~~ **FIXED** | Parser/Runtime | `handle error` — no way to capture the error message in a variable |
+| 4 | ~~**High**~~ **FIXED** | Runtime | `exit` (break) inside infinite `loop` exits the `if` block, not the loop |
+| 5 | ~~**High**~~ **FIXED** | Runtime | `loop` with condition (while-style) doesn't work at runtime |
+| 6 | ~~**Medium**~~ **FIXED** | Lexer | `\n` and other escape sequences in string literals are not processed |
+| 7 | ~~**Medium**~~ **FIXED** | Parser | String interpolation `v"..."` fails with index/key expressions inside braces |
+| 8 | ~~**Medium**~~ **FIXED** | Analyzer | Type-prefixed variables can't be assigned from function return values |
 | 9 | ~~**Low**~~ **FIXED** | Parser | `if ... then ...` single-line form doesn't parse despite `then` being a keyword |
 | 10 | ~~**Low**~~ **FIXED** | Parser | Multi-line literals (lists, records, function calls spanning lines) cause parse errors |
 
