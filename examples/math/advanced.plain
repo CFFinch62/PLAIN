@@ -1,5 +1,0 @@
-rem: Advanced math module
-
-task CalculatePI with (iterations)
-    display(v"Calculating PI with {iterations} iterations")
-    deliver 3.14159

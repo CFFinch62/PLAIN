@@ -1,4 +1,0 @@
-rem: Basic IO module
-
-task Print with (msg)
-    display(msg)

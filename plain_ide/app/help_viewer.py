@@ -107,11 +107,11 @@ class HelpViewer(QDialog):
 
             # Headings
             if line.startswith('### '):
-                html_lines.append(f'<h3>{line[4:]}</h3>')
+                html_lines.append(f'<h3>{self._inline_format(line[4:])}</h3>')
             elif line.startswith('## '):
-                html_lines.append(f'<h2>{line[3:]}</h2>')
+                html_lines.append(f'<h2>{self._inline_format(line[3:])}</h2>')
             elif line.startswith('# '):
-                html_lines.append(f'<h1>{line[2:]}</h1>')
+                html_lines.append(f'<h1>{self._inline_format(line[2:])}</h1>')
             # Horizontal rule
             elif line.strip() == '---':
                 html_lines.append('<hr>')
@@ -148,13 +148,25 @@ class HelpViewer(QDialog):
 
     def _inline_format(self, text: str) -> str:
         """Apply inline markdown formatting"""
-        # Bold
-        text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
-        # Italic
-        text = re.sub(r'\*(.+?)\*', r'<i>\1</i>', text)
-        # Inline code
-        text = re.sub(r'`(.+?)`', r'<code style="background-color: #2a2a3c; padding: 2px 6px; border-radius: 3px; font-family: monospace;">\1</code>', text)
-        return text
+        # Split on inline code spans to handle them separately
+        parts = re.split(r'(`[^`]+`)', text)
+        result = []
+        for part in parts:
+            if part.startswith('`') and part.endswith('`') and len(part) > 2:
+                # Inline code: escape HTML inside, then wrap
+                code = part[1:-1]
+                code = code.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                result.append(
+                    f'<code style="background-color: #2a2a3c; padding: 2px 6px;'
+                    f' border-radius: 3px; font-family: monospace;">{code}</code>'
+                )
+            else:
+                # Regular text: escape HTML, then apply bold/italic
+                part = part.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                part = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', part)
+                part = re.sub(r'\*(.+?)\*', r'<i>\1</i>', part)
+                result.append(part)
+        return ''.join(result)
 
     def _on_search(self, text: str):
         """Search within the help content"""

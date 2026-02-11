@@ -34,7 +34,7 @@ class VariablesView(QTreeWidget):
         if not variables:
             return
         
-        scope_item = QTreeWidgetItem([f"📦 {scope_name}", "", ""])
+        scope_item = QTreeWidgetItem([f"[{scope_name}]", "", ""])
         self.addTopLevelItem(scope_item)
         
         for name, info in variables.items():

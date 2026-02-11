@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=PLAIN IDE
+Comment=Modern IDE for the PLAIN programming language
+Exec=EXEC_PATH
+Icon=ICON_PATH
+Terminal=false
+Categories=Development;IDE;TextEditor;
+MimeType=text/x-plain;
+Keywords=plain;programming;ide;editor;development;
+StartupNotify=true
+StartupWMClass=plain-ide

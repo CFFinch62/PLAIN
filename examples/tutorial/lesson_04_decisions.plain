@@ -11,6 +11,7 @@ task Main()
         display("The weather is pleasant.")
 
     rem: Comparison operators
+	rem: Better choice is seen below using 'Choose/Choice'
     var intScore = 85
 
     if intScore >= 90

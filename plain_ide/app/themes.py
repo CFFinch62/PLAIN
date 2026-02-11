@@ -1,12 +1,14 @@
 """
 Theme Manager for PLAIN IDE
-Handles loading and applying themes
+Handles loading and applying UI themes and syntax themes separately
 """
 
 import json
 from pathlib import Path
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
+from configparser import ConfigParser
+
 
 from plain_ide.app.settings import SettingsManager, get_config_dir
 
@@ -28,9 +30,9 @@ class SyntaxColors:
     interpolation: str = "#c678dd"  # For v"..." strings
 
 
-@dataclass  
+@dataclass
 class Theme:
-    """Complete theme definition"""
+    """Legacy Theme class for backward compatibility with components not yet updated"""
     name: str
     is_dark: bool
     
@@ -97,8 +99,70 @@ class Theme:
             self.syntax = SyntaxColors()
 
 
-# Built-in Dark Theme (One Dark inspired)
-DARK_THEME = Theme(
+@dataclass  
+class UITheme:
+    """UI theme definition (panels, buttons, tabs, etc.)"""
+    name: str
+    is_dark: bool
+    
+    # Main colors
+    background: str
+    foreground: str
+    accent: str
+    accent_hover: str
+    
+    # Panel colors
+    panel_background: str
+    panel_border: str
+    
+    # Editor colors (non-syntax)
+    editor_background: str
+    editor_foreground: str
+    editor_line_highlight: str
+    editor_selection: str
+    editor_gutter_bg: str
+    editor_gutter_fg: str
+    
+    # Tab colors
+    tab_background: str
+    tab_active_background: str
+    tab_hover_background: str
+    tab_border: str
+    
+    # File browser colors
+    browser_background: str
+    browser_item_hover: str
+    browser_item_selected: str
+    
+    # Terminal colors
+    terminal_background: str
+    terminal_foreground: str
+    
+    # Scrollbar
+    scrollbar_background: str
+    scrollbar_handle: str
+    scrollbar_handle_hover: str
+    
+    # Button colors
+    button_background: str
+    button_foreground: str
+    button_hover: str
+    button_pressed: str
+    
+    # Input colors
+    input_background: str
+    input_border: str
+    input_focus_border: str
+    
+    # Status colors
+    success: str
+    warning: str
+    error: str
+    info: str
+
+
+# Built-in UI Themes
+DARK_UI_THEME = UITheme(
     name="Dark",
     is_dark=True,
     background="#1e1e2e",
@@ -136,25 +200,10 @@ DARK_THEME = Theme(
     warning="#f9e2af",
     error="#f38ba8",
     info="#89b4fa",
-    syntax=SyntaxColors(
-        keyword="#cba6f7",
-        builtin="#f9e2af",
-        type="#94e2d5",
-        string="#a6e3a1",
-        number="#fab387",
-        comment="#6c7086",
-        operator="#94e2d5",
-        function="#89b4fa",
-        variable="#f38ba8",
-        constant="#fab387",
-        identifier="#cdd6f4",
-        interpolation="#cba6f7"
-    )
 )
 
 
-# Built-in Light Theme
-LIGHT_THEME = Theme(
+LIGHT_UI_THEME = UITheme(
     name="Light",
     is_dark=False,
     background="#eff1f5",
@@ -192,194 +241,93 @@ LIGHT_THEME = Theme(
     warning="#df8e1d",
     error="#d20f39",
     info="#1e66f5",
-    syntax=SyntaxColors(
-        keyword="#8839ef",
-        builtin="#df8e1d",
-        type="#179299",
-        string="#40a02b",
-        number="#fe640b",
-        comment="#8c8fa1",
-        operator="#179299",
-        function="#1e66f5",
-        variable="#d20f39",
-        constant="#fe640b",
-        identifier="#4c4f69",
-        interpolation="#8839ef"
-    )
 )
 
 
-# Monokai Theme
-MONOKAI_THEME = Theme(
-    name="Monokai",
-    is_dark=True,
-    background="#272822",
-    foreground="#f8f8f2",
-    accent="#a6e22e",
-    accent_hover="#b6f23e",
-    panel_background="#1e1f1c",
-    panel_border="#3e3d32",
-    editor_background="#272822",
-    editor_foreground="#f8f8f2",
-    editor_line_highlight="#3e3d32",
-    editor_selection="#49483e",
-    editor_gutter_bg="#1e1f1c",
-    editor_gutter_fg="#75715e",
-    tab_background="#1e1f1c",
-    tab_active_background="#272822",
-    tab_hover_background="#3e3d32",
-    tab_border="#3e3d32",
-    browser_background="#1e1f1c",
-    browser_item_hover="#3e3d32",
-    browser_item_selected="#49483e",
-    terminal_background="#1a1b16",
-    terminal_foreground="#f8f8f2",
-    scrollbar_background="#1e1f1c",
-    scrollbar_handle="#49483e",
-    scrollbar_handle_hover="#5e5d53",
-    button_background="#49483e",
-    button_foreground="#f8f8f2",
-    button_hover="#5e5d53",
-    button_pressed="#3e3d32",
-    input_background="#3e3d32",
-    input_border="#49483e",
-    input_focus_border="#a6e22e",
-    success="#a6e22e",
-    warning="#e6db74",
-    error="#f92672",
-    info="#66d9ef",
-    syntax=SyntaxColors(
-        keyword="#f92672",
-        builtin="#66d9ef",
-        type="#66d9ef",
-        string="#e6db74",
-        number="#ae81ff",
-        comment="#75715e",
-        operator="#f92672",
-        function="#a6e22e",
-        variable="#fd971f",
-        constant="#ae81ff",
-        identifier="#f8f8f2",
-        interpolation="#f92672"
-    )
+GREY_UI_THEME = UITheme(
+    name="Grey",
+    is_dark=False,
+    background="#2b2d30",
+    foreground="#bcbec4",
+    accent="#4a9eff",
+    accent_hover="#5eadff",
+    panel_background="#25262a",
+    panel_border="#3c3f41",
+    editor_background="#2b2d30",
+    editor_foreground="#bcbec4",
+    editor_line_highlight="#323437",
+    editor_selection="#214283",
+    editor_gutter_bg="#25262a",
+    editor_gutter_fg="#6c6f73",
+    tab_background="#25262a",
+    tab_active_background="#2b2d30",
+    tab_hover_background="#3c3f41",
+    tab_border="#3c3f41",
+    browser_background="#25262a",
+    browser_item_hover="#3c3f41",
+    browser_item_selected="#4a5157",
+    terminal_background="#1e1f22",
+    terminal_foreground="#bcbec4",
+    scrollbar_background="#25262a",
+    scrollbar_handle="#4a5157",
+    scrollbar_handle_hover="#5a5d62",
+    button_background="#4a5157",
+    button_foreground="#bcbec4",
+    button_hover="#5a5d62",
+    button_pressed="#3c3f41",
+    input_background="#3c3f41",
+    input_border="#4a5157",
+    input_focus_border="#4a9eff",
+    success="#6aab73",
+    warning="#d5b778",
+    error="#c75450",
+    info="#4a9eff",
 )
 
 
-# Nord Theme
-NORD_THEME = Theme(
-    name="Nord",
-    is_dark=True,
-    background="#2e3440",
-    foreground="#d8dee9",
-    accent="#88c0d0",
-    accent_hover="#8fbcbb",
-    panel_background="#292e39",
-    panel_border="#3b4252",
-    editor_background="#2e3440",
-    editor_foreground="#d8dee9",
-    editor_line_highlight="#3b4252",
-    editor_selection="#434c5e",
-    editor_gutter_bg="#292e39",
-    editor_gutter_fg="#4c566a",
-    tab_background="#292e39",
-    tab_active_background="#2e3440",
-    tab_hover_background="#3b4252",
-    tab_border="#3b4252",
-    browser_background="#292e39",
-    browser_item_hover="#3b4252",
-    browser_item_selected="#434c5e",
-    terminal_background="#242933",
-    terminal_foreground="#d8dee9",
-    scrollbar_background="#292e39",
-    scrollbar_handle="#434c5e",
-    scrollbar_handle_hover="#4c566a",
-    button_background="#434c5e",
-    button_foreground="#d8dee9",
-    button_hover="#4c566a",
-    button_pressed="#3b4252",
-    input_background="#3b4252",
-    input_border="#434c5e",
-    input_focus_border="#88c0d0",
-    success="#a3be8c",
-    warning="#ebcb8b",
-    error="#bf616a",
-    info="#88c0d0",
-    syntax=SyntaxColors(
-        keyword="#81a1c1",
-        builtin="#88c0d0",
-        type="#8fbcbb",
-        string="#a3be8c",
-        number="#b48ead",
-        comment="#616e88",
-        operator="#81a1c1",
-        function="#88c0d0",
-        variable="#d08770",
-        constant="#b48ead",
-        identifier="#d8dee9",
-        interpolation="#81a1c1"
-    )
+SOLARIZED_LIGHT_UI_THEME = UITheme(
+    name="Solarized Light",
+    is_dark=False,
+    background="#fdf6e3",
+    foreground="#657b83",
+    accent="#268bd2",
+    accent_hover="#2aa1f5",
+    panel_background="#eee8d5",
+    panel_border="#93a1a1",
+    editor_background="#fdf6e3",
+    editor_foreground="#657b83",
+    editor_line_highlight="#eee8d5",
+    editor_selection="#eee8d5",
+    editor_gutter_bg="#eee8d5",
+    editor_gutter_fg="#93a1a1",
+    tab_background="#eee8d5",
+    tab_active_background="#fdf6e3",
+    tab_hover_background="#e3dcc3",
+    tab_border="#93a1a1",
+    browser_background="#eee8d5",
+    browser_item_hover="#e3dcc3",
+    browser_item_selected="#d9d2ba",
+    terminal_background="#eee8d5",
+    terminal_foreground="#657b83",
+    scrollbar_background="#eee8d5",
+    scrollbar_handle="#93a1a1",
+    scrollbar_handle_hover="#839496",
+    button_background="#93a1a1",
+    button_foreground="#fdf6e3",
+    button_hover="#839496",
+    button_pressed="#e3dcc3",
+    input_background="#eee8d5",
+    input_border="#93a1a1",
+    input_focus_border="#268bd2",
+    success="#859900",
+    warning="#b58900",
+    error="#dc322f",
+    info="#268bd2",
 )
 
 
-# Dracula Theme
-DRACULA_THEME = Theme(
-    name="Dracula",
-    is_dark=True,
-    background="#282a36",
-    foreground="#f8f8f2",
-    accent="#bd93f9",
-    accent_hover="#caa9fa",
-    panel_background="#21222c",
-    panel_border="#44475a",
-    editor_background="#282a36",
-    editor_foreground="#f8f8f2",
-    editor_line_highlight="#44475a",
-    editor_selection="#44475a",
-    editor_gutter_bg="#21222c",
-    editor_gutter_fg="#6272a4",
-    tab_background="#21222c",
-    tab_active_background="#282a36",
-    tab_hover_background="#44475a",
-    tab_border="#44475a",
-    browser_background="#21222c",
-    browser_item_hover="#44475a",
-    browser_item_selected="#6272a4",
-    terminal_background="#1d1e28",
-    terminal_foreground="#f8f8f2",
-    scrollbar_background="#21222c",
-    scrollbar_handle="#44475a",
-    scrollbar_handle_hover="#6272a4",
-    button_background="#44475a",
-    button_foreground="#f8f8f2",
-    button_hover="#6272a4",
-    button_pressed="#383a46",
-    input_background="#44475a",
-    input_border="#6272a4",
-    input_focus_border="#bd93f9",
-    success="#50fa7b",
-    warning="#f1fa8c",
-    error="#ff5555",
-    info="#8be9fd",
-    syntax=SyntaxColors(
-        keyword="#ff79c6",
-        builtin="#8be9fd",
-        type="#8be9fd",
-        string="#f1fa8c",
-        number="#bd93f9",
-        comment="#6272a4",
-        operator="#ff79c6",
-        function="#50fa7b",
-        variable="#ffb86c",
-        constant="#bd93f9",
-        identifier="#f8f8f2",
-        interpolation="#ff79c6"
-    )
-)
-
-
-# Solarized Dark Theme
-SOLARIZED_THEME = Theme(
-    name="Solarized",
+SOLARIZED_DARK_UI_THEME = UITheme(
+    name="Solarized Dark",
     is_dark=True,
     background="#002b36",
     foreground="#839496",
@@ -416,70 +364,360 @@ SOLARIZED_THEME = Theme(
     warning="#b58900",
     error="#dc322f",
     info="#268bd2",
-    syntax=SyntaxColors(
-        keyword="#859900",
-        builtin="#b58900",
-        type="#2aa198",
-        string="#2aa198",
-        number="#d33682",
-        comment="#586e75",
-        operator="#859900",
-        function="#268bd2",
-        variable="#cb4b16",
-        constant="#d33682",
-        identifier="#839496",
-        interpolation="#859900"
-    )
 )
 
 
-BUILTIN_THEMES = {
-    "dark": DARK_THEME,
-    "light": LIGHT_THEME,
-    "monokai": MONOKAI_THEME,
-    "nord": NORD_THEME,
-    "dracula": DRACULA_THEME,
-    "solarized": SOLARIZED_THEME,
+HIGH_CONTRAST_UI_THEME = UITheme(
+    name="High Contrast",
+    is_dark=True,
+    background="#000000",
+    foreground="#ffffff",
+    accent="#00d4ff",
+    accent_hover="#00e4ff",
+    panel_background="#0a0a0a",
+    panel_border="#404040",
+    editor_background="#000000",
+    editor_foreground="#ffffff",
+    editor_line_highlight="#1a1a1a",
+    editor_selection="#264f78",
+    editor_gutter_bg="#0a0a0a",
+    editor_gutter_fg="#808080",
+    tab_background="#0a0a0a",
+    tab_active_background="#000000",
+    tab_hover_background="#2a2a2a",
+    tab_border="#404040",
+    browser_background="#0a0a0a",
+    browser_item_hover="#2a2a2a",
+    browser_item_selected="#404040",
+    terminal_background="#000000",
+    terminal_foreground="#ffffff",
+    scrollbar_background="#0a0a0a",
+    scrollbar_handle="#404040",
+    scrollbar_handle_hover="#606060",
+    button_background="#404040",
+    button_foreground="#ffffff",
+    button_hover="#606060",
+    button_pressed="#2a2a2a",
+    input_background="#1a1a1a",
+    input_border="#404040",
+    input_focus_border="#00d4ff",
+    success="#00ff00",
+    warning="#ffff00",
+    error="#ff0000",
+    info="#00d4ff",
+)
+
+
+BUILTIN_UI_THEMES = {
+    "dark": DARK_UI_THEME,
+    "light": LIGHT_UI_THEME,
+    "grey": GREY_UI_THEME,
+    "solarized_light": SOLARIZED_LIGHT_UI_THEME,
+    "solarized_dark": SOLARIZED_DARK_UI_THEME,
+    "high_contrast": HIGH_CONTRAST_UI_THEME,
 }
 
 
+# Default syntax theme (fallback)
+DEFAULT_SYNTAX_THEME = SyntaxColors(
+    keyword="#cba6f7",
+    builtin="#f9e2af",
+    type="#94e2d5",
+    string="#a6e3a1",
+    number="#fab387",
+    comment="#6c7086",
+    operator="#94e2d5",
+    function="#89b4fa",
+    variable="#f38ba8",
+    constant="#fab387",
+    identifier="#cdd6f4",
+    interpolation="#cba6f7"
+)
+
+
+class GeanyThemeParser:
+    """Parser for Geany .conf theme files"""
+    
+    def __init__(self, conf_path: Path):
+        self.conf_path = conf_path
+        self.parser = ConfigParser()
+        self.named_colors: Dict[str, str] = {}
+        
+    def parse(self) -> Optional[SyntaxColors]:
+        """Parse a Geany .conf file and return SyntaxColors"""
+        try:
+            self.parser.read(self.conf_path, encoding='utf-8')
+            
+            # Parse named colors first
+            if self.parser.has_section('named_colors'):
+                for key, value in self.parser.items('named_colors'):
+                    self.named_colors[key] = self._normalize_color(value)
+            
+            # Parse named styles
+            if self.parser.has_section('named_styles'):
+                return self._parse_syntax_colors()
+            
+            return None
+            
+        except Exception as e:
+            print(f"Warning: Could not parse theme {self.conf_path}: {e}")
+            return None
+    
+    def _normalize_color(self, color: str) -> str:
+        """Normalize color format to #RRGGBB"""
+        color = color.strip()
+        
+        # Handle hex colors
+        if color.startswith('#'):
+            if len(color) == 4:  # #RGB -> #RRGGBB
+                return f"#{color[1]*2}{color[2]*2}{color[3]*2}"
+            return color
+        
+        # Handle 0x format
+        if color.startswith('0x'):
+            return '#' + color[2:]
+        
+        # Handle named colors
+        if color in self.named_colors:
+            return self.named_colors[color]
+        
+        return color
+    
+    def _parse_style(self, style_str: str) -> Optional[str]:
+        """Parse a Geany style string (foreground;background;bold;italic)"""
+        parts = style_str.split(';')
+        if parts and parts[0]:
+            color = parts[0].strip()
+            return self._resolve_color(color)
+        return None
+    
+    def _resolve_color(self, color: str) -> str:
+        """Resolve a color, checking named colors"""
+        if color in self.named_colors:
+            return self.named_colors[color]
+        return self._normalize_color(color)
+    
+    def _get_color(self, section: str, key: str, default: str) -> str:
+        """Get a color from the config, with fallback"""
+        try:
+            if self.parser.has_option(section, key):
+                style = self.parser.get(section, key)
+                parsed = self._parse_style(style)
+                if parsed:
+                    return parsed
+        except Exception:
+            pass
+        return default
+    
+    def _parse_syntax_colors(self) -> SyntaxColors:
+        """Parse syntax colors from Geany theme"""
+        # Map Geany elements to our SyntaxColors
+        return SyntaxColors(
+            keyword=self._get_color('named_styles', 'keyword', DEFAULT_SYNTAX_THEME.keyword),
+            builtin=self._get_color('named_styles', 'type', DEFAULT_SYNTAX_THEME.builtin),
+            type=self._get_color('named_styles', 'class', DEFAULT_SYNTAX_THEME.type),
+            string=self._get_color('named_styles', 'string', DEFAULT_SYNTAX_THEME.string),
+            number=self._get_color('named_styles', 'number', DEFAULT_SYNTAX_THEME.number),
+            comment=self._get_color('named_styles', 'comment', DEFAULT_SYNTAX_THEME.comment),
+            operator=self._get_color('named_styles', 'operator', DEFAULT_SYNTAX_THEME.operator),
+            function=self._get_color('named_styles', 'function', DEFAULT_SYNTAX_THEME.function),
+            variable=self._get_color('named_styles', 'identifier', DEFAULT_SYNTAX_THEME.variable),
+            constant=self._get_color('named_styles', 'number', DEFAULT_SYNTAX_THEME.constant),
+            identifier=self._get_color('named_styles', 'default', DEFAULT_SYNTAX_THEME.identifier),
+            interpolation=self._get_color('named_styles', 'keyword', DEFAULT_SYNTAX_THEME.interpolation),
+        )
+
+
 class ThemeManager:
-    """Manages themes for the IDE"""
+    """Manages UI themes and syntax themes for the IDE"""
 
     def __init__(self, settings: SettingsManager):
         self.settings = settings
-        self.themes = dict(BUILTIN_THEMES)
-        self.custom_themes_dir = get_config_dir() / "themes"
-        self.custom_themes_dir.mkdir(parents=True, exist_ok=True)
-        self._current_theme: Optional[Theme] = None
+        self.ui_themes = dict(BUILTIN_UI_THEMES)
+        self.syntax_themes: Dict[str, SyntaxColors] = {"default": DEFAULT_SYNTAX_THEME}
+        self.syntax_themes_dir = self._get_syntax_themes_dir()
+        self._current_ui_theme: Optional[UITheme] = None
+        self._current_syntax_theme: Optional[SyntaxColors] = None
+        
+        # Copy bundled themes to user config directory on first run
+        self._copy_bundled_themes()
+        
+        # Load syntax themes from directory
+        self.load_syntax_themes()
+        
+        # Migrate old settings if needed
+        self._migrate_old_settings()
 
-    def get_theme(self, name: str) -> Theme:
-        """Get a theme by name"""
-        return self.themes.get(name.lower(), DARK_THEME)
+    def _get_syntax_themes_dir(self) -> Path:
+        """Get the user config syntax themes directory"""
+        config_dir = get_config_dir() / "themes" / "syntax"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        return config_dir
+    
+    def _get_bundled_themes_dir(self) -> Path:
+        """Get the bundled syntax themes directory from the package"""
+        import sys
+        
+        # For compiled executable: check share directory relative to executable
+        if getattr(sys, 'frozen', False):
+            # Running as compiled executable
+            exe_dir = Path(sys.executable).parent
+            share_themes = exe_dir.parent / "share" / "themes" / "syntax"
+            if share_themes.exists():
+                return share_themes
+        
+        # For source distribution: use package directory
+        return Path(__file__).parent.parent / "themes" / "syntax"
+    
+    def _copy_bundled_themes(self):
+        """Copy bundled .conf themes to user config directory on first run"""
+        bundled_dir = self._get_bundled_themes_dir()
+        if not bundled_dir.exists():
+            return
+        
+        user_dir = self.syntax_themes_dir
+        
+        # Copy all .conf files from bundled directory to user directory
+        # Skip if file already exists (don't overwrite user modifications)
+        for conf_file in bundled_dir.glob("*.conf"):
+            dest_file = user_dir / conf_file.name
+            if not dest_file.exists():
+                try:
+                    import shutil
+                    shutil.copy2(conf_file, dest_file)
+                    print(f"Copied bundled theme: {conf_file.name}")
+                except Exception as e:
+                    print(f"Warning: Could not copy bundled theme {conf_file.name}: {e}")
 
-    def get_current_theme(self) -> Theme:
-        """Get the currently active theme"""
-        if self._current_theme is None:
-            theme_name = self.settings.settings.theme.current_theme
-            self._current_theme = self.get_theme(theme_name)
-        return self._current_theme
+    def _migrate_old_settings(self):
+        """Migrate old single-theme setting to dual theme settings"""
+        # Check if old 'current_theme' exists but new settings don't
+        if hasattr(self.settings.settings.theme, 'current_theme'):
+            old_theme = self.settings.settings.theme.current_theme
+            
+            # If new settings don't exist, migrate
+            if not hasattr(self.settings.settings.theme, 'ui_theme'):
+                self.settings.settings.theme.ui_theme = old_theme
+                self.settings.settings.theme.syntax_theme = "default"
+                self.settings.save()
 
-    def set_theme(self, name: str):
-        """Set the current theme"""
-        self.settings.settings.theme.current_theme = name
-        self._current_theme = self.get_theme(name)
+    def load_syntax_themes(self):
+        """Load all .conf files from the syntax themes directory"""
+        if not self.syntax_themes_dir.exists():
+            return
+        
+        for conf_file in self.syntax_themes_dir.glob("*.conf"):
+            try:
+                parser = GeanyThemeParser(conf_file)
+                syntax_colors = parser.parse()
+                
+                if syntax_colors:
+                    # Use filename without extension as theme name
+                    theme_name = conf_file.stem
+                    self.syntax_themes[theme_name] = syntax_colors
+                    print(f"Loaded syntax theme: {theme_name}")
+                    
+            except Exception as e:
+                print(f"Warning: Could not load syntax theme {conf_file}: {e}")
+
+    def get_ui_theme(self, name: str) -> UITheme:
+        """Get a UI theme by name"""
+        return self.ui_themes.get(name.lower(), DARK_UI_THEME)
+
+    def get_syntax_theme(self, name: str) -> SyntaxColors:
+        """Get a syntax theme by name"""
+        return self.syntax_themes.get(name.lower(), DEFAULT_SYNTAX_THEME)
+
+    def get_current_ui_theme(self) -> UITheme:
+        """Get the currently active UI theme"""
+        if self._current_ui_theme is None:
+            ui_theme_name = getattr(self.settings.settings.theme, 'ui_theme', 'dark')
+            self._current_ui_theme = self.get_ui_theme(ui_theme_name)
+        return self._current_ui_theme
+
+    def get_current_syntax_theme(self) -> SyntaxColors:
+        """Get the currently active syntax theme"""
+        if self._current_syntax_theme is None:
+            syntax_theme_name = getattr(self.settings.settings.theme, 'syntax_theme', 'default')
+            self._current_syntax_theme = self.get_syntax_theme(syntax_theme_name)
+        return self._current_syntax_theme
+
+    def set_ui_theme(self, name: str):
+        """Set the current UI theme"""
+        self.settings.settings.theme.ui_theme = name
+        self._current_ui_theme = self.get_ui_theme(name)
         self.settings.save()
 
-    def get_available_themes(self) -> list:
-        """Get list of available theme names"""
-        return list(self.themes.keys())
+    def set_syntax_theme(self, name: str):
+        """Set the current syntax theme"""
+        self.settings.settings.theme.syntax_theme = name
+        self._current_syntax_theme = self.get_syntax_theme(name)
+        self.settings.save()
+
+    def get_available_ui_themes(self) -> list:
+        """Get list of available UI theme names"""
+        return list(self.ui_themes.keys())
+
+    def get_available_syntax_themes(self) -> list:
+        """Get list of available syntax theme names"""
+        return list(self.syntax_themes.keys())
+    
+    def get_current_theme(self):
+        """Get current theme as a combined Theme object (for backward compatibility)"""
+        # Import here to avoid circular dependency
+        from plain_ide.app.themes import Theme
+        ui_theme = self.get_current_ui_theme()
+        syntax_theme = self.get_current_syntax_theme()
+        
+        # Create a Theme object combining UI and syntax themes
+        return Theme(
+            name=ui_theme.name,
+            is_dark=ui_theme.is_dark,
+            background=ui_theme.background,
+            foreground=ui_theme.foreground,
+            accent=ui_theme.accent,
+            accent_hover=ui_theme.accent_hover,
+            panel_background=ui_theme.panel_background,
+            panel_border=ui_theme.panel_border,
+            editor_background=ui_theme.editor_background,
+            editor_foreground=ui_theme.editor_foreground,
+            editor_line_highlight=ui_theme.editor_line_highlight,
+            editor_selection=ui_theme.editor_selection,
+            editor_gutter_bg=ui_theme.editor_gutter_bg,
+            editor_gutter_fg=ui_theme.editor_gutter_fg,
+            tab_background=ui_theme.tab_background,
+            tab_active_background=ui_theme.tab_active_background,
+            tab_hover_background=ui_theme.tab_hover_background,
+            tab_border=ui_theme.tab_border,
+            browser_background=ui_theme.browser_background,
+            browser_item_hover=ui_theme.browser_item_hover,
+            browser_item_selected=ui_theme.browser_item_selected,
+            terminal_background=ui_theme.terminal_background,
+            terminal_foreground=ui_theme.terminal_foreground,
+            scrollbar_background=ui_theme.scrollbar_background,
+            scrollbar_handle=ui_theme.scrollbar_handle,
+            scrollbar_handle_hover=ui_theme.scrollbar_handle_hover,
+            button_background=ui_theme.button_background,
+            button_foreground=ui_theme.button_foreground,
+            button_hover=ui_theme.button_hover,
+            button_pressed=ui_theme.button_pressed,
+            input_background=ui_theme.input_background,
+            input_border=ui_theme.input_border,
+            input_focus_border=ui_theme.input_focus_border,
+            success=ui_theme.success,
+            warning=ui_theme.warning,
+            error=ui_theme.error,
+            info=ui_theme.info,
+            syntax=syntax_theme,
+        )
+
 
     def get_current_stylesheet(self) -> str:
-        """Generate Qt stylesheet for current theme"""
-        return self.generate_stylesheet(self.get_current_theme())
+        """Generate Qt stylesheet for current UI theme"""
+        return self.generate_stylesheet(self.get_current_ui_theme())
 
-    def generate_stylesheet(self, theme: Theme) -> str:
-        """Generate a complete Qt stylesheet from a theme"""
+    def generate_stylesheet(self, theme: UITheme) -> str:
+        """Generate a complete Qt stylesheet from a UI theme"""
         return f"""
 /* Main Window */
 QMainWindow, QWidget {{

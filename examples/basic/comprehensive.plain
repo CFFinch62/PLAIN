@@ -1,11 +1,6 @@
 rem: Comprehensive PLAIN Example
 rem: Demonstrates various language features
 
-use:
-    modules:
-        io
-        math
-
 task Main()
     rem: Variables and constants
     var greeting = "Hello"

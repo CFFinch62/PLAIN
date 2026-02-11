@@ -234,11 +234,12 @@ func (l *Lexer) skipLineComment() {
 // skipBlockComment skips a note: comment (multi-line, indentation-based)
 func (l *Lexer) skipBlockComment() {
 	// note: comments continue until we reach a line with same or less indentation
-	// For now, we'll implement a simple version that skips until dedent
-	// A more sophisticated version would track indentation properly
-
-	startColumn := l.column
-
+	// We need to track the indentation level of the note: line itself
+	
+	// Calculate the indentation of the note: line
+	// We need to look back to find where the line started
+	startIndent := l.column - 5 // "note:" is 5 characters, so column - 5 gives us the indent
+	
 	// Skip to end of current line
 	for l.ch != '\n' && l.ch != 0 {
 		l.readChar()
@@ -271,12 +272,21 @@ func (l *Lexer) skipBlockComment() {
 			continue
 		}
 
-		// If indentation is less than or equal to start, we're done
-		if indent <= startColumn {
+		// If we hit EOF, we're done
+		if l.ch == 0 {
 			break
 		}
 
-		// Skip rest of this line
+		// If indentation is less than or equal to start, we're done with the comment block
+		// We need to handle indentation for the next statement
+		if indent <= startIndent {
+			// Don't consume this line - it's the next statement
+			// We need to handle its indentation
+			l.handleIndentation()
+			break
+		}
+
+		// Skip rest of this line (it's part of the comment)
 		for l.ch != '\n' && l.ch != 0 {
 			l.readChar()
 		}

@@ -15,7 +15,9 @@
       "Bash(/tmp/test_attempt3.plain << 'EOF'\ntask Main\\(\\)\n    display\\(\"=== Test 1 ===\"\\)\n    attempt\n        display\\(\"  trying...\"\\)\n    handle error\n        display\\(\"  caught: \" & error\\)\n    rem: spacer\n    display\\(\"after attempt 1\"\\)\n\n    display\\(\"=== Test 2 ===\"\\)\n    attempt\n        abort \"oops\"\n    handle error\n        display\\(\"  caught: \" & error\\)\n    rem: spacer\n    display\\(\"after attempt 2\"\\)\n\n    display\\(\"all done!\"\\)\nEOF)",
       "Bash(/tmp/test_handle.plain << 'EOF'\ntask Main\\(\\)\n    attempt\n        abort \"something bad\"\n    handle\n        display\\(\"caught an error!\"\\)\n    var x = 0\n    display\\(\"done: \" & x\\)\nEOF)",
       "Bash(/tmp/test_handle2.plain << 'EOF'\ntask Main\\(\\)\n    attempt\n        abort \"something bad\"\n    handle\n        display\\(\"caught an error!\"\\)\n    display\\(\"after\"\\)\n    display\\(\"done\"\\)\nEOF)",
-      "Bash(/tmp/test_handle3.plain << 'EOF'\ntask Main\\(\\)\n    attempt\n        abort \"something bad\"\n    handle err\n        display\\(\"caught: \" & err\\)\n    display\\(\"after\"\\)\n    display\\(\"done\"\\)\nEOF)"
+      "Bash(/tmp/test_handle3.plain << 'EOF'\ntask Main\\(\\)\n    attempt\n        abort \"something bad\"\n    handle err\n        display\\(\"caught: \" & err\\)\n    display\\(\"after\"\\)\n    display\\(\"done\"\\)\nEOF)",
+      "Bash(grep:*)",
+      "Bash(python3:*)"
     ]
   }
 }

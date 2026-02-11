@@ -32,6 +32,9 @@ class EditorSettings:
 @dataclass
 class ThemeSettings:
     """Theme-related settings"""
+    ui_theme: str = "dark"          # UI theme name
+    syntax_theme: str = "default"   # Syntax theme name (from .conf file)
+    # Legacy field for migration
     current_theme: str = "dark"
 
 
@@ -71,6 +74,7 @@ class Settings:
     theme: ThemeSettings = field(default_factory=ThemeSettings)
     window: WindowSettings = field(default_factory=WindowSettings)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
+    plain_interpreter_path: str = ""  # Path to PLAIN interpreter (auto-detected if empty)
     recent_files: List[str] = field(default_factory=list)
     bookmarks: List[str] = field(default_factory=list)
     session: SessionSettings = field(default_factory=SessionSettings)

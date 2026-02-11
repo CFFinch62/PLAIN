@@ -225,6 +225,33 @@ var full = "Hello" & " " & "World"
 
 ---
 
+## Comments
+
+### Single-line Comments
+```
+rem: This is a single-line comment
+var intCount = 10    rem: Inline comment
+```
+
+### Multi-line Comments
+```
+note:
+    This is a multi-line comment block.
+    All indented lines following note: are part of the comment.
+    The comment ends when indentation returns to the same level.
+
+var intCount = 10    rem: This is not part of the note block
+```
+
+**Rules:**
+- `rem:` for single-line comments
+- `note:` for multi-line comment blocks
+- Multi-line comments use indentation to define scope
+- Comment ends when a line returns to the same or lesser indentation as the `note:` line
+
+---
+
+
 ## Standard Library (Selected)
 
 ### Console

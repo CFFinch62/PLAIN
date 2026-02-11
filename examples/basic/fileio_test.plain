@@ -84,8 +84,10 @@ display("Read via handle:", handleContent)
 rem: =========================================
 rem: Cleanup
 rem: =========================================
+
 display("")
 display("=== Cleanup ===")
+
 
 delete_file("test_output.txt")
 delete_file("test_lines.txt")

@@ -52,6 +52,34 @@ if [ -f "releases/plain-darwin-amd64" ] && [ -f "releases/plain-darwin-arm64" ];
 fi
 
 echo ""
+echo "Building IDE executable (Linux only)..."
+# DISABLED: Compiling IDE with PyInstaller
+# The IDE will be distributed as source code instead, which ensures
+# all themes and resources are properly included in the release
+echo "  → Skipping IDE compilation (distributing as source code)"
+# if [ "$(uname)" = "Linux" ] && python3 -m PyInstaller --version &> /dev/null; then
+#     echo "  → Compiling PLAIN IDE with PyInstaller..."
+#     python3 -m PyInstaller --clean --noconfirm plain_ide.spec
+#     
+#     if [ -f "dist/plain-ide" ]; then
+#         echo "  → IDE compilation successful"
+#         # Move to releases for packaging
+#         mkdir -p releases/ide-build
+#         mv dist/plain-ide releases/ide-build/
+#     else
+#         echo "  → Warning: IDE compilation failed, will include source instead"
+#     fi
+# else
+#     if [ "$(uname)" != "Linux" ]; then
+#         echo "  → Skipping IDE compilation (not on Linux)"
+#     else
+#         echo "  → Skipping IDE compilation (PyInstaller not found)"
+#         echo "     Install with: sudo apt install python3-pyinstaller"
+#     fi
+# fi
+
+
+echo ""
 echo "Packaging releases..."
 
 # Package each binary with docs and examples
@@ -92,14 +120,24 @@ for platform in "${PLATFORMS[@]}"; do
         find examples -name "*.plain" -exec cp {} "releases/${PACKAGE}/examples/" \;
     fi
 
-    # Copy IDE
+    # Copy IDE as source code
     if [ -d "plain_ide" ]; then
-        echo "     Including IDE..."
+        echo "     Including IDE source code..."
         cp -r plain_ide "releases/${PACKAGE}/"
+        
+        # Verify themes were copied
+        THEME_COUNT=$(find "releases/${PACKAGE}/plain_ide/themes/syntax" -name "*.conf" 2>/dev/null | wc -l)
+        if [ "$THEME_COUNT" -gt 0 ]; then
+            echo "     ✓ Included ${THEME_COUNT} syntax themes"
+        else
+            echo "     ⚠ Warning: No syntax themes found in package!"
+        fi
+        
         # Remove pycache and other unnecessary files
         find "releases/${PACKAGE}/plain_ide" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
         find "releases/${PACKAGE}/plain_ide" -name "*.pyc" -delete 2>/dev/null || true
     fi
+
 
     # Create archive
     cd releases
@@ -142,7 +180,17 @@ if [ -f "releases/plain-darwin-universal" ]; then
 
     # Copy IDE
     if [ -d "plain_ide" ]; then
+        echo "     Including IDE source code..."
         cp -r plain_ide "releases/${PACKAGE}/"
+        
+        # Verify themes were copied
+        THEME_COUNT=$(find "releases/${PACKAGE}/plain_ide/themes/syntax" -name "*.conf" 2>/dev/null | wc -l)
+        if [ "$THEME_COUNT" -gt 0 ]; then
+            echo "     ✓ Included ${THEME_COUNT} syntax themes"
+        else
+            echo "     ⚠ Warning: No syntax themes found in package!"
+        fi
+        
         find "releases/${PACKAGE}/plain_ide" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
         find "releases/${PACKAGE}/plain_ide" -name "*.pyc" -delete 2>/dev/null || true
     fi

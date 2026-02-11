@@ -9,11 +9,11 @@ from PyQt6.QtWidgets import (
     QPushButton, QGroupBox, QFormLayout, QTreeWidget, QTreeWidgetItem,
     QHeaderView, QFontComboBox
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFontDatabase
 
 from plain_ide.app.settings import SettingsManager
-from plain_ide.app.themes import ThemeManager, Theme
+from plain_ide.app.themes import ThemeManager
 
 
 # Keyboard shortcuts reference table
@@ -48,6 +48,8 @@ SHORTCUTS = [
 
 class SettingsDialog(QDialog):
     """Preferences dialog for IDE settings"""
+
+    settings_applied = pyqtSignal()  # Signal emitted when settings are applied
 
     def __init__(self, settings: SettingsManager, theme_manager: ThemeManager,
                  parent=None):
@@ -153,24 +155,45 @@ class SettingsDialog(QDialog):
         tab = QWidget()
         layout = QVBoxLayout(tab)
 
-        theme_group = QGroupBox("Theme Selection")
-        theme_layout = QVBoxLayout()
+        # UI Theme group
+        ui_theme_group = QGroupBox("UI Theme")
+        ui_theme_layout = QVBoxLayout()
 
-        self.theme_combo = QComboBox()
-        for name in self.theme_manager.get_available_themes():
-            self.theme_combo.addItem(name.capitalize(), name)
-        theme_layout.addWidget(self.theme_combo)
+        self.ui_theme_combo = QComboBox()
+        for name in self.theme_manager.get_available_ui_themes():
+            self.ui_theme_combo.addItem(name.replace('_', ' ').title(), name)
+        ui_theme_layout.addWidget(self.ui_theme_combo)
+
+        ui_theme_group.setLayout(ui_theme_layout)
+        layout.addWidget(ui_theme_group)
+
+        # Syntax Theme group
+        syntax_theme_group = QGroupBox("Syntax Theme")
+        syntax_theme_layout = QVBoxLayout()
+
+        self.syntax_theme_combo = QComboBox()
+        for name in self.theme_manager.get_available_syntax_themes():
+            self.syntax_theme_combo.addItem(name.replace('_', ' ').title(), name)
+        syntax_theme_layout.addWidget(self.syntax_theme_combo)
+
+        syntax_theme_group.setLayout(syntax_theme_layout)
+        layout.addWidget(syntax_theme_group)
 
         # Theme preview
+        preview_group = QGroupBox("Preview")
+        preview_layout = QVBoxLayout()
+        
         self.preview_label = QLabel()
-        self.preview_label.setFixedHeight(80)
-        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview_label.setFixedHeight(100)
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        self.preview_label.setWordWrap(True)
         self._update_preview()
-        self.theme_combo.currentIndexChanged.connect(self._update_preview)
-        theme_layout.addWidget(self.preview_label)
-
-        theme_group.setLayout(theme_layout)
-        layout.addWidget(theme_group)
+        self.ui_theme_combo.currentIndexChanged.connect(self._update_preview)
+        self.syntax_theme_combo.currentIndexChanged.connect(self._update_preview)
+        preview_layout.addWidget(self.preview_label)
+        
+        preview_group.setLayout(preview_layout)
+        layout.addWidget(preview_group)
 
         layout.addStretch()
         return tab
@@ -233,10 +256,17 @@ class SettingsDialog(QDialog):
         self.highlight_line_check.setChecked(s.editor.highlight_current_line)
         self.bracket_matching_check.setChecked(s.editor.bracket_matching)
 
-        # Theme
-        idx = self.theme_combo.findData(s.theme.current_theme)
-        if idx >= 0:
-            self.theme_combo.setCurrentIndex(idx)
+        # Theme - load both UI and syntax themes
+        ui_theme = getattr(s.theme, 'ui_theme', s.theme.current_theme)
+        syntax_theme = getattr(s.theme, 'syntax_theme', 'default')
+        
+        ui_idx = self.ui_theme_combo.findData(ui_theme)
+        if ui_idx >= 0:
+            self.ui_theme_combo.setCurrentIndex(ui_idx)
+        
+        syntax_idx = self.syntax_theme_combo.findData(syntax_theme)
+        if syntax_idx >= 0:
+            self.syntax_theme_combo.setCurrentIndex(syntax_idx)
 
         # Terminal
         self.terminal_font_input.setCurrentText(s.terminal.font_family)
@@ -244,24 +274,36 @@ class SettingsDialog(QDialog):
 
     def _update_preview(self):
         """Update the theme preview swatch"""
-        name = self.theme_combo.currentData()
-        if name:
-            theme = self.theme_manager.get_theme(name)
+        ui_theme_name = self.ui_theme_combo.currentData()
+        syntax_theme_name = self.syntax_theme_combo.currentData()
+        
+        if ui_theme_name and syntax_theme_name:
+            ui_theme = self.theme_manager.get_ui_theme(ui_theme_name)
+            syntax_theme = self.theme_manager.get_syntax_theme(syntax_theme_name)
+            
             self.preview_label.setStyleSheet(f"""
-                background-color: {theme.editor_background};
-                color: {theme.editor_foreground};
-                border: 1px solid {theme.panel_border};
+                background-color: {ui_theme.editor_background};
+                color: {ui_theme.editor_foreground};
+                border: 1px solid {ui_theme.panel_border};
                 border-radius: 6px;
-                padding: 8px;
+                padding: 12px;
                 font-family: monospace;
-                font-size: 12px;
+                font-size: 11px;
             """)
-            # Show sample code with theme colors
-            self.preview_label.setText(
-                f"var intCount = 10\n"
-                f'display("Hello, PLAIN!")\n'
-                f"rem: {theme.name} theme"
-            )
+            
+            # Show sample code with syntax highlighting colors
+            sample_html = f'''
+                <span style="color: {syntax_theme.keyword};">var</span> 
+                <span style="color: {syntax_theme.identifier};">intCount</span> 
+                <span style="color: {syntax_theme.operator};">=</span> 
+                <span style="color: {syntax_theme.number};">10</span><br>
+                <span style="color: {syntax_theme.function};">display</span>
+                <span style="color: {ui_theme.foreground};">(</span>
+                <span style="color: {syntax_theme.string};">"Hello, PLAIN!"</span>
+                <span style="color: {ui_theme.foreground};">)</span><br>
+                <span style="color: {syntax_theme.comment};">rem: Combined theme preview</span>
+            '''
+            self.preview_label.setText(sample_html)
 
     def _apply_settings(self):
         """Apply settings without closing"""
@@ -276,10 +318,18 @@ class SettingsDialog(QDialog):
         s.editor.highlight_current_line = self.highlight_line_check.isChecked()
         s.editor.bracket_matching = self.bracket_matching_check.isChecked()
 
-        # Theme
-        new_theme = self.theme_combo.currentData()
-        if new_theme and new_theme != s.theme.current_theme:
-            s.theme.current_theme = new_theme
+        # Theme - save both UI and syntax themes
+        new_ui_theme = self.ui_theme_combo.currentData()
+        new_syntax_theme = self.syntax_theme_combo.currentData()
+        
+        if new_ui_theme:
+            s.theme.ui_theme = new_ui_theme
+            s.theme.current_theme = new_ui_theme  # Keep for backward compatibility
+            self.theme_manager.set_ui_theme(new_ui_theme)
+        
+        if new_syntax_theme:
+            s.theme.syntax_theme = new_syntax_theme
+            self.theme_manager.set_syntax_theme(new_syntax_theme)
 
         # Terminal
         s.terminal.font_family = self.terminal_font_input.currentText()
@@ -287,11 +337,18 @@ class SettingsDialog(QDialog):
 
         self.settings_manager.save()
 
+        # Emit signal so main window can apply settings immediately
+        self.settings_applied.emit()
+
     def _ok_clicked(self):
         """Apply and close"""
         self._apply_settings()
         self.accept()
 
-    def get_selected_theme(self) -> str:
-        """Get the theme name selected in the dialog"""
-        return self.theme_combo.currentData() or "dark"
+    def get_selected_ui_theme(self) -> str:
+        """Get the UI theme name selected in the dialog"""
+        return self.ui_theme_combo.currentData() or "dark"
+    
+    def get_selected_syntax_theme(self) -> str:
+        """Get the syntax theme name selected in the dialog"""
+        return self.syntax_theme_combo.currentData() or "default"
