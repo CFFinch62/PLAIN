@@ -17,6 +17,20 @@ from plain_ide.app.themes import Theme
 class HelpViewer(QDialog):
     """Help/documentation viewer dialog"""
 
+    def _get_resource_path(self, relative_path: str) -> str:
+        """Get absolute path to resource, works for dev and for PyInstaller"""
+        import sys
+        import os
+        if getattr(sys, 'frozen', False):
+            if hasattr(sys, '_MEIPASS'):
+                 base_path = sys._MEIPASS
+            else:
+                 base_path = os.path.dirname(sys.executable)
+        else:
+            base_path = str(Path(__file__).parent.parent.parent)
+
+        return str(Path(base_path) / relative_path)
+
     def __init__(self, parent=None, theme: Theme = None):
         super().__init__(parent)
         self.theme = theme
@@ -56,20 +70,20 @@ class HelpViewer(QDialog):
 
     def _load_content(self):
         """Load the quick reference markdown and convert to HTML"""
-        # Try to find the docs directory relative to the package
-        doc_paths = [
-            Path(__file__).parent.parent.parent / "docs" / "quick_reference.md",
-            Path.cwd() / "docs" / "quick_reference.md",
-        ]
-
-        content = ""
-        for doc_path in doc_paths:
-            if doc_path.exists():
-                content = doc_path.read_text(encoding='utf-8')
-                break
+        # Use robust resource path resolution
+        ref_path = self._get_resource_path("docs/quick_reference.md")
+        
+        if Path(ref_path).exists():
+            content = Path(ref_path).read_text(encoding='utf-8')
+        else:
+            # Fallback for dev environment if not found via _get_resource_path
+            # try looking up from current file
+            dev_path = Path(__file__).parent.parent.parent / "docs" / "quick_reference.md"
+            if dev_path.exists():
+                content = dev_path.read_text(encoding='utf-8')
 
         if not content:
-            content = "# PLAIN Quick Reference\n\nDocumentation file not found."
+            content = f"# PLAIN Quick Reference\n\nDocumentation file not found at: {ref_path}"
 
         html = self._markdown_to_html(content)
         self._full_html = html

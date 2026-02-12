@@ -41,6 +41,12 @@ plain_exe = project_root / 'plain'
 if plain_exe.exists():
     binaries.append((str(plain_exe), '.'))  # Put in root of dist folder
 
+# Collect docs
+docs_dir = project_root / 'docs'
+if docs_dir.exists():
+    for doc_file in docs_dir.glob('*.md'):
+        theme_datas.append((str(doc_file), 'docs'))
+
 a = Analysis(
     ['plain_ide/main.py'],
     pathex=[],
