@@ -28,6 +28,43 @@ class SyntaxColors:
     constant: str = "#d19a66"
     identifier: str = "#abb2bf"
     interpolation: str = "#c678dd"  # For v"..." strings
+    theme_type: str = "any"  # "dark", "light", "any"
+
+def _hex_to_rgb(hex_color: str):
+    """Convert hex color to (r, g, b) tuple"""
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+def _get_luminance(hex_color: str) -> float:
+    """Calculate relative luminance of a color"""
+    try:
+        r, g, b = _hex_to_rgb(hex_color)
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    except:
+        return 0.5
+
+def _determine_theme_type(colors: SyntaxColors) -> str:
+    """Determine if a syntax theme is for dark or light backgrounds based on text brightness"""
+    # Calculate average luminance of key text colors
+    # High luminance text -> meant for Dark background
+    # Low luminance text -> meant for Light background
+    
+    key_colors = [
+        colors.identifier,
+        colors.keyword,
+        colors.function,
+        colors.string,
+        colors.number
+    ]
+    
+    try:
+        total_lum = sum(_get_luminance(c) for c in key_colors)
+        avg_lum = total_lum / len(key_colors)
+    except:
+        return "any"
+    
+    # Threshold: > 0.5 implies bright text (for dark bg), < 0.5 implies dark text (for light bg)
+    return "dark" if avg_lum > 0.5 else "light"
 
 
 @dataclass
@@ -534,6 +571,8 @@ class ThemeManager:
     def __init__(self, settings: SettingsManager):
         self.settings = settings
         self.ui_themes = dict(BUILTIN_UI_THEMES)
+        # Default theme type needs to be set manually as it's not determined by parser
+        DEFAULT_SYNTAX_THEME.theme_type = "dark" 
         self.syntax_themes: Dict[str, SyntaxColors] = {"default": DEFAULT_SYNTAX_THEME}
         self.syntax_themes_dir = self._get_syntax_themes_dir()
         self._current_ui_theme: Optional[UITheme] = None
@@ -612,13 +651,28 @@ class ThemeManager:
                 syntax_colors = parser.parse()
                 
                 if syntax_colors:
+                    # Determine theme type (dark/light compatibility)
+                    syntax_colors.theme_type = _determine_theme_type(syntax_colors)
+                    
                     # Use filename without extension as theme name
                     theme_name = conf_file.stem
                     self.syntax_themes[theme_name] = syntax_colors
-                    print(f"Loaded syntax theme: {theme_name}")
+                    print(f"Loaded syntax theme: {theme_name} ({syntax_colors.theme_type})")
                     
             except Exception as e:
                 print(f"Warning: Could not load syntax theme {conf_file}: {e}")
+
+    def get_compatible_syntax_themes(self, is_dark: bool) -> list:
+        """Get list of syntax themes compatible with the given UI darkness"""
+        compatible = []
+        target_type = "dark" if is_dark else "light"
+        
+        for name, theme in self.syntax_themes.items():
+            # Include if types match or if theme is 'any'
+            if theme.theme_type == target_type or theme.theme_type == "any":
+                compatible.append(name)
+        
+        return sorted(compatible)
 
     def get_ui_theme(self, name: str) -> UITheme:
         """Get a UI theme by name"""

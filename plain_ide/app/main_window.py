@@ -267,11 +267,10 @@ class PlainIDEMainWindow(QMainWindow):
             ui_theme_menu.addAction(theme_action)
         
         # Syntax Theme submenu
-        syntax_theme_menu = theme_menu.addMenu("Syntax Theme")
-        for theme_name in self.theme_manager.get_available_syntax_themes():
-            theme_action = QAction(theme_name.replace('_', ' ').title(), self)
-            theme_action.triggered.connect(lambda checked, n=theme_name: self._set_syntax_theme(n))
-            syntax_theme_menu.addAction(theme_action)
+        # We need to store this menu to update it later when UI theme changes
+        self.syntax_theme_menu = theme_menu.addMenu("Syntax Theme")
+        self._update_syntax_theme_menu()
+
         
         view_menu.addSeparator()
         
@@ -521,15 +520,77 @@ class PlainIDEMainWindow(QMainWindow):
         self.theme_manager.set_ui_theme(name)
         from PyQt6.QtWidgets import QApplication
         QApplication.instance().setStyleSheet(self.theme_manager.get_current_stylesheet())
+        
+        # Check syntax theme compatibility
+        ui_theme = self.theme_manager.get_current_ui_theme()
+        compatible_names = self.theme_manager.get_compatible_syntax_themes(ui_theme.is_dark)
+        current_syntax_name = getattr(self.settings.settings.theme, 'syntax_theme', 'default')
+        
+        if current_syntax_name not in compatible_names and compatible_names:
+            # Switch to first compatible
+            new_syntax = compatible_names[0]
+            print(f"Switching incompatible syntax theme {current_syntax_name} to {new_syntax}")
+            self._set_syntax_theme(new_syntax)
+            
+        self._update_syntax_theme_menu()
         self._apply_theme()
     
     def _set_syntax_theme(self, name: str):
         """Set and apply a new syntax theme"""
         self.theme_manager.set_syntax_theme(name)
+        # Update menu to show new selection
+        self._update_syntax_theme_menu()
+        
         # Only update editors
         syntax_theme = self.theme_manager.get_current_syntax_theme()
         for editor in self.editors.values():
             editor.apply_syntax_theme(syntax_theme)
+
+    def _update_syntax_theme_menu(self):
+        """Update syntax theme menu with compatible themes"""
+        if not hasattr(self, 'syntax_theme_menu'):
+            return
+
+        self.syntax_theme_menu.clear()
+        
+        # Get compatible themes for current UI theme
+        ui_theme = self.theme_manager.get_current_ui_theme()
+        is_dark = ui_theme.is_dark
+        compatible_themes = self.theme_manager.get_compatible_syntax_themes(is_dark)
+        
+        # Add actions
+        for theme_name in compatible_themes:
+            display_name = theme_name.replace('_', ' ').title()
+            
+            # Add checkmark if active
+            current_syntax = getattr(self.settings.settings.theme, 'syntax_theme', 'default')
+            if theme_name == current_syntax:
+                display_name = f"✓ {display_name}"
+                
+            theme_action = QAction(display_name, self)
+            theme_action.triggered.connect(lambda checked, n=theme_name: self._set_syntax_theme(n))
+            self.syntax_theme_menu.addAction(theme_action)
+            
+        # Add separator and option to show all themes
+        self.syntax_theme_menu.addSeparator()
+        show_all_action = QAction("Show All Themes", self)
+        # Check if we are currently showing all? 
+        # For now, just a button to repopulate with all
+        show_all_action.triggered.connect(self._show_all_syntax_themes)
+        self.syntax_theme_menu.addAction(show_all_action)
+
+    def _show_all_syntax_themes(self):
+        """Show all syntax themes in the menu regardless of compatibility"""
+        self.syntax_theme_menu.clear()
+        for theme_name in self.theme_manager.get_available_syntax_themes():
+            display_name = theme_name.replace('_', ' ').title()
+            current_syntax = getattr(self.settings.settings.theme, 'syntax_theme', 'default')
+            if theme_name == current_syntax:
+                display_name = f"✓ {display_name}"
+                
+            theme_action = QAction(display_name, self)
+            theme_action.triggered.connect(lambda checked, n=theme_name: self._set_syntax_theme(n))
+            self.syntax_theme_menu.addAction(theme_action)
 
     # File operations
     def new_file(self):
@@ -546,8 +607,9 @@ class PlainIDEMainWindow(QMainWindow):
 
     def open_file_dialog(self):
         """Open file dialog"""
+        start_dir = self.current_project_path if self.current_project_path else str(Path.home())
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Open File", str(Path.home()),
+            self, "Open File", start_dir,
             "PLAIN Files (*.plain);;All Files (*)"
         )
         if file_path:
@@ -555,8 +617,9 @@ class PlainIDEMainWindow(QMainWindow):
 
     def open_folder_dialog(self):
         """Open folder dialog"""
+        start_dir = self.current_project_path if self.current_project_path else str(Path.home())
         folder = QFileDialog.getExistingDirectory(
-            self, "Open Folder", str(Path.home())
+            self, "Open Folder", start_dir
         )
         if folder:
             self.file_browser.set_root_path(folder)
@@ -617,8 +680,9 @@ class PlainIDEMainWindow(QMainWindow):
         if not isinstance(editor, CodeEditor):
             return
 
+        start_dir = self.current_project_path if self.current_project_path else str(Path.home())
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save File", str(Path.home()),
+            self, "Save File", start_dir,
             "PLAIN Files (*.plain);;All Files (*)"
         )
         if file_path:

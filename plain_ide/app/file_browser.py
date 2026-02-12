@@ -7,7 +7,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import (
     QTreeView, QWidget, QVBoxLayout, QHBoxLayout, QMenu,
     QListWidget, QListWidgetItem, QPushButton, QLabel, QFrame,
-    QFileDialog
+    QFileDialog, QInputDialog, QMessageBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QDir
 from PyQt6.QtGui import QFileSystemModel, QAction
@@ -235,21 +235,41 @@ class FileBrowserWidget(QWidget):
     def _show_context_menu(self, position):
         """Show context menu for file operations"""
         index = self.tree_view.indexAt(position)
-        if not index.isValid():
-            return
-
-        path = self.model.filePath(index)
-        is_file = Path(path).is_file()
-        is_dir = Path(path).is_dir()
+        path = ""
+        target_dir = self._current_root
+        
+        if index.isValid():
+            path = self.model.filePath(index)
+            is_file = Path(path).is_file()
+            is_dir = Path(path).is_dir()
+            
+            if is_dir:
+                target_dir = path
+            elif is_file:
+                target_dir = str(Path(path).parent)
+        else:
+            # If clicked on empty space, use root
+            pass
 
         menu = QMenu(self)
 
-        if is_file:
+        # File operations
+        new_file_action = QAction("New File...", self)
+        new_file_action.triggered.connect(lambda: self._create_new_file(target_dir))
+        menu.addAction(new_file_action)
+
+        new_folder_action = QAction("New Folder...", self)
+        new_folder_action.triggered.connect(lambda: self._create_new_folder(target_dir))
+        menu.addAction(new_folder_action)
+        
+        menu.addSeparator()
+
+        if index.isValid() and Path(path).is_file():
             open_action = QAction("Open", self)
             open_action.triggered.connect(lambda: self.file_double_clicked.emit(path))
             menu.addAction(open_action)
 
-        if is_dir:
+        if index.isValid() and Path(path).is_dir():
             bookmark_action = QAction("Add to Bookmarks", self)
             bookmark_action.triggered.connect(lambda: self.add_bookmark(path))
             menu.addAction(bookmark_action)
@@ -257,11 +277,41 @@ class FileBrowserWidget(QWidget):
         menu.addSeparator()
 
         # Show in file manager
-        reveal_action = QAction("Reveal in File Manager", self)
-        reveal_action.triggered.connect(lambda: self._reveal_in_file_manager(path))
-        menu.addAction(reveal_action)
+        if path:
+            reveal_action = QAction("Reveal in File Manager", self)
+            reveal_action.triggered.connect(lambda: self._reveal_in_file_manager(path))
+            menu.addAction(reveal_action)
 
         menu.exec(self.tree_view.mapToGlobal(position))
+
+    def _create_new_file(self, target_dir: str):
+        """Create a new file in the target directory"""
+        filename, ok = QInputDialog.getText(self, "New File", "Enter filename:")
+        if ok and filename:
+            new_path = Path(target_dir) / filename
+            if new_path.exists():
+                QMessageBox.warning(self, "Error", "File already exists!")
+                return
+                
+            try:
+                new_path.touch()
+                self.file_double_clicked.emit(str(new_path))
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Could not create file: {e}")
+
+    def _create_new_folder(self, target_dir: str):
+        """Create a new folder in the target directory"""
+        foldername, ok = QInputDialog.getText(self, "New Folder", "Enter folder name:")
+        if ok and foldername:
+            new_path = Path(target_dir) / foldername
+            if new_path.exists():
+                QMessageBox.warning(self, "Error", "Folder already exists!")
+                return
+                
+            try:
+                new_path.mkdir()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Could not create folder: {e}")
 
     def _reveal_in_file_manager(self, path: str):
         """Open the file location in system file manager"""
