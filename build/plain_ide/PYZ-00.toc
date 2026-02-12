@@ -184,6 +184,7 @@
   ('quopri', '/usr/lib/python3.13/quopri.py', 'PYMODULE'),
   ('random', '/usr/lib/python3.13/random.py', 'PYMODULE'),
   ('selectors', '/usr/lib/python3.13/selectors.py', 'PYMODULE'),
+  ('shlex', '/usr/lib/python3.13/shlex.py', 'PYMODULE'),
   ('shutil', '/usr/lib/python3.13/shutil.py', 'PYMODULE'),
   ('signal', '/usr/lib/python3.13/signal.py', 'PYMODULE'),
   ('socket', '/usr/lib/python3.13/socket.py', 'PYMODULE'),
