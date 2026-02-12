@@ -162,6 +162,58 @@ class CodeEditor(QPlainTextEdit):
         if rect.contains(self.viewport().rect()):
             self.update_line_number_area_width(0)
     
+    def keyPressEvent(self, event):
+        """Handle key press events for auto-indentation"""
+        if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+            # Check previous line for indentation logic
+            cursor = self.textCursor()
+            block = cursor.block()
+            text = block.text()
+            
+            # Allow default behavior to create the new line
+            super().keyPressEvent(event)
+            
+            # Now determine indentation for the new line
+            cursor = self.textCursor()
+            prev_block = cursor.block().previous()
+            
+            if prev_block.isValid():
+                prev_text = prev_block.text().rstrip()
+                
+                # Calculate indentation of previous line
+                indent = len(prev_text) - len(prev_text.lstrip())
+                
+                # If previous line ends with ':', increase indent (for imports/records)
+                # OR if it starts with a block keyword (if, loop, task, etc.)
+                should_indent = False
+                
+                # Check for colons (imports, records)
+                if prev_text.endswith(':'):
+                    should_indent = True
+                else:
+                    # Check for keywords
+                    # Split into words to check first word
+                    parts = prev_text.strip().split()
+                    if parts:
+                        keyword = parts[0]
+                        block_keywords = {'task', 'loop', 'choose', 'choice', 'default', 'attempt', 'handle', 'ensure', 'record', 'else'}
+                        if keyword in block_keywords:
+                            should_indent = True
+                        elif keyword == 'if':
+                             # Only indent 'if' if it's not a single-line 'if ... then ...'
+                             # Heuristic: check if 'then' is present
+                             if ' then ' not in prev_text and not prev_text.endswith(' then'):
+                                 should_indent = True
+
+                if should_indent:
+                    indent += 4
+                
+                # Apply indentation
+                if indent > 0:
+                    cursor.insertText(" " * indent)
+        else:
+            super().keyPressEvent(event)
+
     def resizeEvent(self, event):
         """Handle resize events"""
         super().resizeEvent(event)

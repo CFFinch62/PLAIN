@@ -146,6 +146,24 @@ func (ds *DeliverStatement) String() string {
 	return out.String()
 }
 
+// SwapStatement represents: swap left, right
+type SwapStatement struct {
+	Token token.Token // the SWAP token
+	Left  Expression
+	Right Expression
+}
+
+func (ss *SwapStatement) statementNode()       {}
+func (ss *SwapStatement) TokenLiteral() string { return ss.Token.Literal }
+func (ss *SwapStatement) String() string {
+	var out strings.Builder
+	out.WriteString("swap ")
+	out.WriteString(ss.Left.String())
+	out.WriteString(", ")
+	out.WriteString(ss.Right.String())
+	return out.String()
+}
+
 // AbortStatement represents: abort "message"
 type AbortStatement struct {
 	Token   token.Token // the ABORT token

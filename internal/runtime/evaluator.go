@@ -48,6 +48,8 @@ func (e *Evaluator) Eval(node ast.Node, env *Environment) Value {
 		return e.evalFxdStatement(n, env)
 	case *ast.AssignStatement:
 		return e.evalAssignStatement(n, env)
+	case *ast.SwapStatement:
+		return e.evalSwapStatement(n, env)
 	case *ast.ExpressionStatement:
 		return e.Eval(n.Expression, env)
 	case *ast.BlockStatement:
@@ -317,6 +319,47 @@ func (e *Evaluator) evalIndexAssignment(expr *ast.IndexExpression, val Value, en
 		container.Fields[key.Val] = val
 	default:
 		return NewError("index assignment not supported for %s", left.Type())
+	}
+
+	return NULL
+}
+
+// evalSwapStatement handles swapping two variables
+func (e *Evaluator) evalSwapStatement(stmt *ast.SwapStatement, env *Environment) Value {
+	// 1. Get variable names/references
+	var leftName string
+	var rightName string
+
+	// For now, swap only supports simple identifiers
+	// In future we could support swapping array elements etc. by reusing evalIndexAssignment logic
+	if ident, ok := stmt.Left.(*ast.Identifier); ok {
+		leftName = ident.Value
+	} else {
+		return NewError("swap left side must be an identifier")
+	}
+
+	if ident, ok := stmt.Right.(*ast.Identifier); ok {
+		rightName = ident.Value
+	} else {
+		return NewError("swap right side must be an identifier")
+	}
+
+	// 2. Get current values
+	leftVal, ok := env.Get(leftName)
+	if !ok {
+		return NewError("undefined variable: %s", leftName)
+	}
+	rightVal, ok := env.Get(rightName)
+	if !ok {
+		return NewError("undefined variable: %s", rightName)
+	}
+
+	// 3. Set swapped values
+	if !env.Set(leftName, rightVal) {
+		return NewError("undefined variable: %s", leftName)
+	}
+	if !env.Set(rightName, leftVal) {
+		return NewError("undefined variable: %s", rightName)
 	}
 
 	return NULL

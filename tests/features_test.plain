@@ -1,0 +1,14 @@
+var a = 1
+var b = 2
+swap a, b
+if a != 2 or b != 1 then
+    abort "Swap failed"
+
+var t = time()
+var d = date()
+if type_of(t) != "integer" then abort "time() should return integer"
+if type_of(d) != "table" then abort "date() should return table, got " & type_of(d)
+
+if d.year < 2025 then abort "Year should be >= 2025"
+
+display("All tests passed")

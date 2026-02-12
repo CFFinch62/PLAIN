@@ -1329,12 +1329,43 @@ display(abs)             rem: /home/user/project/data.txt (full path)
 Pauses execution for the specified number of milliseconds.
 
 ```plain
-display("Starting...")
-sleep(1000)                 rem: wait 1 second
+display("Wait...")
+sleep(1000)         rem: Wait 1 second
 display("Done!")
 ```
 
-**Argument:** integer (milliseconds)
+**Arguments:** integer
+
+**Returns:** null
+
+---
+
+### `time()`
+
+Returns the current Unix timestamp in milliseconds.
+
+```plain
+var start = time()
+rem: ... do something ...
+var end = time()
+display("Elapsed:", end - start, "ms")
+```
+
+**Returns:** integer
+
+---
+
+### `date()`
+
+Returns a table containing the current date and time components.
+
+```plain
+var now = date()
+display(v"Date: {now.year}-{now.month}-{now.day}")
+display(v"Time: {now.hour}:{now.minute}:{now.second}")
+```
+
+**Returns:** table with keys: `year`, `month`, `day`, `hour`, `minute`, `second` (all integers)
 
 ---
 

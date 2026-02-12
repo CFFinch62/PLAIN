@@ -26,6 +26,7 @@ const (
 	USING
 	DELIVER
 	ABORT
+	SWAP
 
 	// Keywords - Variables
 	VAR
@@ -150,6 +151,7 @@ var keywords = map[string]TokenType{
 	"using":   USING,
 	"deliver": DELIVER,
 	"abort":   ABORT,
+	"swap":    SWAP,
 
 	// Variables
 	"var": VAR,
@@ -260,6 +262,8 @@ func (tt TokenType) String() string {
 		return "DELIVER"
 	case ABORT:
 		return "ABORT"
+	case SWAP:
+		return "SWAP"
 	case VAR:
 		return "VAR"
 	case FXD:

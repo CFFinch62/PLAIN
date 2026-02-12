@@ -1697,6 +1697,36 @@ func GetBuiltins() map[string]*BuiltinValue {
 				return NULL
 			},
 		},
+		// ============================================================
+		// Time and Date
+		// ============================================================
+		"time": {
+			Name: "time",
+			Fn: func(args ...Value) Value {
+				if len(args) != 0 {
+					return NewError("time() takes no arguments")
+				}
+				return NewInteger(time.Now().UnixMilli())
+			},
+		},
+		"date": {
+			Name: "date",
+			Fn: func(args ...Value) Value {
+				if len(args) != 0 {
+					return NewError("date() takes no arguments")
+				}
+				now := time.Now()
+				pairs := make(map[string]Value)
+				pairs["year"] = NewInteger(int64(now.Year()))
+				pairs["month"] = NewInteger(int64(now.Month()))
+				pairs["day"] = NewInteger(int64(now.Day()))
+				pairs["hour"] = NewInteger(int64(now.Hour()))
+				pairs["minute"] = NewInteger(int64(now.Minute()))
+				pairs["second"] = NewInteger(int64(now.Second()))
+				return &TableValue{Pairs: pairs}
+			},
+		},
+
 		"create_timer": {
 			Name: "create_timer",
 			Fn: func(args ...Value) Value {

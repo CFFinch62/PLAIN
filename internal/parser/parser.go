@@ -231,6 +231,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseDeliverStatement()
 	case token.ABORT:
 		return p.parseAbortStatement()
+	case token.SWAP:
+		return p.parseSwapStatement()
 	case token.EXIT:
 		return p.parseExitStatement()
 	case token.CONTINUE:
@@ -402,7 +404,7 @@ func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 			return nil
 		}
 
-		p.nextToken() // move past comma
+		p.nextToken()    // move past comma
 		p.skipNewlines() // Allow newline and indent after comma
 
 		list = append(list, p.parseExpression(LOWEST))
@@ -448,7 +450,7 @@ func (p *Parser) parseTableLiteral() ast.Expression {
 			return nil
 		}
 
-		p.nextToken() // move past comma
+		p.nextToken()    // move past comma
 		p.skipNewlines() // Allow newline and indent after comma
 	}
 }
@@ -709,6 +711,22 @@ func (p *Parser) parseAbortStatement() ast.Statement {
 
 	p.nextToken()
 	stmt.Message = p.parseExpression(LOWEST)
+
+	return stmt
+}
+
+func (p *Parser) parseSwapStatement() ast.Statement {
+	stmt := &ast.SwapStatement{Token: p.curToken}
+
+	p.nextToken()
+	stmt.Left = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.COMMA) {
+		return nil
+	}
+
+	p.nextToken()
+	stmt.Right = p.parseExpression(LOWEST)
 
 	return stmt
 }

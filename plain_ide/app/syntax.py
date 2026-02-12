@@ -44,11 +44,11 @@ class PlainHighlighter(QSyntaxHighlighter):
         syntax = self.syntax_theme
         
         # Keywords - structure
-        structure_keywords = r'\b(task|deliver|record|use|based on|with)\b'
+        structure_keywords = r'\b(task|deliver|record|use|based on|with|swap)\b'
         self.rules.append((re.compile(structure_keywords), self._create_format(syntax.keyword, bold=True)))
         
         # Keywords - control flow
-        control_keywords = r'\b(if|else|choose|choice|default|loop|from|to|step|in|while|until)\b'
+        control_keywords = r'\b(if|then|else|choose|choice|default|loop|from|to|step|in|while|until)\b'
         self.rules.append((re.compile(control_keywords), self._create_format(syntax.keyword, bold=True)))
         
         # Keywords - error handling
@@ -68,7 +68,7 @@ class PlainHighlighter(QSyntaxHighlighter):
         self.rules.append((re.compile(type_prefixes), self._create_format(syntax.type)))
         
         # Built-in functions
-        builtins = r'\b(display|input|len|type|toString|toNumber|toBoolean|abs|round|floor|ceil|min|max|random|append|remove|contains|keys|values|now|wait|sleep)\b'
+        builtins = r'\b(display|input|len|type|type_of|to_string|to_int|to_float|to_bool|abs|round|floor|ceil|min|max|random|append|remove|contains|keys|values|now|wait|sleep|time|date)\b'
         self.rules.append((re.compile(builtins), self._create_format(syntax.builtin)))
         
         # Boolean literals

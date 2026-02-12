@@ -319,6 +319,17 @@ x /= 4        rem: Divide and assign
 s &= "!"     rem: Concatenate and assign (strings)
 ```
 
+### Swapping Values
+
+You can swap the values of two variables using the `swap` statement:
+
+```plain
+var a = 1
+var b = 2
+swap a, b
+rem: Now a is 2, b is 1
+```
+
 ### Operators
 
 **Arithmetic**: `+`, `-`, `*`, `/`, `%` (modulo), `**` (power)

@@ -20,7 +20,7 @@
 
 ```
 task            deliver         abort
-with            using           based
+swap            with            using
 on              var             fxd
 as              if              then
 else            choose          choice
@@ -206,6 +206,9 @@ counter += 1
 total -= 5
 value *= 2
 text &= " more"
+
+rem: Swap Values
+swap a, b
 ```
 
 ---
@@ -351,6 +354,8 @@ get_extension(path) absolute_path(path)
 ### Basic Timing
 ```
 sleep(milliseconds)              rem: blocking pause
+time()                           rem: current timestamp (ms)
+date()                           rem: current date table
 ```
 
 ### Timers
