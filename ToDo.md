@@ -1,18 +1,48 @@
 # PLAIN Language and IDE To Do List
 
-## Language Issues
+## Current Language Issues
 
+## Current IDE Issues
 
-## IDE Issues
+## Future Language Enhancements (Standard Library)
 
-- Need to go through the syntax themes and group them as compatible with a given UI theme. If a syntax themes has any colors of items that is the same as the editor background color those items won't show. We need smart drop down listing based upon UI themes for syntax themes choices.
-- Need the New/Open/Save editing features in the toolbar to use currently opened project folder
-- Need to add context menu items for new file , new folder in the file/folder browser
+###Text Graphics Library (text_graphics)
+Goal: Terminal-based UI (TUI) capabilities. Implementation:
 
+Go Wrapper: Use a library like termbox-go or tcell in internal/runtime.
+Built-ins:
+text.clear()
+text.set_cursor(x, y)
+text.set_color(fg, bg)
+text.print(x, y, str)
+text.poll_event() (keyboard/mouse)
+###Minimal GUI Library (gui)
 
-## Future Enhacnements
+Goal: Simple windowing and widgets (like Python's Tkinter). Implementation:
 
-- Text graphics library
-- Minimal GUI library ( like Tkinter for Python)
-- Turtle graphics library
-- Networking library
+Go Wrapper: Use fyne or andlabs/ui (though Fyne is non-native look). Alternatively, valid web-view based UI (lorca).
+Built-ins:
+window = gui.create_window(title, width, height)
+button = gui.create_button(text, callback)
+gui.run()
+
+###Turtle Graphics (turtle)
+Goal: Educational drawing graphics. Implementation:
+
+Strategy: Could be built on top of the Minimal GUI library or ebiten (2D game lib).
+Built-ins:
+turtle.forward(dict)
+turtle.right(angle)
+turtle.penup(), turtle.pendown()
+
+###Networking Library (net)
+Goal: Basic TCP/UDP/HTTP support. Implementation:
+
+HTTP Client:
+net.http.get(url) -> returns content
+net.http.post(url, data)
+Socket (Low-level):
+socket = net.connect(host, port)
+socket.send(data)
+socket.receive(count)
+server = net.listen(port)
