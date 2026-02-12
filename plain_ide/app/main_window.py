@@ -12,6 +12,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QKeySequence, QIcon
 
+import sys
+import os
+
 from plain_ide.app.settings import SettingsManager
 from plain_ide.app.themes import ThemeManager
 from plain_ide.app.editor import CodeEditor
@@ -32,7 +35,7 @@ class PlainIDEMainWindow(QMainWindow):
         self.settings = settings
         self.theme_manager = theme_manager
         self.editors = {}  # path -> CodeEditor
-        self.debug_manager = DebugManager(self)
+        self.debug_manager = DebugManager(self, self.settings)
         self.current_project_path = None
         self._terminal_position_before_debug = None  # Track position before debug mode
         
@@ -47,6 +50,11 @@ class PlainIDEMainWindow(QMainWindow):
     def _setup_ui(self):
         """Set up the main UI layout"""
         self.setWindowTitle("PLAIN IDE")
+        
+        # Set window icon
+        icon_path = self._get_resource_path("images/plain_icon_256.png")
+        if icon_path and Path(icon_path).exists():
+            self.setWindowIcon(QIcon(icon_path))
         
         # Central widget with main layout
         central = QWidget()
@@ -290,6 +298,12 @@ class PlainIDEMainWindow(QMainWindow):
         stop_action.setShortcut("Shift+F5")
         stop_action.triggered.connect(self.terminal.stop_execution)
         run_menu.addAction(stop_action)
+
+        run_menu.addSeparator()
+
+        set_interpreter_action = QAction("Set Interpreter...", self)
+        set_interpreter_action.triggered.connect(self._show_interpreter_settings)
+        run_menu.addAction(set_interpreter_action)
 
         # Debug menu
         debug_menu = menubar.addMenu("&Debug")
@@ -881,6 +895,17 @@ class PlainIDEMainWindow(QMainWindow):
         # Run the file
         self.terminal.run_plain_file(editor.file_path)
 
+    def _show_interpreter_settings(self):
+        """Open settings dialog directly to the Runtime tab"""
+        dialog = SettingsDialog(self.settings, self.theme_manager, parent=self)
+        dialog.settings_applied.connect(self._apply_preferences_changes)
+        
+        # Switch to Runtime tab (index 4)
+        # 0=Editor, 1=Theme, 2=Terminal, 3=Shortcuts, 4=Runtime
+        dialog.tabs.setCurrentIndex(4)
+        
+        dialog.exec()
+
     def _show_quick_reference(self):
         """Show the PLAIN quick reference help viewer"""
         viewer = HelpViewer(parent=self, theme=self._get_compat_theme())
@@ -1099,4 +1124,23 @@ class PlainIDEMainWindow(QMainWindow):
         """Handle error from debugger"""
         self.terminal.write_line(error, self.theme_manager.get_current_theme().error)
         self.debug_panel.add_trace(f"Error: {error}")
+
+    def _get_resource_path(self, relative_path: str) -> str:
+        """Get absolute path to resource, works for dev and for PyInstaller"""
+        if getattr(sys, 'frozen', False):
+            # PyInstaller creates a temp folder and stores path in _MEIPASS,
+            # or for onedir mode, it's relative to executable location (sys._MEIPASS may not be set in onedir?)
+            # In onedir, sys._MEIPASS is NOT set usually, resources are next to exe?
+            # actually for onedir, sys._MEIPASS IS set if using --onedir? 
+            # Wait, for onedir, the files are just in the directory.
+            # But PyInstaller loader sets sys._MEIPASS even for onedir?
+            if hasattr(sys, '_MEIPASS'):
+                 base_path = sys._MEIPASS
+            else:
+                 base_path = os.path.dirname(sys.executable)
+        else:
+            base_path = str(Path(__file__).parent.parent.parent)
+
+        return str(Path(base_path) / relative_path)
+
 

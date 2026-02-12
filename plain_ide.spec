@@ -28,10 +28,23 @@ if themes_dir.exists():
     if gitkeep.exists():
         theme_datas.append((str(gitkeep), 'plain_ide/themes/syntax'))
 
+# Collect images
+images_dir = project_root / 'images'
+if images_dir.exists():
+    for img_file in images_dir.glob('*'):
+        if img_file.is_file():
+            theme_datas.append((str(img_file), 'images'))
+
+# Collect interpreter binary
+binaries = []
+plain_exe = project_root / 'plain'
+if plain_exe.exists():
+    binaries.append((str(plain_exe), '.'))  # Put in root of dist folder
+
 a = Analysis(
     ['plain_ide/main.py'],
     pathex=[],
-    binaries=[],
+    binaries=binaries,
     datas=theme_datas,
     hiddenimports=[
         'PyQt6.QtCore',
@@ -65,22 +78,29 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='plain-ide',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
-    console=False,  # No console window
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='marketing-website/images/plain_icon_256.png',  # Icon for the executable
+    icon='images/plain_icon_256.png',
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='plain-ide',
 )

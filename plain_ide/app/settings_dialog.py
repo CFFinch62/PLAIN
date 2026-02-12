@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
     QLabel, QSpinBox, QCheckBox, QComboBox, QLineEdit,
     QPushButton, QGroupBox, QFormLayout, QTreeWidget, QTreeWidgetItem,
-    QHeaderView, QFontComboBox
+    QHeaderView, QFontComboBox, QFileDialog
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFontDatabase
@@ -79,6 +79,9 @@ class SettingsDialog(QDialog):
 
         # Shortcuts tab
         self.tabs.addTab(self._create_shortcuts_tab(), "Shortcuts")
+
+        # Runtime tab
+        self.tabs.addTab(self._create_runtime_tab(), "Runtime")
 
         layout.addWidget(self.tabs)
 
@@ -243,6 +246,49 @@ class SettingsDialog(QDialog):
         layout.addWidget(tree)
         return tab
 
+    def _create_runtime_tab(self) -> QWidget:
+        """Create the runtime/interpreter settings tab"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        # Interpreter group
+        interpreter_group = QGroupBox("PLAIN Interpreter")
+        interpreter_layout = QVBoxLayout()
+
+        lbl = QLabel("Path to 'plain' executable:")
+        interpreter_layout.addWidget(lbl)
+
+        path_layout = QHBoxLayout()
+        self.interpreter_path_input = QLineEdit()
+        self.interpreter_path_input.setPlaceholderText("Auto-detect")
+        path_layout.addWidget(self.interpreter_path_input)
+
+        browse_btn = QPushButton("Browse...")
+        browse_btn.clicked.connect(self._browse_interpreter)
+        path_layout.addWidget(browse_btn)
+
+        interpreter_layout.addLayout(path_layout)
+        
+        info_lbl = QLabel("Leave empty to auto-detect the interpreter in your PATH or program directory.")
+        info_lbl.setWordWrap(True)
+        info_lbl.setStyleSheet("color: gray; font-style: italic;")
+        interpreter_layout.addWidget(info_lbl)
+
+        interpreter_group.setLayout(interpreter_layout)
+        layout.addWidget(interpreter_group)
+
+        layout.addStretch()
+        return tab
+
+    def _browse_interpreter(self):
+        """Open file dialog to select interpreter"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select PLAIN Interpreter", "",
+            "Executable (*);;All Files (*)"
+        )
+        if file_path:
+            self.interpreter_path_input.setText(file_path)
+
     def _load_current_settings(self):
         """Load current settings into the dialog"""
         s = self.settings_manager.settings
@@ -270,7 +316,12 @@ class SettingsDialog(QDialog):
 
         # Terminal
         self.terminal_font_input.setCurrentText(s.terminal.font_family)
+        # Terminal
+        self.terminal_font_input.setCurrentText(s.terminal.font_family)
         self.terminal_font_size_spin.setValue(s.terminal.font_size)
+
+        # Runtime
+        self.interpreter_path_input.setText(s.plain_interpreter_path)
 
     def _update_preview(self):
         """Update the theme preview swatch"""
@@ -332,8 +383,12 @@ class SettingsDialog(QDialog):
             self.theme_manager.set_syntax_theme(new_syntax_theme)
 
         # Terminal
+        # Terminal
         s.terminal.font_family = self.terminal_font_input.currentText()
         s.terminal.font_size = self.terminal_font_size_spin.value()
+
+        # Runtime
+        s.plain_interpreter_path = self.interpreter_path_input.text().strip()
 
         self.settings_manager.save()
 

@@ -1,8 +1,11 @@
 """Debug manager for PLAIN IDE - handles communication with the Go runtime debugger"""
 
-import json
+import shutil
+import sys
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, QProcess
+
+from plain_ide.app.settings import SettingsManager
 
 
 class DebugManager(QObject):
@@ -15,8 +18,9 @@ class DebugManager(QObject):
     output_received = pyqtSignal(str)
     error_received = pyqtSignal(str)
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, settings_manager: SettingsManager = None):
         super().__init__(parent)
+        self.settings = settings_manager
         self.process: QProcess = None
         self._debugging = False
         self._buffer = ""  # Buffer for partial JSON messages
@@ -30,7 +34,23 @@ class DebugManager(QObject):
         self.process.setWorkingDirectory(str(Path(__file__).parent.parent.parent))
 
         # Build command arguments
-        args = ["run", "./cmd/plain/", "--debug", file_path]
+        # Determine interpreter to use
+        interpreter = self._find_plain_interpreter()
+        if not interpreter:
+            self.error_received.emit("PLAIN interpreter not found. Please configure it in settings.")
+            return False
+
+        # Build command arguments
+        # If we found the 'plain' executable, use it directly
+        if interpreter.endswith("plain") or interpreter.endswith("plain.exe"):
+             args = [file_path, "--debug"]
+             program = interpreter
+        else:
+            # Fallback for dev environment (go run) if for some reason we want that
+            # But _find_plain_interpreter should return the binary path
+            args = ["run", "./cmd/plain/", "--debug", file_path]
+            program = "go"
+
         if breakpoints:
             bp_str = ",".join(str(line) for line in sorted(breakpoints))
             args.append(f"--breakpoints={bp_str}")
@@ -41,7 +61,7 @@ class DebugManager(QObject):
         self.process.finished.connect(self._on_finished)
 
         # Start the process
-        self.process.start("go", args)
+        self.process.start(program, args)
 
         if not self.process.waitForStarted(5000):
             self.error_received.emit("Failed to start debug process")
@@ -152,3 +172,36 @@ class DebugManager(QObject):
         """Check if debugging is active"""
         return self._debugging
 
+
+    def _find_plain_interpreter(self) -> str:
+        """Find the PLAIN interpreter"""
+        # Strategy 1: Check settings for configured path
+        if self.settings and self.settings.settings.plain_interpreter_path:
+            path = Path(self.settings.settings.plain_interpreter_path)
+            if path.exists():
+                return str(path)
+        
+        # Strategy 2: Check same directory as IDE executable (frozen)
+        if getattr(sys, 'frozen', False):
+            exe_dir = Path(sys.executable).parent
+            plain_exe = exe_dir / "plain"
+            if plain_exe.exists():
+                return str(plain_exe)
+        else:
+            # Strategy 3: Check development build location
+            # If running from source, look in project root/plain
+            dev_plain = Path(__file__).parent.parent.parent / "plain"
+            if dev_plain.exists():
+                return str(dev_plain)
+
+        # Strategy 4: Check PATH
+        plain_in_path = shutil.which("plain")
+        if plain_in_path:
+            return plain_in_path
+
+        # Fallback to 'go run' only if we are in source dev mode and go is available
+        # This preserves old behavior for development if 'plain' binary is missing
+        if not getattr(sys, 'frozen', False) and shutil.which("go"):
+            return "go" 
+
+        return None

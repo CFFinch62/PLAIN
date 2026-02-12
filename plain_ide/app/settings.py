@@ -110,6 +110,8 @@ class SettingsManager:
             settings.window = WindowSettings(**data['window'])
         if 'terminal' in data:
             settings.terminal = TerminalSettings(**data['terminal'])
+        if 'plain_interpreter_path' in data:
+            settings.plain_interpreter_path = data['plain_interpreter_path']
         if 'recent_files' in data:
             settings.recent_files = data['recent_files']
         if 'bookmarks' in data:
@@ -126,6 +128,7 @@ class SettingsManager:
             'theme': asdict(self.settings.theme),
             'window': asdict(self.settings.window),
             'terminal': asdict(self.settings.terminal),
+            'plain_interpreter_path': self.settings.plain_interpreter_path,
             'recent_files': self.settings.recent_files[:20],  # Keep last 20
             'bookmarks': self.settings.bookmarks,
             'session': asdict(self.settings.session),
