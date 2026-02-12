@@ -266,6 +266,7 @@ len(str) upper(str) lower(str) trim(str)
 split(str, delim) join(lst, sep) 
 substring(str, start, end) replace(str, old, new)
 contains(str, search) starts_with(str, prefix) ends_with(str, suffix)
+chr(code) ord(str)
 ```
 
 ### Math

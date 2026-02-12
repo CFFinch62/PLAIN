@@ -24,6 +24,7 @@ PLAIN — **Programming Language: Able, Intuitive, and Natural** — is a teachi
 14. [Modules and Imports](#modules-and-imports)
 15. [Debugging](#debugging)
 16. [Best Practices](#best-practices)
+17. [Advanced Console Output](#advanced-console-output)
 
 ---
 
@@ -48,14 +49,14 @@ PLAIN is a programming language built for **learning**. It was designed from the
 
 PLAIN makes the programmer's **intent** explicit:
 
-| PLAIN | Other Languages | Why? |
-|-------|----------------|------|
-| `task Greet with (name)` | `def greet(name)` | `with` means "procedure" — no return value |
-| `task Add using (a, b)` | `def add(a, b)` | `using` means "function" — must return a value |
-| `deliver result` | `return result` | Clearer metaphor for producing a value |
-| `fxd PI as float = 3.14` | `const PI = 3.14` | `fxd` (fixed) — explicit, memorable |
-| `rem: this is a comment` | `# this is a comment` | `rem:` (remark) — no ambiguity |
-| `attempt / handle / ensure` | `try / catch / finally` | Natural English words |
+| PLAIN                       | Other Languages         | Why?                                           |
+| --------------------------- | ----------------------- | ---------------------------------------------- |
+| `task Greet with (name)`    | `def greet(name)`       | `with` means "procedure" — no return value     |
+| `task Add using (a, b)`     | `def add(a, b)`         | `using` means "function" — must return a value |
+| `deliver result`            | `return result`         | Clearer metaphor for producing a value         |
+| `fxd PI as float = 3.14`    | `const PI = 3.14`       | `fxd` (fixed) — explicit, memorable            |
+| `rem: this is a comment`    | `# this is a comment`   | `rem:` (remark) — no ambiguity                 |
+| `attempt / handle / ensure` | `try / catch / finally` | Natural English words                          |
 
 ---
 
@@ -142,14 +143,14 @@ go run ./cmd/plain/
 
 ### REPL Commands
 
-| Command | Shortcut | Description |
-|---------|----------|-------------|
-| `:help` | `:h` | Show available commands |
-| `:quit` | `:q` | Exit the REPL |
-| `:clear` | `:c` | Clear the screen |
-| `:env` | `:e` | Show all current variables |
-| `:history` | `:hist` | Show command history |
-| `:reset` | `:r` | Reset environment (clear all variables) |
+| Command    | Shortcut | Description                             |
+| ---------- | -------- | --------------------------------------- |
+| `:help`    | `:h`     | Show available commands                 |
+| `:quit`    | `:q`     | Exit the REPL                           |
+| `:clear`   | `:c`     | Clear the screen                        |
+| `:env`     | `:e`     | Show all current variables              |
+| `:history` | `:hist`  | Show command history                    |
+| `:reset`   | `:r`     | Reset environment (clear all variables) |
 
 ### Example Session
 
@@ -186,39 +187,39 @@ go run ./cmd/plain-ide/
 
 ### Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| **File** | |
-| `Ctrl+N` | New file |
-| `Ctrl+O` | Open file |
-| `Ctrl+Shift+O` | Open folder |
-| `Ctrl+S` | Save |
-| `Ctrl+Shift+S` | Save as |
-| `Ctrl+Q` | Quit |
-| **Edit** | |
-| `Ctrl+Z` | Undo |
-| `Ctrl+Shift+Z` | Redo |
-| `Ctrl+X` | Cut |
-| `Ctrl+C` | Copy |
-| `Ctrl+V` | Paste |
-| `Ctrl+F` | Find |
-| `Ctrl+H` | Find and Replace |
-| `Ctrl+,` | Preferences |
-| **View** | |
-| `Ctrl+B` | Toggle file browser |
-| `` Ctrl+` `` | Toggle terminal |
-| `Ctrl+D` | Toggle debug panel |
-| **Run** | |
-| `F5` | Run program |
-| `Shift+F5` | Stop program |
-| **Debug** | |
-| `F6` | Start debugging |
-| `F9` | Toggle breakpoint |
-| `F10` | Step over |
-| `F11` | Step into |
-| `F8` | Continue |
-| **Help** | |
-| `F1` | Quick reference |
+| Shortcut       | Action              |
+| -------------- | ------------------- |
+| **File**       |                     |
+| `Ctrl+N`       | New file            |
+| `Ctrl+O`       | Open file           |
+| `Ctrl+Shift+O` | Open folder         |
+| `Ctrl+S`       | Save                |
+| `Ctrl+Shift+S` | Save as             |
+| `Ctrl+Q`       | Quit                |
+| **Edit**       |                     |
+| `Ctrl+Z`       | Undo                |
+| `Ctrl+Shift+Z` | Redo                |
+| `Ctrl+X`       | Cut                 |
+| `Ctrl+C`       | Copy                |
+| `Ctrl+V`       | Paste               |
+| `Ctrl+F`       | Find                |
+| `Ctrl+H`       | Find and Replace    |
+| `Ctrl+,`       | Preferences         |
+| **View**       |                     |
+| `Ctrl+B`       | Toggle file browser |
+| `` Ctrl+` ``   | Toggle terminal     |
+| `Ctrl+D`       | Toggle debug panel  |
+| **Run**        |                     |
+| `F5`           | Run program         |
+| `Shift+F5`     | Stop program        |
+| **Debug**      |                     |
+| `F6`           | Start debugging     |
+| `F9`           | Toggle breakpoint   |
+| `F10`          | Step over           |
+| `F11`          | Step into           |
+| `F8`           | Continue            |
+| **Help**       |                     |
+| `F1`           | Quick reference     |
 
 ### IDE Features
 
@@ -250,12 +251,12 @@ Usage:
 
 These flags are useful for understanding how PLAIN processes your code:
 
-| Flag | Description |
-|------|-------------|
-| `-lex` | Shows how the lexer breaks your code into tokens |
-| `-parse` | Shows the abstract syntax tree (AST) the parser builds |
+| Flag       | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| `-lex`     | Shows how the lexer breaks your code into tokens             |
+| `-parse`   | Shows the abstract syntax tree (AST) the parser builds       |
 | `-analyze` | Runs semantic analysis to check for errors without executing |
-| `--debug` | Runs in debug mode with breakpoint support |
+| `--debug`  | Runs in debug mode with breakpoint support                   |
 
 ---
 
@@ -275,14 +276,14 @@ fxd PI as float = 3.14   rem: Constant — cannot be changed
 
 PLAIN has six data types:
 
-| Type | Keyword | Prefix | Examples |
-|------|---------|--------|----------|
-| Integer | `integer` | `int` | `42`, `-7`, `0` |
-| Float | `float` | `flt` | `3.14`, `-0.5` |
-| String | `string` | `str` | `"hello"`, `""` |
-| Boolean | `boolean` | `bln` | `true`, `false` |
-| List | `list` | `lst` | `[1, 2, 3]` |
-| Table | `table` | `tbl` | `{"key": "value"}` |
+| Type    | Keyword   | Prefix | Examples           |
+| ------- | --------- | ------ | ------------------ |
+| Integer | `integer` | `int`  | `42`, `-7`, `0`    |
+| Float   | `float`   | `flt`  | `3.14`, `-0.5`     |
+| String  | `string`  | `str`  | `"hello"`, `""`    |
+| Boolean | `boolean` | `bln`  | `true`, `false`    |
+| List    | `list`    | `lst`  | `[1, 2, 3]`        |
+| Table   | `table`   | `tbl`  | `{"key": "value"}` |
 
 ### Type Inference with Prefixes
 
@@ -643,11 +644,11 @@ use:
 
 ### Access Patterns
 
-| Import Level | Access Pattern |
-|-------------|----------------|
-| Assembly | `math.geometry.CircleArea()` |
-| Module | `geometry.CircleArea()` |
-| Task | `CircleArea()` |
+| Import Level | Access Pattern               |
+| ------------ | ---------------------------- |
+| Assembly     | `math.geometry.CircleArea()` |
+| Module       | `geometry.CircleArea()`      |
+| Task         | `CircleArea()`               |
 
 ---
 
@@ -714,6 +715,46 @@ var names = ["Alice", "Bob", "Charlie"]
 var scores = [95, 87, 92]
 loop i from 0 to len(names) - 1
     display(names[i] & ": " & scores[i])
+```
+
+---
+
+---
+
+## Advanced Console Output
+
+### Writing Without Newlines
+
+The standard `display()` function always prints a newline at the end. For advanced output like progress bars, you can write directly to standard output:
+
+```plain
+rem: Open stdout in append mode
+var stdout = open("/dev/stdout", "a")
+
+rem: Write without newline
+write(stdout, "Loading...")
+sleep(1000)
+write(stdout, " Done!\n")
+
+close(stdout)
+```
+
+### Overwriting Lines (Progress Bars)
+
+Use the carriage return character `chr(13)` to move the cursor back to the start of the line:
+
+```plain
+var stdout = open("/dev/stdout", "a")
+var total = 100
+
+loop i from 0 to total
+    rem: chr(13) moves cursor to start
+    var bar = chr(13) & "Progress: " & i & "%"
+    write(stdout, bar)
+    sleep(50)
+
+write(stdout, "\n")
+close(stdout)
 ```
 
 ---

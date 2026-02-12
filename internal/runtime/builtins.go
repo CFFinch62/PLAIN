@@ -300,6 +300,35 @@ func GetBuiltins() map[string]*BuiltinValue {
 				return NewString(strings.TrimSpace(str.Val))
 			},
 		},
+		"chr": {
+			Name: "chr",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("chr() takes exactly 1 argument")
+				}
+				code, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("chr() argument must be an integer")
+				}
+				return NewString(string(rune(code.Val)))
+			},
+		},
+		"ord": {
+			Name: "ord",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("ord() takes exactly 1 argument")
+				}
+				str, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("ord() argument must be a string")
+				}
+				if len(str.Val) == 0 {
+					return NewError("ord() argument cannot be empty")
+				}
+				return NewInteger(int64([]rune(str.Val)[0]))
+			},
+		},
 		"split": {
 			Name: "split",
 			Fn: func(args ...Value) Value {

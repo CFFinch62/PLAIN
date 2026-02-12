@@ -388,6 +388,40 @@ display(ends_with("Hello", "LO"))       rem: false
 
 ---
 
+### `chr(code)`
+
+Returns the string containing the character with the given integer code point.
+
+```plain
+display(chr(65))            rem: "A"
+display(chr(13))            rem: "\r" (carriage return)
+```
+
+**Arguments:**
+- `code` — integer code point
+
+**Returns:** string
+
+---
+
+### `ord(str)`
+
+Returns the integer code point of the first character in the string.
+
+```plain
+display(ord("A"))           rem: 65
+display(ord("\r"))          rem: 13
+```
+
+**Arguments:**
+- `str` — string (non-empty)
+
+**Returns:** integer
+
+**Errors:** If the string is empty.
+
+---
+
 ## 5. Math — Basic
 
 ### `abs(n)`
@@ -1020,14 +1054,14 @@ var file = open("data.txt", "r")
 
 **Modes:**
 
-| Mode | Description |
-|------|-------------|
-| `"r"` | Read (text) — file must exist |
-| `"w"` | Write (text) — creates or truncates |
-| `"a"` | Append (text) — creates or appends |
-| `"rb"` | Read (binary) |
-| `"wb"` | Write (binary) |
-| `"ab"` | Append (binary) |
+| Mode   | Description                         |
+| ------ | ----------------------------------- |
+| `"r"`  | Read (text) — file must exist       |
+| `"w"`  | Write (text) — creates or truncates |
+| `"a"`  | Append (text) — creates or appends  |
+| `"rb"` | Read (binary)                       |
+| `"wb"` | Write (binary)                      |
+| `"ab"` | Append (binary)                     |
 
 **Returns:** file handle
 
@@ -1447,23 +1481,23 @@ task OnTick with (timer, elapsed)
 
 ## Quick Reference Table
 
-| Category | Functions |
-|----------|-----------|
-| **Console** | `display`, `get` |
-| **Types** | `is_int`, `is_float`, `is_string`, `is_bool`, `is_list`, `is_table`, `is_null`, `type_of` |
-| **Conversion** | `to_int`, `to_float`, `to_string`, `to_bool` |
-| **Strings** | `len`, `upper`, `lower`, `trim`, `split`, `join`, `substring`, `replace`, `contains`, `starts_with`, `ends_with` |
-| **Math** | `abs`, `sqrt`, `sqr`, `pow`, `round`, `floor`, `ceil`, `min`, `max`, `mod` |
-| **Trigonometry** | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2` |
-| **Logarithms** | `log`, `log10`, `log2`, `exp` |
-| **Random** | `random`, `random_int`, `random_choice` |
-| **Lists** | `len`, `append`, `insert`, `remove`, `pop`, `sort`, `reverse`, `contains` |
-| **Tables** | `len`, `keys`, `values`, `has_key`, `remove` |
-| **Files (simple)** | `read_file`, `write_file`, `append_file`, `read_lines`, `write_lines`, `read_binary`, `write_binary`, `append_binary` |
-| **Files (handle)** | `open`, `close`, `read`, `read_line`, `read_bytes`, `write`, `write_line` |
-| **File system** | `file_exists`, `delete_file`, `rename_file`, `copy_file`, `file_size`, `dir_exists`, `create_dir`, `delete_dir`, `list_dir` |
-| **Paths** | `join_path`, `split_path`, `get_extension`, `absolute_path` |
-| **Timing** | `sleep`, `create_timer`, `create_timeout`, `start_timer`, `stop_timer`, `cancel_timer`, `wait_for_events`, `run_events`, `stop_events` |
+| Category           | Functions                                                                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Console**        | `display`, `get`                                                                                                                       |
+| **Types**          | `is_int`, `is_float`, `is_string`, `is_bool`, `is_list`, `is_table`, `is_null`, `type_of`                                              |
+| **Conversion**     | `to_int`, `to_float`, `to_string`, `to_bool`                                                                                           |
+| **Strings**        | `len`, `upper`, `lower`, `trim`, `split`, `join`, `substring`, `replace`, `contains`, `starts_with`, `ends_with`                       |
+| **Math**           | `abs`, `sqrt`, `sqr`, `pow`, `round`, `floor`, `ceil`, `min`, `max`, `mod`                                                             |
+| **Trigonometry**   | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`                                                                                   |
+| **Logarithms**     | `log`, `log10`, `log2`, `exp`                                                                                                          |
+| **Random**         | `random`, `random_int`, `random_choice`                                                                                                |
+| **Lists**          | `len`, `append`, `insert`, `remove`, `pop`, `sort`, `reverse`, `contains`                                                              |
+| **Tables**         | `len`, `keys`, `values`, `has_key`, `remove`                                                                                           |
+| **Files (simple)** | `read_file`, `write_file`, `append_file`, `read_lines`, `write_lines`, `read_binary`, `write_binary`, `append_binary`                  |
+| **Files (handle)** | `open`, `close`, `read`, `read_line`, `read_bytes`, `write`, `write_line`                                                              |
+| **File system**    | `file_exists`, `delete_file`, `rename_file`, `copy_file`, `file_size`, `dir_exists`, `create_dir`, `delete_dir`, `list_dir`            |
+| **Paths**          | `join_path`, `split_path`, `get_extension`, `absolute_path`                                                                            |
+| **Timing**         | `sleep`, `create_timer`, `create_timeout`, `start_timer`, `stop_timer`, `cancel_timer`, `wait_for_events`, `run_events`, `stop_events` |
 
 ---
 
