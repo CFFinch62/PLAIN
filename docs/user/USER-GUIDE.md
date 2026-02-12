@@ -187,39 +187,40 @@ go run ./cmd/plain-ide/
 
 ### Keyboard Shortcuts
 
-| Shortcut       | Action              |
-| -------------- | ------------------- |
-| **File**       |                     |
-| `Ctrl+N`       | New file            |
-| `Ctrl+O`       | Open file           |
-| `Ctrl+Shift+O` | Open folder         |
-| `Ctrl+S`       | Save                |
-| `Ctrl+Shift+S` | Save as             |
-| `Ctrl+Q`       | Quit                |
-| **Edit**       |                     |
-| `Ctrl+Z`       | Undo                |
-| `Ctrl+Shift+Z` | Redo                |
-| `Ctrl+X`       | Cut                 |
-| `Ctrl+C`       | Copy                |
-| `Ctrl+V`       | Paste               |
-| `Ctrl+F`       | Find                |
-| `Ctrl+H`       | Find and Replace    |
-| `Ctrl+,`       | Preferences         |
-| **View**       |                     |
-| `Ctrl+B`       | Toggle file browser |
-| `` Ctrl+` ``   | Toggle terminal     |
-| `Ctrl+D`       | Toggle debug panel  |
-| **Run**        |                     |
-| `F5`           | Run program         |
-| `Shift+F5`     | Stop program        |
-| **Debug**      |                     |
-| `F6`           | Start debugging     |
-| `F9`           | Toggle breakpoint   |
-| `F10`          | Step over           |
-| `F11`          | Step into           |
-| `F8`           | Continue            |
-| **Help**       |                     |
-| `F1`           | Quick reference     |
+| Shortcut       | Action               |
+| -------------- | -------------------- |
+| **File**       |                      |
+| `Ctrl+N`       | New file             |
+| `Ctrl+O`       | Open file            |
+| `Ctrl+Shift+O` | Open folder          |
+| `Ctrl+S`       | Save                 |
+| `Ctrl+Shift+S` | Save as              |
+| `Ctrl+Q`       | Quit                 |
+| **Edit**       |                      |
+| `Ctrl+Z`       | Undo                 |
+| `Ctrl+Shift+Z` | Redo                 |
+| `Ctrl+X`       | Cut                  |
+| `Ctrl+C`       | Copy                 |
+| `Ctrl+V`       | Paste                |
+| `Ctrl+F`       | Find                 |
+| `Ctrl+H`       | Find and Replace     |
+| `Ctrl+,`       | Preferences          |
+| **View**       |                      |
+| `Ctrl+B`       | Toggle file browser  |
+| `` Ctrl+` ``   | Toggle terminal      |
+| `Ctrl+D`       | Toggle debug panel   |
+| **Run**        |                      |
+| `F5`           | Run program          |
+| `Ctrl+F5`      | Run in External Term |
+| `Shift+F5`     | Stop program         |
+| **Debug**      |                      |
+| `F6`           | Start debugging      |
+| `F9`           | Toggle breakpoint    |
+| `F10`          | Step over            |
+| `F11`          | Step into            |
+| `F8`           | Continue             |
+| **Help**       |                      |
+| `F1`           | Quick reference      |
 
 ### IDE Features
 

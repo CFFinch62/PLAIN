@@ -57,6 +57,7 @@ class TerminalSettings:
     font_size: int = 11
     visible: bool = True
     position: str = "bottom"  # "bottom" or "right"
+    external_terminal_command: str = ""  # Command template for external terminal
 
 
 @dataclass

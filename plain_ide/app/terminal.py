@@ -193,6 +193,26 @@ class TerminalWidget(QWidget):
     
     def write(self, text: str, color: str = None):
         """Write text to terminal"""
+        
+        # Check for clear screen sequence: \033[2J\033[H or just \033[2J
+        # The runtime emits "\033[2J\033[H"
+        
+        # Simple detection for now - if text contains the sequence
+        # We might need a proper ANSI parser later for more complex codes
+        
+        if "\033[2J" in text or "\x1b[2J" in text:
+            self.clear()
+            # Remove the sequence from text to avoid printing it?
+            # Or just print the rest? 
+            # If we clear, we probably want to start fresh.
+            # Let's remove the clear sequence parts and print the rest if any.
+            text = text.replace("\033[2J", "").replace("\x1b[2J", "")
+            text = text.replace("\033[H", "").replace("\x1b[H", "")
+            
+            # If nothing left, valid clear
+            if not text:
+                return
+
         cursor = self.output.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
 
@@ -247,6 +267,133 @@ class TerminalWidget(QWidget):
 
         # Enable input so user can provide input when program requests it
         self.output.enable_input()
+    
+    def run_external_file(self, file_path: str):
+        """Run a PLAIN file in an external terminal"""
+        plain_executable = self._find_plain_interpreter()
+        if not plain_executable:
+             self.write_line("[ERROR] PLAIN interpreter not found!", self.theme.error if self.theme else None)
+             return
+
+        # Get configured command or auto-detect
+        command_template = ""
+        if self.settings:
+            command_template = self.settings.settings.terminal.external_terminal_command
+        
+        if not command_template:
+            # Auto-detect logic (duplicate of settings dialog for fallback)
+            import sys
+            import shutil
+            
+            if sys.platform == "win32":
+                command_template = "start cmd /k"
+            elif sys.platform == "darwin":
+                command_template = "open -a Terminal"
+            else:
+                 terminals = [
+                    ("gnome-terminal", "gnome-terminal --"),
+                    ("konsole", "konsole -e"),
+                    ("xfce4-terminal", "xfce4-terminal -x"),
+                    ("x-terminal-emulator", "x-terminal-emulator -e"),
+                    ("xterm", "xterm -e"),
+                    ("urxvt", "urxvt -e"),
+                ]
+                 for term, cmd in terminals:
+                    if shutil.which(term):
+                        command_template = cmd
+                        break
+            
+            # Save detected command if found
+            if command_template and self.settings:
+                self.settings.settings.terminal.external_terminal_command = command_template
+                self.settings.save()
+        
+        if not command_template:
+             self.write_line("[ERROR] No supported external terminal found. Please configure one in Preferences.", self.theme.error if self.theme else None)
+             return
+
+        # Prepare the command to run
+        # We need to keep the window open after execution
+        import sys
+        import shlex
+        
+        full_command = []
+        
+        # Parse the template
+        # If {command} placeholder exists, use it. Otherwise append command to end.
+        if "{command}" in command_template:
+            # complex template
+            pass # TODO: Implement complex template parsing if needed
+        
+        # Simpler approach: split template into parts
+        cmd_parts = shlex.split(command_template)
+        full_command.extend(cmd_parts)
+        
+        # Construct the minimal command to run the script and pause
+        # e.g. plain /path/to/file.plain
+        
+        if sys.platform == "win32":
+            # Windows: cmd /k keeps window open
+            # command_template is likely "start cmd /k"
+            # We want: start cmd /k "plain file.plain"
+            # verify if start is in use
+            if cmd_parts[0] == "start":
+                 # start is a shell command, not an executable
+                 # usage: start "title" program args...
+                 # But subprocess.Popen with shell=True handles it better or just executing command
+                 pass
+            
+            # For simplicity on Windows with "start cmd /k":
+            # We construct the arguments for cmd
+            # cmd /k plain file.plain
+            
+            # Implementation for Windows "start cmd /k" specifically is tricky via Popen list
+            # simpler to use shell=True with string
+            win_cmd = f'{command_template} "{plain_executable}" "{file_path}"'
+            subprocess.Popen(win_cmd, shell=True)
+            
+        elif sys.platform == "darwin":
+            # macOS: open -a Terminal /path/to/script
+            # We need a wrapper script because we can't easily pass args to Terminal.app directly for a command
+            # The standard way is to create a temp script
+            import tempfile
+            import stat
+            
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.command', delete=False) as f:
+                f.write(f'#!/bin/bash\n')
+                f.write(f'"{plain_executable}" "{file_path}"\n')
+                f.write(f'read -p "Press Enter to close..."\n')
+                temp_script = f.name
+            
+            os.chmod(temp_script, os.stat(temp_script).st_mode | stat.S_IEXEC)
+            subprocess.Popen(["open", "-a", "Terminal", temp_script])
+            
+        else:
+            # Linux
+            # Most terminals expect: terminal -e "command arg1 arg2" OR terminal -e command arg1 arg2
+            # And we need to wrap it in bash to pause: bash -c "plain file; read -p ..."
+            
+            # wrapper command
+            wrapper_cmd = f'"{plain_executable}" "{file_path}"; echo; read -p "Press Enter to close..."'
+            
+            # If the terminal command ends with something that expects a single string arg (like xterm -e "cmd")
+            # it varies. 
+            # gnome-terminal -- bash -c "..."
+            # xterm -e bash -c "..."
+            
+            # We will assume the configured command is the prefix, e.g. "gnome-terminal --"
+            # and we append ["bash", "-c", wrapper_cmd]
+            
+            run_args = ["bash", "-c", wrapper_cmd]
+            
+            final_cmd = list(cmd_parts)
+            final_cmd.extend(run_args)
+            
+            try:
+                subprocess.Popen(final_cmd)
+                self.write_line(f"[>] Launched external terminal: {' '.join(final_cmd)}")
+            except Exception as e:
+                self.write_line(f"[ERROR] Failed to launch terminal: {e}", self.theme.error if self.theme else None)
     
     def _find_plain_interpreter(self) -> str:
         """Find the PLAIN interpreter using multiple strategies"""

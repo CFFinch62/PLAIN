@@ -220,6 +220,31 @@ class SettingsDialog(QDialog):
         font_group.setLayout(font_layout)
         layout.addWidget(font_group)
 
+        # External Terminal group
+        ext_term_group = QGroupBox("External Terminal")
+        ext_term_layout = QVBoxLayout()
+
+        lbl = QLabel("Command to launch external terminal:")
+        ext_term_layout.addWidget(lbl)
+
+        cmd_layout = QHBoxLayout()
+        self.ext_term_input = QLineEdit()
+        self.ext_term_input.setPlaceholderText("e.g. gnome-terminal --, xterm -e, etc.")
+        cmd_layout.addWidget(self.ext_term_input)
+
+        detect_btn = QPushButton("Auto-detect")
+        detect_btn.clicked.connect(self._auto_detect_terminal)
+        cmd_layout.addWidget(detect_btn)
+
+        ext_term_layout.addLayout(cmd_layout)
+
+        help_lbl = QLabel("Use {command} as placeholder for the command to run.\nExample: gnome-terminal -- {command}")
+        help_lbl.setStyleSheet("color: gray; font-style: italic;")
+        ext_term_layout.addWidget(help_lbl)
+
+        ext_term_group.setLayout(ext_term_layout)
+        layout.addWidget(ext_term_group)
+
         layout.addStretch()
         return tab
 
@@ -319,6 +344,7 @@ class SettingsDialog(QDialog):
         # Terminal
         self.terminal_font_input.setCurrentText(s.terminal.font_family)
         self.terminal_font_size_spin.setValue(s.terminal.font_size)
+        self.ext_term_input.setText(s.terminal.external_terminal_command)
 
         # Runtime
         self.interpreter_path_input.setText(s.plain_interpreter_path)
@@ -386,6 +412,39 @@ class SettingsDialog(QDialog):
         # Terminal
         s.terminal.font_family = self.terminal_font_input.currentText()
         s.terminal.font_size = self.terminal_font_size_spin.value()
+        s.terminal.external_terminal_command = self.ext_term_input.text().strip()
+
+    def _auto_detect_terminal(self):
+        """Auto-detect the best external terminal command"""
+        import shutil
+        import sys
+        
+        command = ""
+        
+        if sys.platform == "win32":
+            command = "start cmd /k"
+        elif sys.platform == "darwin":
+            command = "open -a Terminal"
+        else:
+            # Linux/Unix
+            terminals = [
+                ("gnome-terminal", "gnome-terminal --"),
+                ("konsole", "konsole -e"),
+                ("xfce4-terminal", "xfce4-terminal -x"),
+                ("x-terminal-emulator", "x-terminal-emulator -e"),
+                ("xterm", "xterm -e"),
+                ("urxvt", "urxvt -e"),
+            ]
+            
+            for term, cmd_template in terminals:
+                if shutil.which(term):
+                    command = cmd_template
+                    break
+        
+        if command:
+            self.ext_term_input.setText(command)
+        else:
+            self.ext_term_input.setPlaceholderText("No supported terminal found")
 
         # Runtime
         s.plain_interpreter_path = self.interpreter_path_input.text().strip()

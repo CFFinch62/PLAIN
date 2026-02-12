@@ -293,6 +293,11 @@ class PlainIDEMainWindow(QMainWindow):
         run_action.triggered.connect(self.run_current_file)
         run_menu.addAction(run_action)
 
+        run_ext_action = QAction(self._std_icon(QStyle.StandardPixmap.SP_ComputerIcon), "Run in External Terminal", self)
+        run_ext_action.setShortcut("Ctrl+F5")
+        run_ext_action.triggered.connect(self.run_current_file_external)
+        run_menu.addAction(run_ext_action)
+
         stop_action = QAction(self._std_icon(QStyle.StandardPixmap.SP_MediaStop), "Stop", self)
         stop_action.setShortcut("Shift+F5")
         stop_action.triggered.connect(self.terminal.stop_execution)
@@ -958,6 +963,41 @@ class PlainIDEMainWindow(QMainWindow):
 
         # Run the file
         self.terminal.run_plain_file(editor.file_path)
+
+    def run_current_file_external(self):
+        """Run the current PLAIN file in an external terminal"""
+        editor = self.tab_widget.currentWidget()
+        if not isinstance(editor, CodeEditor):
+            QMessageBox.warning(self, "No File", "No file is open to run.")
+            return
+
+        # Save first if modified
+        if editor.is_modified():
+            if editor.file_path:
+                self._save_editor(editor, editor.file_path)
+                # If still modified (save failed), abort
+                if editor.is_modified():
+                    return
+            else:
+                reply = QMessageBox.question(
+                    self, "Save File?",
+                    "File must be saved before running. Save now?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.save_file_as()
+                    # If still no path (cancelled), abort
+                    if not editor.file_path:
+                        return
+                else:
+                    return
+
+        if not editor.file_path:
+            QMessageBox.warning(self, "No File", "Please save the file first.")
+            return
+
+        # Run the file externally
+        self.terminal.run_external_file(editor.file_path)
 
     def _show_interpreter_settings(self):
         """Open settings dialog directly to the Runtime tab"""

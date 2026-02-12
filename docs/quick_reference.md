@@ -261,6 +261,7 @@ var intCount = 10    rem: This is not part of the note block
 ```
 display(value)              rem: output to console
 get(prompt)                 rem: input from user
+clear()                     rem: clear console screen
 ```
 
 ### String

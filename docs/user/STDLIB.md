@@ -64,6 +64,25 @@ display("Hello, " & name)
 
 ---
 
+### `clear()`
+
+Clears the console screen and moves the cursor to the top-left corner.
+
+```plain
+display("Now you see me...")
+sleep(1000)
+clear()
+display("Now you don't!")
+```
+
+**Arguments:** None.
+
+**Returns:** null
+
+**Compatibility:** Works in the PLAIN IDE internal terminal and most external terminals (Linux, macOS, Windows 10+).
+
+---
+
 ## 2. Type Checking
 
 All type-checking functions take exactly one argument and return a boolean.

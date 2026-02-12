@@ -65,6 +65,16 @@ func GetBuiltins() map[string]*BuiltinValue {
 				return NewString("")
 			},
 		},
+		"clear": {
+			Name: "clear",
+			Fn: func(args ...Value) Value {
+				// ANSI escape code to clear screen and move cursor home
+				// \033[2J clears the entire screen
+				// \033[H moves cursor to top-left
+				fmt.Print("\033[2J\033[H")
+				return NULL
+			},
+		},
 
 		// ============================================================
 		// Type Checking
