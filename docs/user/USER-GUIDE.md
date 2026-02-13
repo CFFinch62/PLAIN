@@ -45,6 +45,21 @@ PLAIN is a programming language built for **learning**. It was designed from the
 - **Self-learners** who want a friendly introduction to programming
 - **Anyone** who appreciates clear, readable code
 
+### What Can You Build?
+
+PLAIN is designed for learning, but it's also capable of real-world applications:
+
+- **Console applications** — Interactive programs with user input and output
+- **File processing** — Read, write, and manipulate text and binary files
+- **Data analysis** — Process CSV files, calculate statistics, generate reports
+- **Serial communication** — Interface with GPS receivers, sensors, and instruments via RS-232/RS-485
+- **Network applications** — TCP/UDP clients and servers for data acquisition and communication
+- **Marine electronics** — Read NMEA 0183 data from GPS, AIS, and other marine instruments
+- **Automation scripts** — Automate repetitive tasks with file operations and timers
+- **Educational projects** — Learn programming concepts with immediate, practical applications
+
+With 93+ built-in functions covering strings, math, files, networking, serial I/O, and more, PLAIN grows with you from "Hello, World!" to real hardware interfacing.
+
 ### Design Philosophy
 
 PLAIN makes the programmer's **intent** explicit:
@@ -491,6 +506,67 @@ display(is_int(42))            rem: true
 display(is_string("hi"))      rem: true
 display(is_list([1,2]))       rem: true
 ```
+
+### Working with Files
+
+```plain
+rem: Simple file operations
+var content = read_file("data.txt")
+write_file("output.txt", "Hello, file!")
+var lines = read_lines("data.txt")
+
+rem: Handle-based file I/O (for more control)
+var file = open("data.txt", "r")
+var line = read_line(file)
+close(file)
+```
+
+### Serial Port Communication
+
+```plain
+rem: List available ports
+var ports = serial_ports()
+display(ports)
+
+rem: Open a serial port (GPS receiver example)
+var gps = serial_open("/dev/ttyUSB0", 4800)
+serial_set_timeout(gps, 5000)  rem: 5 second timeout
+
+rem: Read NMEA sentences
+var sentence = serial_read_line(gps)
+display(sentence)
+
+serial_close(gps)
+```
+
+### Network Communication
+
+```plain
+rem: TCP client (connect to NMEA server)
+var conn = net_connect("192.168.1.100", 10110)
+net_set_timeout(conn, 5000)
+
+rem: Read data
+var data = net_read_line(conn)
+display(data)
+
+rem: Send data
+net_write(conn, "Hello, server!\r\n")
+
+net_close(conn)
+
+rem: TCP server
+var listener = net_listen(8080)
+display("Server listening on port 8080")
+var client = net_accept(listener)  rem: Blocks until connection
+net_write(client, "Welcome!\r\n")
+net_close(client)
+net_close(listener)
+```
+
+**Handle Types:** Functions like `open()`, `serial_open()`, and `net_connect()` return **handle** values. These are opaque types that represent open resources. Always close handles when done to free system resources.
+
+See [STDLIB.md](STDLIB.md) for complete documentation of all I/O functions.
 
 ---
 

@@ -351,6 +351,83 @@ get_extension(path) absolute_path(path)
 
 ---
 
+## Serial Port I/O
+
+```
+rem: Discovery
+ports = serial_ports()                           rem: list available ports
+
+rem: Connection
+port = serial_open(name, baud)                   rem: open port
+port = serial_open(name, baud, config)           rem: with config (e.g. "8N1")
+serial_close(port)                               rem: close port
+
+rem: I/O
+bytes_written = serial_write(port, data)         rem: send data
+data = serial_read(port, count)                  rem: read bytes
+line = serial_read_line(port)                    rem: read until newline (NMEA)
+
+rem: Control
+available = serial_available(port)               rem: check if data waiting
+serial_set_timeout(port, ms)                     rem: 0=non-block, -1=forever
+serial_flush(port)                               rem: clear buffers
+serial_set_dtr(port, state)                      rem: control DTR line
+serial_set_rts(port, state)                      rem: control RTS line
+signals = serial_get_signals(port)               rem: read CTS/DSR/RI/DCD
+```
+
+**Common config strings:**
+- `"8N1"` — 8 data bits, no parity, 1 stop bit (most common)
+- `"7E1"` — 7 data bits, even parity, 1 stop bit
+- `"8N2"` — 8 data bits, no parity, 2 stop bits
+
+**NMEA GPS Example:**
+```
+var gps = serial_open("/dev/ttyUSB0", 4800)
+serial_set_timeout(gps, 5000)
+loop forever
+    var sentence = serial_read_line(gps)
+    if starts_with(sentence, "$GPGGA")
+        var fields = split(sentence, ",")
+        display("Position:", fields[2], fields[3])
+serial_close(gps)
+```
+
+---
+
+## Network I/O
+
+### TCP/UDP Client
+```
+conn = net_connect(host, port [, protocol])  rem: "tcp" (default) or "udp"
+net_close(conn)
+bytes = net_write(conn, data)                rem: data = string or bytes
+data = net_read(conn, count)                 rem: read up to count bytes
+line = net_read_line(conn)                   rem: read until newline
+net_set_timeout(conn, ms)                    rem: -1=forever, 0=non-blocking
+```
+
+### TCP Server
+```
+listener = net_listen(port [, protocol])
+client = net_accept(listener)                rem: blocks until connection
+net_close(client)
+net_close(listener)
+```
+
+### Example: NMEA over TCP/IP
+```
+gps = net_connect("192.168.1.100", 10110)
+net_set_timeout(gps, 5000)
+repeat while true
+    sentence = net_read_line(gps)
+    if starts_with(sentence, "$GPRMC")
+        display(sentence)
+net_close(gps)
+```
+
+---
+
 ## Events and Timers
 
 ### Basic Timing

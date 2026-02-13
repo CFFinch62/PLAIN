@@ -75,6 +75,10 @@ mkdir -p "${PACKAGE_PATH}"
 # Copy the build output (which contains the IDE and the bundled interpreter)
 cp -r dist/plain-ide/* "${PACKAGE_PATH}/"
 
+# Copy standalone interpreter to root directory (in addition to _internal)
+echo "  → Copying standalone interpreter to release root..."
+cp "${INTERPRETER_NAME}" "${PACKAGE_PATH}/"
+
 # Copy Documentation
 cp README.md "${PACKAGE_PATH}/"
 [ -f LICENSE ] && cp LICENSE "${PACKAGE_PATH}/"
@@ -85,11 +89,10 @@ if [ -d "docs" ]; then
     cp -r docs "${PACKAGE_PATH}/"
 fi
 
-# Copy Examples
+# Copy Examples (preserve directory structure)
 if [ -d "examples" ]; then
-    mkdir -p "${PACKAGE_PATH}/examples"
-    # Copy .plain files only
-    find examples -name "*.plain" -exec cp {} "${PACKAGE_PATH}/examples/" \;
+    echo "  → Copying examples directory with full structure..."
+    cp -r examples "${PACKAGE_PATH}/"
 fi
 
 # Create Archive

@@ -38,8 +38,11 @@ if images_dir.exists():
 # Collect interpreter binary
 binaries = []
 plain_exe = project_root / 'plain'
+plain_exe_win = project_root / 'plain.exe'
 if plain_exe.exists():
-    binaries.append((str(plain_exe), '.'))  # Put in root of dist folder
+    binaries.append((str(plain_exe), '_internal'))  # Put in _internal folder
+elif plain_exe_win.exists():
+    binaries.append((str(plain_exe_win), '_internal'))  # Windows version
 
 # Collect docs
 docs_dir = project_root / 'docs'

@@ -25,6 +25,8 @@ For language syntax and semantics, see the [Language Reference](LANGUAGE-REFEREN
 13. [File System](#13-file-system)
 14. [Path Operations](#14-path-operations)
 15. [Timing and Events](#15-timing-and-events)
+16. [Serial Port I/O](#16-serial-port-io)
+17. [Network I/O](#17-network-io)
 
 ---
 
@@ -1598,6 +1600,460 @@ task OnTick with (timer, elapsed)
 
 ---
 
+## 16. Serial Port I/O
+
+PLAIN provides comprehensive serial port support for data acquisition and communication with hardware devices. This includes support for physical serial ports (RS-232, RS-485) and virtual COM ports (USB-to-serial adapters).
+
+**Common use cases:**
+- Reading NMEA 0183 GPS data
+- Communicating with marine electronics and sensors
+- Industrial data acquisition
+- Embedded systems interfacing
+
+---
+
+### `serial_ports()`
+
+Returns a list of available serial port names on the system.
+
+```plain
+var ports = serial_ports()
+loop port in ports
+    display(port)
+rem: Linux: /dev/ttyUSB0, /dev/ttyACM0
+rem: macOS: /dev/cu.usbserial-*
+rem: Windows: COM1, COM3, etc.
+```
+
+**Arguments:** None
+
+**Returns:** list of strings — Available serial port names
+
+**Note:** Returns an empty list if no serial ports are detected. Virtual COM ports (USB-to-serial) are listed alongside physical ports.
+
+---
+
+### `serial_open(port, baud [, config])`
+
+Opens a serial port connection with the specified baud rate and configuration.
+
+```plain
+var gps = serial_open("/dev/ttyUSB0", 4800)
+var instrument = serial_open("COM3", 9600, "8N1")
+```
+
+**Arguments:**
+- `port` (string) — Port name (e.g., "/dev/ttyUSB0", "COM3")
+- `baud` (integer) — Baud rate (e.g., 4800, 9600, 19200, 38400, 57600, 115200)
+- `config` (string, optional) — Configuration string, default "8N1"
+
+**Config format:** `{data_bits}{parity}{stop_bits}`
+- Data bits: 5, 6, 7, or 8
+- Parity: N (none), E (even), O (odd), M (mark), S (space)
+- Stop bits: 1 or 2
+
+**Returns:** serial_port handle
+
+**Common configurations:**
+- `"8N1"` — 8 data bits, no parity, 1 stop bit (most common)
+- `"7E1"` — 7 data bits, even parity, 1 stop bit
+- `"8N2"` — 8 data bits, no parity, 2 stop bits
+
+---
+
+### `serial_close(port)`
+
+Closes an open serial port connection.
+
+```plain
+serial_close(gps)
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle from `serial_open()`
+
+**Returns:** null
+
+---
+
+### `serial_write(port, data)`
+
+Writes data to the serial port.
+
+```plain
+serial_write(port, "$CCMSG,1,1*hh\r\n")
+var bytes_sent = serial_write(port, "Hello")
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle
+- `data` (string) — Data to send
+
+**Returns:** integer — Number of bytes written
+
+---
+
+### `serial_read(port, count)`
+
+Reads up to `count` bytes from the serial port.
+
+```plain
+var data = serial_read(port, 256)
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle
+- `count` (integer) — Maximum number of bytes to read
+
+**Returns:** string — Data read (may be less than `count` bytes)
+
+**Note:** This function respects the timeout set by `serial_set_timeout()`. It blocks until data is available or the timeout expires.
+
+---
+
+### `serial_read_line(port)`
+
+Reads data from the serial port until a newline character (`\n`) is encountered. This is the primary function for reading line-based protocols like NMEA 0183.
+
+```plain
+var sentence = serial_read_line(gps)
+rem: Returns "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,47.0,M,,*47"
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle
+
+**Returns:** string — Line of text with trailing `\r\n` or `\n` removed
+
+**Note:** Blocks until a complete line is received or timeout expires. Ideal for NMEA sentences, which are CR+LF terminated.
+
+---
+
+### `serial_available(port)`
+
+Checks if data is waiting to be read from the serial port.
+
+```plain
+if serial_available(port)
+    var data = serial_read_line(port)
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle
+
+**Returns:** boolean — `true` if data is available, `false` otherwise
+
+**Note:** This is a non-blocking check. Useful for polling-based reading.
+
+---
+
+### `serial_set_timeout(port, milliseconds)`
+
+Sets the read timeout for the serial port.
+
+```plain
+serial_set_timeout(gps, 2000)    rem: 2-second timeout
+serial_set_timeout(port, 0)      rem: non-blocking
+serial_set_timeout(port, -1)     rem: block forever
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle
+- `milliseconds` (integer) — Timeout value
+  - `0` = non-blocking (return immediately)
+  - `-1` = block forever (wait until data arrives)
+  - `> 0` = wait up to N milliseconds
+
+**Returns:** null
+
+**Best practice:** Always set a timeout in production code to prevent indefinite blocking.
+
+---
+
+### `serial_flush(port)`
+
+Flushes both input and output buffers, discarding any pending data.
+
+```plain
+serial_flush(port)
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle
+
+**Returns:** null
+
+**Use case:** Clear stale data before starting a new communication sequence.
+
+---
+
+### `serial_set_dtr(port, state)`
+
+Controls the DTR (Data Terminal Ready) handshake line.
+
+```plain
+serial_set_dtr(port, true)     rem: assert DTR
+serial_set_dtr(port, false)    rem: clear DTR
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle
+- `state` (boolean) — `true` to assert, `false` to clear
+
+**Returns:** null
+
+---
+
+### `serial_set_rts(port, state)`
+
+Controls the RTS (Request To Send) handshake line.
+
+```plain
+serial_set_rts(port, true)     rem: assert RTS
+serial_set_rts(port, false)    rem: clear RTS
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle
+- `state` (boolean) — `true` to assert, `false` to clear
+
+**Returns:** null
+
+---
+
+### `serial_get_signals(port)`
+
+Reads the state of modem control lines.
+
+```plain
+var signals = serial_get_signals(port)
+display("CTS:", signals["cts"])
+display("DSR:", signals["dsr"])
+```
+
+**Arguments:**
+- `port` (serial_port) — Serial port handle
+
+**Returns:** table with keys:
+- `"cts"` (boolean) — Clear To Send
+- `"dsr"` (boolean) — Data Set Ready
+- `"ri"` (boolean) — Ring Indicator
+- `"dcd"` (boolean) — Data Carrier Detect
+
+---
+
+### Serial Port Example: NMEA GPS Reader
+
+```plain
+task Main()
+    display("Available serial ports:")
+    var ports = serial_ports()
+    loop port in ports
+        display("  " & port)
+
+    if len(ports) = 0
+        display("No serial ports found.")
+        deliver null
+
+    rem: Open GPS on first available port (typically 4800 baud for NMEA)
+    var gps = serial_open(ports[0], 4800)
+    serial_set_timeout(gps, 5000)
+
+    display("Reading NMEA sentences...")
+    loop i from 1 to 10
+        var sentence = serial_read_line(gps)
+
+        rem: Parse GPGGA (position) sentences
+        if starts_with(sentence, "$GPGGA")
+            var fields = split(sentence, ",")
+            display(v"Position: {fields[2]} {fields[3]}, {fields[4]} {fields[5]}")
+        otherwise
+            display(sentence)
+
+    serial_close(gps)
+    display("Done.")
+```
+
+---
+
+## 17. Network I/O
+
+PLAIN provides TCP and UDP network connectivity for client and server applications. These functions enable communication over IP networks, including reading NMEA data over TCP/IP.
+
+### 17.1 `net_connect(host, port [, protocol])`
+
+Opens a network connection to a remote host.
+
+**Parameters:**
+- `host` (string): Hostname or IP address
+- `port` (integer): Port number (1-65535)
+- `protocol` (string, optional): "tcp" (default) or "udp"
+
+**Returns:** Network connection handle, or error
+
+**Example:**
+```plain
+conn = net_connect("192.168.1.100", 10110)
+if is_error(conn)
+    display("Connection failed: " + conn)
+    stop
+```
+
+### 17.2 `net_close(conn)`
+
+Closes a network connection.
+
+**Parameters:**
+- `conn` (net_conn): Connection handle from `net_connect()` or `net_accept()`
+
+**Returns:** `null` on success, or error
+
+**Example:**
+```plain
+net_close(conn)
+```
+
+### 17.3 `net_write(conn, data)`
+
+Sends data over a network connection.
+
+**Parameters:**
+- `conn` (net_conn): Connection handle
+- `data` (string or bytes): Data to send
+
+**Returns:** Number of bytes written, or error
+
+**Example:**
+```plain
+bytes_sent = net_write(conn, "Hello, server!\r\n")
+display("Sent " + to_string(bytes_sent) + " bytes")
+```
+
+### 17.4 `net_read(conn, count)`
+
+Reads up to `count` bytes from a network connection.
+
+**Parameters:**
+- `conn` (net_conn): Connection handle
+- `count` (integer): Maximum number of bytes to read
+
+**Returns:** String containing received data, or error
+
+**Example:**
+```plain
+data = net_read(conn, 1024)
+if is_error(data)
+    display("Read error: " + data)
+otherwise
+    display("Received: " + data)
+```
+
+### 17.5 `net_read_line(conn)`
+
+Reads a line of text from a network connection (up to newline character). Automatically strips CR+LF or LF line endings.
+
+**Parameters:**
+- `conn` (net_conn): Connection handle
+
+**Returns:** String containing the line (without line ending), or error
+
+**Example:**
+```plain
+line = net_read_line(conn)
+if is_error(line)
+    display("Error: " + line)
+otherwise
+    display("Received line: " + line)
+```
+
+### 17.6 `net_set_timeout(conn, milliseconds)`
+
+Sets the read timeout for a network connection.
+
+**Parameters:**
+- `conn` (net_conn): Connection handle
+- `milliseconds` (integer): Timeout in milliseconds
+  - `-1` = block forever (wait indefinitely)
+  - `0` = non-blocking (return immediately)
+  - `> 0` = timeout after specified milliseconds
+
+**Returns:** `null` on success, or error
+
+**Example:**
+```plain
+net_set_timeout(conn, 5000)  # 5 second timeout
+```
+
+### 17.7 `net_listen(port [, protocol])`
+
+Creates a network listener (server) on the specified port.
+
+**Parameters:**
+- `port` (integer): Port number to listen on (1-65535)
+- `protocol` (string, optional): "tcp" (default) or "udp"
+
+**Returns:** Listener handle, or error
+
+**Example:**
+```plain
+listener = net_listen(8080)
+if is_error(listener)
+    display("Failed to start server: " + listener)
+    stop
+display("Server listening on port 8080")
+```
+
+### 17.8 `net_accept(listener)`
+
+Accepts an incoming connection on a listener. This function blocks until a client connects.
+
+**Parameters:**
+- `listener` (net_conn): Listener handle from `net_listen()`
+
+**Returns:** Client connection handle, or error
+
+**Example:**
+```plain
+client = net_accept(listener)
+if is_error(client)
+    display("Accept failed: " + client)
+otherwise
+    display("Client connected!")
+```
+
+### Complete Example: NMEA GPS Reader over TCP/IP
+
+Many GPS receivers and marine electronics support NMEA 0183 over TCP/IP (typically port 10110):
+
+```plain
+# Connect to GPS receiver on network
+gps = net_connect("192.168.1.100", 10110)
+if is_error(gps)
+    display("Failed to connect: " + gps)
+    stop
+
+display("Connected to GPS receiver")
+net_set_timeout(gps, 5000)  # 5 second timeout
+
+# Read 10 NMEA sentences
+count = 0
+repeat while count < 10
+    sentence = net_read_line(gps)
+    if is_error(sentence)
+        display("Error reading: " + sentence)
+        break
+
+    # Only display GPRMC sentences (position data)
+    if starts_with(sentence, "$GPRMC")
+        display(sentence)
+        count = count + 1
+
+net_close(gps)
+display("Done.")
+```
+
+---
+
 ## Quick Reference Table
 
 | Category           | Functions                                                                                                                              |
@@ -1617,6 +2073,8 @@ task OnTick with (timer, elapsed)
 | **File system**    | `file_exists`, `delete_file`, `rename_file`, `copy_file`, `file_size`, `dir_exists`, `create_dir`, `delete_dir`, `list_dir`            |
 | **Paths**          | `join_path`, `split_path`, `get_extension`, `absolute_path`                                                                            |
 | **Timing**         | `sleep`, `create_timer`, `create_timeout`, `start_timer`, `stop_timer`, `cancel_timer`, `wait_for_events`, `run_events`, `stop_events` |
+| **Serial Port**    | `serial_ports`, `serial_open`, `serial_close`, `serial_write`, `serial_read`, `serial_read_line`, `serial_available`, `serial_set_timeout`, `serial_flush`, `serial_set_dtr`, `serial_set_rts`, `serial_get_signals` |
+| **Network I/O**    | `net_connect`, `net_close`, `net_write`, `net_read`, `net_read_line`, `net_set_timeout`, `net_listen`, `net_accept` |
 
 ---
 

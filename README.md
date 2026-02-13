@@ -26,6 +26,9 @@ A programming language designed to be approachable without sacrificing competenc
 - **Task-based functions** - Clear distinction between procedures and functions
 - **Built-in error handling** - `attempt`/`handle`/`ensure` blocks
 - **String interpolation** - `v"Hello {name}!"` syntax
+- **Serial port I/O** - Full support for RS-232/RS-485 and virtual COM ports
+- **Network I/O** - TCP/UDP client and server support for IP-based communication
+- **Comprehensive standard library** - 93+ built-in functions for real-world tasks
 
 ## Quick Example
 

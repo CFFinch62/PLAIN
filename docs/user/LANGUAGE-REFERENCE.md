@@ -142,7 +142,7 @@ Inside `v"..."`, any text between `{` and `}` is evaluated as an expression and 
 
 ## 2. Data Types
 
-PLAIN has eight built-in data types.
+PLAIN has eight core data types, plus several specialized handle types for I/O operations.
 
 ### 2.1 Integer
 
@@ -259,7 +259,33 @@ var p = Person(name: "Alice", age: 30)
 display(p.name)     rem: "Alice"
 ```
 
-### 2.9 Type Compatibility
+### 2.9 Handle Types
+
+PLAIN provides several specialized **handle types** for managing I/O resources. These are opaque types returned by builtin functions and used to interact with external resources:
+
+| Handle Type     | Created By                | Purpose                                    |
+| --------------- | ------------------------- | ------------------------------------------ |
+| `file_handle`   | `open()`                  | File I/O operations                        |
+| `serial_port`   | `serial_open()`           | Serial port (RS-232/RS-485) communication  |
+| `net_conn`      | `net_connect()`, `net_listen()`, `net_accept()` | TCP/UDP network connections |
+| `timer`         | `create_timer()`, `create_timeout()` | Event-based timing                |
+
+**Example:**
+```plain
+var file = open("data.txt", "r")        rem: file_handle type
+var gps = serial_open("/dev/ttyUSB0", 4800)  rem: serial_port type
+var conn = net_connect("192.168.1.100", 10110)  rem: net_conn type
+```
+
+Handle types:
+- Cannot be created directly (only through builtin functions)
+- Should be closed when no longer needed (`close()`, `serial_close()`, `net_close()`)
+- Are truthy when open, falsy when closed
+- Display as descriptive strings (e.g., `<serial /dev/ttyUSB0 baud=4800 open>`)
+
+See [STDLIB.md](STDLIB.md) for complete documentation of I/O functions.
+
+### 2.10 Type Compatibility
 
 | Operation               | Allowed Types             | Result Type                                |
 | ----------------------- | ------------------------- | ------------------------------------------ |

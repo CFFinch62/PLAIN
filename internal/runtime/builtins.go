@@ -7,12 +7,15 @@ import (
 	"io/ioutil"
 	"math"
 	"math/rand"
+	"net"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"go.bug.st/serial"
 )
 
 func init() {
@@ -1948,6 +1951,627 @@ func GetBuiltins() map[string]*BuiltinValue {
 				}
 				GetEventLoop().StopEvents()
 				return NULL
+			},
+		},
+
+		// ============================================================
+		// Serial Port I/O
+		// ============================================================
+		"serial_ports": {
+			Name: "serial_ports",
+			Fn: func(args ...Value) Value {
+				if len(args) != 0 {
+					return NewError("serial_ports() takes no arguments")
+				}
+				ports, err := serial.GetPortsList()
+				if err != nil {
+					return NewError("serial_ports() failed: %s", err.Error())
+				}
+				elements := make([]Value, len(ports))
+				for i, p := range ports {
+					elements[i] = NewString(p)
+				}
+				return NewList(elements)
+			},
+		},
+		"serial_open": {
+			Name: "serial_open",
+			Fn: func(args ...Value) Value {
+				if len(args) < 2 || len(args) > 3 {
+					return NewError("serial_open() takes 2 or 3 arguments (port, baud [, config])")
+				}
+				portName, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("serial_open() first argument must be a string (port name)")
+				}
+				baudArg, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("serial_open() second argument must be an integer (baud rate)")
+				}
+				configStr := "8N1"
+				if len(args) == 3 {
+					cfgVal, ok := args[2].(*StringValue)
+					if !ok {
+						return NewError("serial_open() third argument must be a string (config, e.g. \"8N1\")")
+					}
+					configStr = cfgVal.Val
+				}
+				// Parse config string (e.g. "8N1")
+				if len(configStr) != 3 {
+					return NewError("serial_open() config must be 3 characters: data_bits + parity + stop_bits (e.g. \"8N1\")")
+				}
+				var dataBits int
+				switch configStr[0] {
+				case '5':
+					dataBits = 5
+				case '6':
+					dataBits = 6
+				case '7':
+					dataBits = 7
+				case '8':
+					dataBits = 8
+				default:
+					return NewError("serial_open() invalid data bits '%c' (use 5, 6, 7, or 8)", configStr[0])
+				}
+				var parity serial.Parity
+				switch configStr[1] {
+				case 'N', 'n':
+					parity = serial.NoParity
+				case 'E', 'e':
+					parity = serial.EvenParity
+				case 'O', 'o':
+					parity = serial.OddParity
+				case 'M', 'm':
+					parity = serial.MarkParity
+				case 'S', 's':
+					parity = serial.SpaceParity
+				default:
+					return NewError("serial_open() invalid parity '%c' (use N, E, O, M, or S)", configStr[1])
+				}
+				var stopBits serial.StopBits
+				switch configStr[2] {
+				case '1':
+					stopBits = serial.OneStopBit
+				case '2':
+					stopBits = serial.TwoStopBits
+				default:
+					return NewError("serial_open() invalid stop bits '%c' (use 1 or 2)", configStr[2])
+				}
+				mode := &serial.Mode{
+					BaudRate: int(baudArg.Val),
+					DataBits: dataBits,
+					Parity:   parity,
+					StopBits: stopBits,
+				}
+				port, err := serial.Open(portName.Val, mode)
+				if err != nil {
+					return NewError("serial_open() failed: %s", err.Error())
+				}
+				reader := bufio.NewReader(port)
+				return &SerialPortValue{
+					PortName: portName.Val,
+					BaudRate: int(baudArg.Val),
+					Config:   configStr,
+					Handle:   port,
+					Reader:   reader,
+					IsOpen:   true,
+				}
+			},
+		},
+		"serial_close": {
+			Name: "serial_close",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("serial_close() takes exactly 1 argument")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_close() argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_close() port already closed")
+				}
+				port := sp.Handle.(serial.Port)
+				err := port.Close()
+				sp.IsOpen = false
+				sp.Handle = nil
+				sp.Reader = nil
+				if err != nil {
+					return NewError("serial_close() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"serial_write": {
+			Name: "serial_write",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("serial_write() takes exactly 2 arguments (port, data)")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_write() first argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_write() port is closed")
+				}
+				port := sp.Handle.(serial.Port)
+				var data []byte
+				switch v := args[1].(type) {
+				case *StringValue:
+					data = []byte(v.Val)
+				case *BytesValue:
+					data = v.Data
+				default:
+					return NewError("serial_write() second argument must be a string or bytes")
+				}
+				n, err := port.Write(data)
+				if err != nil {
+					return NewError("serial_write() failed: %s", err.Error())
+				}
+				return NewInteger(int64(n))
+			},
+		},
+		"serial_read": {
+			Name: "serial_read",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("serial_read() takes exactly 2 arguments (port, count)")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_read() first argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_read() port is closed")
+				}
+				count, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("serial_read() second argument must be an integer (byte count)")
+				}
+				if count.Val <= 0 {
+					return NewError("serial_read() count must be positive")
+				}
+				port := sp.Handle.(serial.Port)
+				buf := make([]byte, count.Val)
+				n, err := port.Read(buf)
+				if err != nil {
+					return NewError("serial_read() failed: %s", err.Error())
+				}
+				return NewString(string(buf[:n]))
+			},
+		},
+		"serial_read_line": {
+			Name: "serial_read_line",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("serial_read_line() takes exactly 1 argument")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_read_line() argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_read_line() port is closed")
+				}
+				reader := sp.Reader.(*bufio.Reader)
+				line, err := reader.ReadString('\n')
+				if err != nil {
+					return NewError("serial_read_line() failed: %s", err.Error())
+				}
+				// Trim trailing \r\n or \n
+				line = strings.TrimRight(line, "\r\n")
+				return NewString(line)
+			},
+		},
+		"serial_available": {
+			Name: "serial_available",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("serial_available() takes exactly 1 argument")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_available() argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_available() port is closed")
+				}
+				reader := sp.Reader.(*bufio.Reader)
+				return NewBoolean(reader.Buffered() > 0)
+			},
+		},
+		"serial_set_timeout": {
+			Name: "serial_set_timeout",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("serial_set_timeout() takes exactly 2 arguments (port, milliseconds)")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_set_timeout() first argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_set_timeout() port is closed")
+				}
+				ms, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("serial_set_timeout() second argument must be an integer (milliseconds)")
+				}
+				port := sp.Handle.(serial.Port)
+				var timeout time.Duration
+				if ms.Val < 0 {
+					// Negative = block forever (effectively very long timeout)
+					timeout = time.Duration(0)
+				} else if ms.Val == 0 {
+					// Zero = non-blocking: use 1ms minimum
+					timeout = time.Millisecond
+				} else {
+					timeout = time.Duration(ms.Val) * time.Millisecond
+				}
+				err := port.SetReadTimeout(timeout)
+				if err != nil {
+					return NewError("serial_set_timeout() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"serial_flush": {
+			Name: "serial_flush",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("serial_flush() takes exactly 1 argument")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_flush() argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_flush() port is closed")
+				}
+				port := sp.Handle.(serial.Port)
+				err := port.ResetInputBuffer()
+				if err != nil {
+					return NewError("serial_flush() failed to flush input: %s", err.Error())
+				}
+				err = port.ResetOutputBuffer()
+				if err != nil {
+					return NewError("serial_flush() failed to flush output: %s", err.Error())
+				}
+				// Also reset the buffered reader since we flushed the input
+				sp.Reader = bufio.NewReader(port)
+				return NULL
+			},
+		},
+		"serial_set_dtr": {
+			Name: "serial_set_dtr",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("serial_set_dtr() takes exactly 2 arguments (port, state)")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_set_dtr() first argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_set_dtr() port is closed")
+				}
+				state, ok := args[1].(*BooleanValue)
+				if !ok {
+					return NewError("serial_set_dtr() second argument must be a boolean")
+				}
+				port := sp.Handle.(serial.Port)
+				err := port.SetDTR(state.Val)
+				if err != nil {
+					return NewError("serial_set_dtr() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"serial_set_rts": {
+			Name: "serial_set_rts",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("serial_set_rts() takes exactly 2 arguments (port, state)")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_set_rts() first argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_set_rts() port is closed")
+				}
+				state, ok := args[1].(*BooleanValue)
+				if !ok {
+					return NewError("serial_set_rts() second argument must be a boolean")
+				}
+				port := sp.Handle.(serial.Port)
+				err := port.SetRTS(state.Val)
+				if err != nil {
+					return NewError("serial_set_rts() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"serial_get_signals": {
+			Name: "serial_get_signals",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("serial_get_signals() takes exactly 1 argument")
+				}
+				sp, ok := args[0].(*SerialPortValue)
+				if !ok {
+					return NewError("serial_get_signals() argument must be a serial port handle")
+				}
+				if !sp.IsOpen {
+					return NewError("serial_get_signals() port is closed")
+				}
+				port := sp.Handle.(serial.Port)
+				status, err := port.GetModemStatusBits()
+				if err != nil {
+					return NewError("serial_get_signals() failed: %s", err.Error())
+				}
+				pairs := map[string]Value{
+					"cts": NewBoolean(status.CTS),
+					"dsr": NewBoolean(status.DSR),
+					"ri":  NewBoolean(status.RI),
+					"dcd": NewBoolean(status.DCD),
+				}
+				return NewTable(pairs)
+			},
+		},
+
+		// ============================================================
+		// Network I/O (TCP/UDP)
+		// ============================================================
+		"net_connect": {
+			Name: "net_connect",
+			Fn: func(args ...Value) Value {
+				if len(args) < 2 || len(args) > 3 {
+					return NewError("net_connect() takes 2 or 3 arguments (host, port [, protocol])")
+				}
+				host, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("net_connect() first argument must be a string (host)")
+				}
+				portArg, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("net_connect() second argument must be an integer (port)")
+				}
+				protocol := "tcp"
+				if len(args) == 3 {
+					protoVal, ok := args[2].(*StringValue)
+					if !ok {
+						return NewError("net_connect() third argument must be a string (protocol: \"tcp\" or \"udp\")")
+					}
+					protocol = strings.ToLower(protoVal.Val)
+					if protocol != "tcp" && protocol != "udp" {
+						return NewError("net_connect() protocol must be \"tcp\" or \"udp\"")
+					}
+				}
+				address := fmt.Sprintf("%s:%d", host.Val, portArg.Val)
+				conn, err := net.Dial(protocol, address)
+				if err != nil {
+					return NewError("net_connect() failed: %s", err.Error())
+				}
+				reader := bufio.NewReader(conn)
+				return &NetConnValue{
+					Address:  address,
+					Protocol: protocol,
+					Handle:   conn,
+					Reader:   reader,
+					IsOpen:   true,
+					IsServer: false,
+				}
+			},
+		},
+		"net_close": {
+			Name: "net_close",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("net_close() takes exactly 1 argument")
+				}
+				nc, ok := args[0].(*NetConnValue)
+				if !ok {
+					return NewError("net_close() argument must be a network connection handle")
+				}
+				if !nc.IsOpen {
+					return NewError("net_close() connection already closed")
+				}
+				conn := nc.Handle.(net.Conn)
+				nc.IsOpen = false
+				nc.Handle = nil
+				nc.Reader = nil
+				err := conn.Close()
+				if err != nil {
+					return NewError("net_close() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"net_write": {
+			Name: "net_write",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("net_write() takes exactly 2 arguments (conn, data)")
+				}
+				nc, ok := args[0].(*NetConnValue)
+				if !ok {
+					return NewError("net_write() first argument must be a network connection handle")
+				}
+				if !nc.IsOpen {
+					return NewError("net_write() connection is closed")
+				}
+				conn := nc.Handle.(net.Conn)
+				var data []byte
+				switch v := args[1].(type) {
+				case *StringValue:
+					data = []byte(v.Val)
+				case *BytesValue:
+					data = v.Data
+				default:
+					return NewError("net_write() second argument must be a string or bytes")
+				}
+				n, err := conn.Write(data)
+				if err != nil {
+					return NewError("net_write() failed: %s", err.Error())
+				}
+				return NewInteger(int64(n))
+			},
+		},
+		"net_read": {
+			Name: "net_read",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("net_read() takes exactly 2 arguments (conn, count)")
+				}
+				nc, ok := args[0].(*NetConnValue)
+				if !ok {
+					return NewError("net_read() first argument must be a network connection handle")
+				}
+				if !nc.IsOpen {
+					return NewError("net_read() connection is closed")
+				}
+				count, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("net_read() second argument must be an integer (byte count)")
+				}
+				if count.Val <= 0 {
+					return NewError("net_read() count must be positive")
+				}
+				conn := nc.Handle.(net.Conn)
+				buf := make([]byte, count.Val)
+				n, err := conn.Read(buf)
+				if err != nil {
+					return NewError("net_read() failed: %s", err.Error())
+				}
+				return NewString(string(buf[:n]))
+			},
+		},
+		"net_read_line": {
+			Name: "net_read_line",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("net_read_line() takes exactly 1 argument")
+				}
+				nc, ok := args[0].(*NetConnValue)
+				if !ok {
+					return NewError("net_read_line() argument must be a network connection handle")
+				}
+				if !nc.IsOpen {
+					return NewError("net_read_line() connection is closed")
+				}
+				reader := nc.Reader.(*bufio.Reader)
+				line, err := reader.ReadString('\n')
+				if err != nil {
+					return NewError("net_read_line() failed: %s", err.Error())
+				}
+				// Trim trailing \r\n or \n
+				line = strings.TrimRight(line, "\r\n")
+				return NewString(line)
+			},
+		},
+		"net_set_timeout": {
+			Name: "net_set_timeout",
+			Fn: func(args ...Value) Value {
+				if len(args) != 2 {
+					return NewError("net_set_timeout() takes exactly 2 arguments (conn, milliseconds)")
+				}
+				nc, ok := args[0].(*NetConnValue)
+				if !ok {
+					return NewError("net_set_timeout() first argument must be a network connection handle")
+				}
+				if !nc.IsOpen {
+					return NewError("net_set_timeout() connection is closed")
+				}
+				ms, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("net_set_timeout() second argument must be an integer (milliseconds)")
+				}
+				conn := nc.Handle.(net.Conn)
+				var timeout time.Duration
+				if ms.Val < 0 {
+					// -1 means block forever (no timeout)
+					timeout = 0
+				} else if ms.Val == 0 {
+					// 0 means non-blocking (immediate timeout)
+					timeout = 1 * time.Nanosecond
+				} else {
+					timeout = time.Duration(ms.Val) * time.Millisecond
+				}
+				err := conn.SetReadDeadline(time.Now().Add(timeout))
+				if err != nil {
+					return NewError("net_set_timeout() failed: %s", err.Error())
+				}
+				return NULL
+			},
+		},
+		"net_listen": {
+			Name: "net_listen",
+			Fn: func(args ...Value) Value {
+				if len(args) < 1 || len(args) > 2 {
+					return NewError("net_listen() takes 1 or 2 arguments (port [, protocol])")
+				}
+				portArg, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("net_listen() first argument must be an integer (port)")
+				}
+				protocol := "tcp"
+				if len(args) == 2 {
+					protoVal, ok := args[1].(*StringValue)
+					if !ok {
+						return NewError("net_listen() second argument must be a string (protocol: \"tcp\" or \"udp\")")
+					}
+					protocol = strings.ToLower(protoVal.Val)
+					if protocol != "tcp" && protocol != "udp" {
+						return NewError("net_listen() protocol must be \"tcp\" or \"udp\"")
+					}
+				}
+				address := fmt.Sprintf(":%d", portArg.Val)
+				listener, err := net.Listen(protocol, address)
+				if err != nil {
+					return NewError("net_listen() failed: %s", err.Error())
+				}
+				return &NetConnValue{
+					Address:  address,
+					Protocol: protocol,
+					Handle:   listener,
+					Reader:   nil,
+					IsOpen:   true,
+					IsServer: true,
+				}
+			},
+		},
+		"net_accept": {
+			Name: "net_accept",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("net_accept() takes exactly 1 argument")
+				}
+				nc, ok := args[0].(*NetConnValue)
+				if !ok {
+					return NewError("net_accept() argument must be a network connection handle")
+				}
+				if !nc.IsServer {
+					return NewError("net_accept() can only be called on a listener")
+				}
+				if !nc.IsOpen {
+					return NewError("net_accept() listener is closed")
+				}
+				listener := nc.Handle.(net.Listener)
+				conn, err := listener.Accept()
+				if err != nil {
+					return NewError("net_accept() failed: %s", err.Error())
+				}
+				reader := bufio.NewReader(conn)
+				return &NetConnValue{
+					Address:  conn.RemoteAddr().String(),
+					Protocol: nc.Protocol,
+					Handle:   conn,
+					Reader:   reader,
+					IsOpen:   true,
+					IsServer: false,
+				}
 			},
 		},
 	}

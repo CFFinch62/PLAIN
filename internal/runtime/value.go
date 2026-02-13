@@ -35,7 +35,7 @@ type FloatValue struct {
 // >= 0 means fixed precision
 var FloatPrecision int = -1
 
-func (v *FloatValue) Type() string   { return "float" }
+func (v *FloatValue) Type() string { return "float" }
 func (v *FloatValue) String() string {
 	if FloatPrecision < 0 {
 		return fmt.Sprintf("%g", v.Val)
@@ -190,6 +190,50 @@ type TimerValue struct {
 func (v *TimerValue) Type() string   { return "timer" }
 func (v *TimerValue) String() string { return fmt.Sprintf("<timer id=%d>", v.ID) }
 func (v *TimerValue) IsTruthy() bool { return !v.Cancelled }
+
+// SerialPortValue represents an open serial port connection
+type SerialPortValue struct {
+	PortName string
+	BaudRate int
+	Config   string      // e.g., "8N1"
+	Handle   interface{} // serial.Port from go.bug.st/serial
+	Reader   interface{} // *bufio.Reader for line-based reading
+	IsOpen   bool
+}
+
+func (v *SerialPortValue) Type() string { return "serial_port" }
+func (v *SerialPortValue) String() string {
+	status := "closed"
+	if v.IsOpen {
+		status = "open"
+	}
+	return fmt.Sprintf("<serial %s baud=%d %s>", v.PortName, v.BaudRate, status)
+}
+func (v *SerialPortValue) IsTruthy() bool { return v.IsOpen }
+
+// NetConnValue represents a network connection (TCP or UDP)
+type NetConnValue struct {
+	Address  string      // "host:port"
+	Protocol string      // "tcp" or "udp"
+	Handle   interface{} // net.Conn
+	Reader   interface{} // *bufio.Reader for line-based reading
+	IsOpen   bool
+	IsServer bool // true if this is a listener
+}
+
+func (v *NetConnValue) Type() string { return "net_conn" }
+func (v *NetConnValue) String() string {
+	status := "closed"
+	if v.IsOpen {
+		status = "open"
+	}
+	connType := "client"
+	if v.IsServer {
+		connType = "listener"
+	}
+	return fmt.Sprintf("<net %s %s %s %s>", v.Protocol, v.Address, connType, status)
+}
+func (v *NetConnValue) IsTruthy() bool { return v.IsOpen }
 
 // ============================================================================
 // Record Values
