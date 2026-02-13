@@ -106,6 +106,114 @@ display("Now you don't!")
 
 ---
 
+### `text_at(x, y, text)`
+
+Positions the cursor at the specified column and row, then prints the text.
+
+```plain
+clear()
+text_at(10, 5, "Hello at position 10, 5")
+text_at(10, 6, "This is one line below")
+text_at(20, 8, "Indented more to the right")
+```
+
+**Arguments:**
+- `x` (integer) — Column position (1-based, left edge is 1)
+- `y` (integer) — Row position (1-based, top edge is 1)
+- `text` (any) — Text to display (automatically converted to string)
+
+**Returns:** null
+
+**Note:** Coordinates are 1-based. Position (1, 1) is the top-left corner of the terminal.
+
+---
+
+### `text_color(foreground [, background])`
+
+Sets the text color for subsequent output using ANSI color codes.
+
+```plain
+text_color("red")
+display("This is red text")
+
+text_color("green", "black")
+display("Green text on black background")
+
+text_color("default")
+display("Back to normal")
+```
+
+**Arguments:**
+- `foreground` (string) — Foreground color name
+- `background` (string, optional) — Background color name
+
+**Valid colors:** `"black"`, `"red"`, `"green"`, `"yellow"`, `"blue"`, `"magenta"`, `"cyan"`, `"white"`, `"default"`
+
+**Returns:** null
+
+**Note:** Use `"default"` to reset colors to terminal defaults.
+
+---
+
+### `draw_line(x, y, length, direction [, char])`
+
+Draws a horizontal or vertical line at the specified position.
+
+```plain
+rem: Horizontal line
+draw_line(5, 10, 40, "h")
+
+rem: Vertical line
+draw_line(5, 10, 10, "v")
+
+rem: Custom character
+draw_line(5, 15, 30, "h", "=")
+draw_line(50, 10, 8, "v", "*")
+```
+
+**Arguments:**
+- `x` (integer) — Starting column position
+- `y` (integer) — Starting row position
+- `length` (integer) — Length of the line
+- `direction` (string) — Direction: `"h"`, `"horizontal"`, `"v"`, or `"vertical"`
+- `char` (string, optional) — Character to use (default: `"-"` for horizontal, `"|"` for vertical)
+
+**Returns:** null
+
+---
+
+### `draw_box(x, y, width, height [, title])`
+
+Draws a bordered box using Unicode box-drawing characters.
+
+```plain
+rem: Simple box
+draw_box(5, 5, 40, 10)
+
+rem: Box with title
+draw_box(5, 5, 40, 10, "Status Panel")
+
+rem: Create a dashboard
+text_color("cyan")
+draw_box(1, 1, 60, 8, "Sensor Data")
+text_color("default")
+text_at(3, 3, "Temperature: 72.5°F")
+text_at(3, 4, "Humidity: 45%")
+```
+
+**Arguments:**
+- `x` (integer) — Left edge column position
+- `y` (integer) — Top edge row position
+- `width` (integer) — Width of the box (including borders)
+- `height` (integer) — Height of the box (including borders)
+- `title` (string, optional) — Title to display centered in the top border
+
+**Returns:** null
+
+**Note:** Uses Unicode box-drawing characters (┌─┐│└┘). Ensure your terminal supports UTF-8.
+
+---
+
 ## 2. Type Checking
 
 All type-checking functions take exactly one argument and return a boolean.
@@ -2058,7 +2166,7 @@ display("Done.")
 
 | Category           | Functions                                                                                                                              |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Console**        | `display`, `get`                                                                                                                       |
+| **Console**        | `display`, `get`, `clear`, `text_at`, `text_color`, `draw_line`, `draw_box`                                                           |
 | **Types**          | `is_int`, `is_float`, `is_string`, `is_bool`, `is_list`, `is_table`, `is_null`, `type_of`                                              |
 | **Conversion**     | `to_int`, `to_float`, `to_string`, `to_bool`, `to_bin`, `to_hex`                                                                       |
 | **Strings**        | `len`, `upper`, `lower`, `trim`, `split`, `join`, `substring`, `replace`, `contains`, `starts_with`, `ends_with`                       |

@@ -1702,6 +1702,30 @@ PLAIN includes a comprehensive standard library of built-in tasks that are alway
 - Returns the input as a string
 - Trailing newline is removed
 
+**clear()**
+- Clears the console screen and moves cursor to top-left
+- Uses ANSI escape codes
+
+**text_at(x, y, text)**
+- Positions cursor at column x, row y (1-based coordinates)
+- Prints the text at that position
+- Useful for creating text-based UIs and dashboards
+
+**text_color(foreground [, background])**
+- Sets text color for subsequent output
+- Valid colors: "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white", "default"
+- Use "default" to reset colors
+
+**draw_line(x, y, length, direction [, char])**
+- Draws a horizontal or vertical line
+- Direction: "h", "horizontal", "v", or "vertical"
+- Optional char parameter to customize line character
+
+**draw_box(x, y, width, height [, title])**
+- Draws a bordered box using Unicode box-drawing characters
+- Optional title displayed centered in top border
+- Useful for creating panels and UI elements
+
 **Examples:**
 ```
 display("Hello, World!")
@@ -1710,6 +1734,14 @@ display(v"Result: {total}")
 
 var name = get("Enter your name: ")
 var age = to_int(get("Enter your age: "))
+
+rem: Text graphics examples
+clear()
+text_color("cyan")
+draw_box(1, 1, 60, 10, "Dashboard")
+text_color("default")
+text_at(3, 3, "Temperature: 72.5°F")
+draw_line(3, 5, 50, "h")
 ```
 
 ### String Operations

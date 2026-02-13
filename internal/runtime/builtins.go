@@ -81,6 +81,237 @@ func GetBuiltins() map[string]*BuiltinValue {
 		},
 
 		// ============================================================
+		// Enhanced Text Output (Phase 1 TUI)
+		// ============================================================
+		"text_at": {
+			Name: "text_at",
+			Fn: func(args ...Value) Value {
+				if len(args) < 3 {
+					return NewError("text_at() takes 3 arguments: x, y, text")
+				}
+
+				// Get x coordinate
+				xVal, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("text_at() x must be an integer")
+				}
+
+				// Get y coordinate
+				yVal, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("text_at() y must be an integer")
+				}
+
+				// Get text (convert to string if needed)
+				text := args[2].String()
+
+				// ANSI escape code to position cursor: \033[y;xH
+				// Note: ANSI coordinates are 1-based, so we add 1
+				fmt.Printf("\033[%d;%dH%s", yVal.Val, xVal.Val, text)
+				return NULL
+			},
+		},
+
+		"text_color": {
+			Name: "text_color",
+			Fn: func(args ...Value) Value {
+				if len(args) < 1 || len(args) > 2 {
+					return NewError("text_color() takes 1 or 2 arguments: foreground [, background]")
+				}
+
+				// Color name to ANSI code mapping
+				colorMap := map[string]int{
+					"black":   0,
+					"red":     1,
+					"green":   2,
+					"yellow":  3,
+					"blue":    4,
+					"magenta": 5,
+					"cyan":    6,
+					"white":   7,
+					"default": 9,
+				}
+
+				// Get foreground color
+				fgStr, ok := args[0].(*StringValue)
+				if !ok {
+					return NewError("text_color() foreground must be a string")
+				}
+				fgCode, ok := colorMap[strings.ToLower(fgStr.Val)]
+				if !ok {
+					return NewError("text_color() invalid color: %s (use black, red, green, yellow, blue, magenta, cyan, white, default)", fgStr.Val)
+				}
+
+				// Set foreground color (30-37 for normal, 90-97 for bright)
+				fmt.Printf("\033[%dm", 30+fgCode)
+
+				// Set background color if provided
+				if len(args) == 2 {
+					bgStr, ok := args[1].(*StringValue)
+					if !ok {
+						return NewError("text_color() background must be a string")
+					}
+					bgCode, ok := colorMap[strings.ToLower(bgStr.Val)]
+					if !ok {
+						return NewError("text_color() invalid color: %s (use black, red, green, yellow, blue, magenta, cyan, white, default)", bgStr.Val)
+					}
+					// Set background color (40-47)
+					fmt.Printf("\033[%dm", 40+bgCode)
+				}
+
+				return NULL
+			},
+		},
+
+		"draw_line": {
+			Name: "draw_line",
+			Fn: func(args ...Value) Value {
+				if len(args) < 4 {
+					return NewError("draw_line() takes 4 or 5 arguments: x, y, length, direction [, char]")
+				}
+
+				// Get x coordinate
+				xVal, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("draw_line() x must be an integer")
+				}
+
+				// Get y coordinate
+				yVal, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("draw_line() y must be an integer")
+				}
+
+				// Get length
+				lengthVal, ok := args[2].(*IntegerValue)
+				if !ok {
+					return NewError("draw_line() length must be an integer")
+				}
+
+				// Get direction
+				dirStr, ok := args[3].(*StringValue)
+				if !ok {
+					return NewError("draw_line() direction must be a string")
+				}
+				direction := strings.ToLower(dirStr.Val)
+				if direction != "h" && direction != "v" && direction != "horizontal" && direction != "vertical" {
+					return NewError("draw_line() direction must be 'h', 'v', 'horizontal', or 'vertical'")
+				}
+
+				// Get character (default to appropriate line character)
+				char := "-"
+				if direction == "v" || direction == "vertical" {
+					char = "|"
+				}
+				if len(args) >= 5 {
+					charStr, ok := args[4].(*StringValue)
+					if !ok {
+						return NewError("draw_line() char must be a string")
+					}
+					if len(charStr.Val) > 0 {
+						char = string([]rune(charStr.Val)[0]) // Get first character
+					}
+				}
+
+				// Draw the line
+				if direction == "h" || direction == "horizontal" {
+					// Horizontal line
+					fmt.Printf("\033[%d;%dH", yVal.Val, xVal.Val)
+					for i := int64(0); i < lengthVal.Val; i++ {
+						fmt.Print(char)
+					}
+				} else {
+					// Vertical line
+					for i := int64(0); i < lengthVal.Val; i++ {
+						fmt.Printf("\033[%d;%dH%s", yVal.Val+i, xVal.Val, char)
+					}
+				}
+
+				return NULL
+			},
+		},
+
+		"draw_box": {
+			Name: "draw_box",
+			Fn: func(args ...Value) Value {
+				if len(args) < 4 {
+					return NewError("draw_box() takes 4 or 5 arguments: x, y, width, height [, title]")
+				}
+
+				// Get x coordinate
+				xVal, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("draw_box() x must be an integer")
+				}
+
+				// Get y coordinate
+				yVal, ok := args[1].(*IntegerValue)
+				if !ok {
+					return NewError("draw_box() y must be an integer")
+				}
+
+				// Get width
+				widthVal, ok := args[2].(*IntegerValue)
+				if !ok {
+					return NewError("draw_box() width must be an integer")
+				}
+
+				// Get height
+				heightVal, ok := args[3].(*IntegerValue)
+				if !ok {
+					return NewError("draw_box() height must be an integer")
+				}
+
+				// Get optional title
+				title := ""
+				if len(args) >= 5 {
+					title = args[4].String()
+				}
+
+				x := xVal.Val
+				y := yVal.Val
+				width := widthVal.Val
+				height := heightVal.Val
+
+				// Box drawing characters
+				topLeft := "┌"
+				topRight := "┐"
+				bottomLeft := "└"
+				bottomRight := "┘"
+				horizontal := "─"
+				vertical := "│"
+
+				// Draw top border
+				fmt.Printf("\033[%d;%dH%s", y, x, topLeft)
+				for i := int64(1); i < width-1; i++ {
+					fmt.Print(horizontal)
+				}
+				fmt.Print(topRight)
+
+				// Draw title if provided
+				if title != "" && width > int64(len(title)+4) {
+					titleX := x + (width-int64(len(title)))/2
+					fmt.Printf("\033[%d;%dH %s ", y, titleX, title)
+				}
+
+				// Draw sides
+				for i := int64(1); i < height-1; i++ {
+					fmt.Printf("\033[%d;%dH%s", y+i, x, vertical)
+					fmt.Printf("\033[%d;%dH%s", y+i, x+width-1, vertical)
+				}
+
+				// Draw bottom border
+				fmt.Printf("\033[%d;%dH%s", y+height-1, x, bottomLeft)
+				for i := int64(1); i < width-1; i++ {
+					fmt.Print(horizontal)
+				}
+				fmt.Print(bottomRight)
+
+				return NULL
+			},
+		},
+
+		// ============================================================
 		// Type Checking
 		// ============================================================
 		"set_float_precision": {
