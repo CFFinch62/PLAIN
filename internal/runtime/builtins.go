@@ -79,6 +79,20 @@ func GetBuiltins() map[string]*BuiltinValue {
 		// ============================================================
 		// Type Checking
 		// ============================================================
+		"set_float_precision": {
+			Name: "set_float_precision",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("set_float_precision() takes exactly 1 argument")
+				}
+				precision, ok := args[0].(*IntegerValue)
+				if !ok {
+					return NewError("set_float_precision() argument must be an integer")
+				}
+				FloatPrecision = int(precision.Val)
+				return NULL
+			},
+		},
 		"is_int": {
 			Name: "is_int",
 			Fn: func(args ...Value) Value {

@@ -25,6 +25,7 @@ from plain_ide.app.debug_manager import DebugManager
 from plain_ide.app.find_replace import FindReplaceWidget
 from plain_ide.app.settings_dialog import SettingsDialog
 from plain_ide.app.help_viewer import HelpViewer
+from plain_ide.app.utils import get_resource_path
 
 
 class PlainIDEMainWindow(QMainWindow):
@@ -52,7 +53,7 @@ class PlainIDEMainWindow(QMainWindow):
         self.setWindowTitle("PLAIN IDE")
         
         # Set window icon
-        icon_path = self._get_resource_path("images/plain_icon_256.png")
+        icon_path = get_resource_path("images/plain_icon_256.png")
         if icon_path and Path(icon_path).exists():
             self.setWindowIcon(QIcon(icon_path))
         
@@ -1229,22 +1230,6 @@ class PlainIDEMainWindow(QMainWindow):
         self.terminal.write_line(error, self.theme_manager.get_current_theme().error)
         self.debug_panel.add_trace(f"Error: {error}")
 
-    def _get_resource_path(self, relative_path: str) -> str:
-        """Get absolute path to resource, works for dev and for PyInstaller"""
-        if getattr(sys, 'frozen', False):
-            # PyInstaller creates a temp folder and stores path in _MEIPASS,
-            # or for onedir mode, it's relative to executable location (sys._MEIPASS may not be set in onedir?)
-            # In onedir, sys._MEIPASS is NOT set usually, resources are next to exe?
-            # actually for onedir, sys._MEIPASS IS set if using --onedir? 
-            # Wait, for onedir, the files are just in the directory.
-            # But PyInstaller loader sets sys._MEIPASS even for onedir?
-            if hasattr(sys, '_MEIPASS'):
-                 base_path = sys._MEIPASS
-            else:
-                 base_path = os.path.dirname(sys.executable)
-        else:
-            base_path = str(Path(__file__).parent.parent.parent)
 
-        return str(Path(base_path) / relative_path)
 
 

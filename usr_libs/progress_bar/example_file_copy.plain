@@ -1,0 +1,48 @@
+rem: ============================================
+rem: example_file_copy.plain - File Copy with Progress
+rem: ============================================
+rem: Copies a text file line by line, showing
+rem: progress as each line is written.
+rem: ============================================
+use:
+    modules:
+        prog_bar
+
+task Main()
+    var strSource = "sample_data.txt"
+    var strDest = "sample_data_copy.txt"
+
+    rem: Create sample file if it doesn't exist
+    if not file_exists(strSource)
+        display("Creating sample data file...")
+        var lstData = []
+        loop i from 1 to 201
+            append(lstData, v"Record {i}: This is sample data line number {i}")
+        write_lines(strSource, lstData)
+        display(v"Created {strSource} with 200 lines.")
+        display("")
+
+    rem: Read the source file
+    var lstLines = read_lines(strSource)
+    var intTotal = len(lstLines)
+
+    display(v"Copying {strSource} to {strDest} ({intTotal} lines)...")
+    display("")
+
+    prog_bar.Init(intTotal)
+
+    rem: Copy line by line with progress
+    var hOut = open(strDest, "w")
+    loop i from 0 to intTotal
+        write_line(hOut, lstLines[i])
+        prog_bar.Update(i)
+        sleep(20)
+    close(hOut)
+
+    prog_bar.Finish()
+    display("")
+    display(v"File copied successfully!")
+
+    rem: Verify the copy
+    var lstCopy = read_lines(strDest)
+    display(v"Verified: {len(lstCopy)} lines in copy.")

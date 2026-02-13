@@ -66,9 +66,9 @@ Block-introducing statements include: `task`, `if`, `else`, `choose`, `choice`, 
 
 PLAIN has two comment styles. Both extend from the keyword to the end of the line.
 
-| Keyword | Purpose | Convention |
-|---------|---------|------------|
-| `rem:` | **Remark** — explains *what* the code does | Used for inline documentation |
+| Keyword | Purpose                                       | Convention                            |
+| ------- | --------------------------------------------- | ------------------------------------- |
+| `rem:`  | **Remark** — explains *what* the code does    | Used for inline documentation         |
 | `note:` | **Note** — explains *why* or provides context | Used for rationale, caveats, warnings |
 
 ```plain
@@ -85,19 +85,19 @@ Comments can appear on their own line or at the end of a code line. They have no
 
 The lexer produces the following token categories:
 
-| Category | Examples |
-|----------|---------|
-| **Keywords** | `task`, `var`, `if`, `loop`, `deliver`, etc. (see [§13](#13-reserved-words)) |
-| **Identifiers** | `myVar`, `CalculateTotal`, `strName` |
-| **Integer literals** | `0`, `42`, `-17` |
-| **Float literals** | `3.14`, `0.5`, `-2.7` |
-| **String literals** | `"hello"`, `""` |
-| **Interpolated strings** | `v"Hello {name}"` |
-| **Boolean literals** | `true`, `false` |
-| **Null literal** | `null` |
-| **Operators** | `+`, `-`, `*`, `/`, `==`, `&`, etc. |
-| **Delimiters** | `(`, `)`, `[`, `]`, `{`, `}`, `,`, `:`, `.` |
-| **Indentation** | INDENT (increase), DEDENT (decrease) |
+| Category                 | Examples                                                                     |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| **Keywords**             | `task`, `var`, `if`, `loop`, `deliver`, etc. (see [§13](#13-reserved-words)) |
+| **Identifiers**          | `myVar`, `CalculateTotal`, `strName`                                         |
+| **Integer literals**     | `0`, `42`, `-17`                                                             |
+| **Float literals**       | `3.14`, `0.5`, `-2.7`                                                        |
+| **String literals**      | `"hello"`, `""`                                                              |
+| **Interpolated strings** | `v"Hello {name}"`                                                            |
+| **Boolean literals**     | `true`, `false`                                                              |
+| **Null literal**         | `null`                                                                       |
+| **Operators**            | `+`, `-`, `*`, `/`, `==`, `&`, etc.                                          |
+| **Delimiters**           | `(`, `)`, `[`, `]`, `{`, `}`, `,`, `:`, `.`                                  |
+| **Indentation**          | INDENT (increase), DEDENT (decrease)                                         |
 
 ### 1.6 Identifiers
 
@@ -110,13 +110,13 @@ Identifiers name variables, constants, tasks, records, and parameters. An identi
 
 **Naming conventions:**
 
-| Element | Convention | Example |
-|---------|-----------|---------|
-| Variables | camelCase, optionally with type prefix | `count`, `intCount`, `strName` |
-| Constants | UPPER_SNAKE_CASE | `MAX_SIZE`, `PI` |
-| Tasks | PascalCase | `CalculateTotal`, `Main` |
-| Records | PascalCase | `Person`, `StudentRecord` |
-| Parameters | camelCase | `firstName`, `maxRetries` |
+| Element    | Convention                             | Example                        |
+| ---------- | -------------------------------------- | ------------------------------ |
+| Variables  | camelCase, optionally with type prefix | `count`, `intCount`, `strName` |
+| Constants  | UPPER_SNAKE_CASE                       | `MAX_SIZE`, `PI`               |
+| Tasks      | PascalCase                             | `CalculateTotal`, `Main`       |
+| Records    | PascalCase                             | `Person`, `StudentRecord`      |
+| Parameters | camelCase                              | `firstName`, `maxRetries`      |
 
 ### 1.7 String Literals
 
@@ -167,6 +167,8 @@ var tiny = 0.001
 ```
 
 **Note:** Floating-point arithmetic may produce small rounding errors. For example, `0.1 + 0.2` may not equal exactly `0.3`. Use `round()` when exact decimal values are needed.
+
+The display precision of floating-point numbers can be controlled globally using `set_float_precision(n)`. See [STDLIB.md](STDLIB.md#set_float_precision) for details.
 
 ### 2.3 String
 
@@ -257,16 +259,16 @@ display(p.name)     rem: "Alice"
 
 ### 2.9 Type Compatibility
 
-| Operation | Allowed Types | Result Type |
-|-----------|--------------|-------------|
-| `+`, `-`, `*`, `/` | integer, float | integer (if both integer), float otherwise |
-| `//` (integer division) | integer, float | integer |
-| `%` (modulo) | integer, float | integer (if both integer), float otherwise |
-| `**` (power) | integer, float | float |
-| `&` (concatenation) | any (converted to string) | string |
-| `==`, `!=` | any pair of same type | boolean |
-| `<`, `>`, `<=`, `>=` | integer, float, string | boolean |
-| `and`, `or`, `not` | boolean | boolean |
+| Operation               | Allowed Types             | Result Type                                |
+| ----------------------- | ------------------------- | ------------------------------------------ |
+| `+`, `-`, `*`, `/`      | integer, float            | integer (if both integer), float otherwise |
+| `//` (integer division) | integer, float            | integer                                    |
+| `%` (modulo)            | integer, float            | integer (if both integer), float otherwise |
+| `**` (power)            | integer, float            | float                                      |
+| `&` (concatenation)     | any (converted to string) | string                                     |
+| `==`, `!=`              | any pair of same type     | boolean                                    |
+| `<`, `>`, `<=`, `>=`    | integer, float, string    | boolean                                    |
+| `and`, `or`, `not`      | boolean                   | boolean                                    |
 
 ---
 
@@ -294,14 +296,14 @@ x = "hello"    rem: ERROR — cannot assign string to integer variable
 
 Variable names can include a **type prefix** that tells both the reader and the analyzer what type the variable holds:
 
-| Prefix | Full Name | Type | Example |
-|--------|-----------|------|---------|
-| `int` | `integer` | Integer | `var intCount = 0` |
-| `flt` | `float` | Float | `var fltPrice = 9.99` |
-| `str` | `string` | String | `var strName = "Alice"` |
-| `bln` | `boolean` | Boolean | `var blnReady = true` |
-| `lst` | `list` | List | `var lstItems = [1, 2, 3]` |
-| `tbl` | `table` | Table | `var tblScores = {"math": 95}` |
+| Prefix | Full Name | Type    | Example                        |
+| ------ | --------- | ------- | ------------------------------ |
+| `int`  | `integer` | Integer | `var intCount = 0`             |
+| `flt`  | `float`   | Float   | `var fltPrice = 9.99`          |
+| `str`  | `string`  | String  | `var strName = "Alice"`        |
+| `bln`  | `boolean` | Boolean | `var blnReady = true`          |
+| `lst`  | `list`    | List    | `var lstItems = [1, 2, 3]`     |
+| `tbl`  | `table`   | Table   | `var tblScores = {"math": 95}` |
 
 The prefix is part of the variable name — `intCount` is a single identifier. The analyzer uses the prefix to verify that the assigned value matches the expected type.
 
@@ -353,13 +355,13 @@ x = 20         rem: reassign x
 
 Compound assignment operators provide shorthand:
 
-| Operator | Equivalent | Description |
-|----------|-----------|-------------|
-| `x += 5` | `x = x + 5` | Add and assign |
-| `x -= 3` | `x = x - 3` | Subtract and assign |
-| `x *= 2` | `x = x * 2` | Multiply and assign |
-| `x /= 4` | `x = x / 4` | Divide and assign |
-| `x %= 3` | `x = x % 3` | Modulo and assign |
+| Operator   | Equivalent    | Description            |
+| ---------- | ------------- | ---------------------- |
+| `x += 5`   | `x = x + 5`   | Add and assign         |
+| `x -= 3`   | `x = x - 3`   | Subtract and assign    |
+| `x *= 2`   | `x = x * 2`   | Multiply and assign    |
+| `x /= 4`   | `x = x / 4`   | Divide and assign      |
+| `x %= 3`   | `x = x % 3`   | Modulo and assign      |
 | `s &= "!"` | `s = s & "!"` | Concatenate and assign |
 
 You can also assign to list elements and table entries:
@@ -380,16 +382,16 @@ table["b"] = 2              rem: table is now {"a": 1, "b": 2}
 
 Operators are listed from **highest** to **lowest** precedence. Operators on the same row have the same precedence and are evaluated left-to-right (except `**` which is right-to-left).
 
-| Precedence | Operator(s) | Description | Associativity |
-|-----------|-------------|-------------|--------------|
-| 1 (highest) | `**` | Exponentiation | Right-to-left |
-| 2 | `*` `/` `//` `%` | Multiplication, division, integer division, modulo | Left-to-right |
-| 3 | `+` `-` | Addition, subtraction | Left-to-right |
-| 4 | `&` | String concatenation | Left-to-right |
-| 5 | `==` `!=` `<` `>` `<=` `>=` | Comparison | Left-to-right |
-| 6 | `not` | Logical NOT | Unary (prefix) |
-| 7 | `and` | Logical AND | Left-to-right |
-| 8 (lowest) | `or` | Logical OR | Left-to-right |
+| Precedence  | Operator(s)                 | Description                                        | Associativity  |
+| ----------- | --------------------------- | -------------------------------------------------- | -------------- |
+| 1 (highest) | `**`                        | Exponentiation                                     | Right-to-left  |
+| 2           | `*` `/` `//` `%`            | Multiplication, division, integer division, modulo | Left-to-right  |
+| 3           | `+` `-`                     | Addition, subtraction                              | Left-to-right  |
+| 4           | `&`                         | String concatenation                               | Left-to-right  |
+| 5           | `==` `!=` `<` `>` `<=` `>=` | Comparison                                         | Left-to-right  |
+| 6           | `not`                       | Logical NOT                                        | Unary (prefix) |
+| 7           | `and`                       | Logical AND                                        | Left-to-right  |
+| 8 (lowest)  | `or`                        | Logical OR                                         | Left-to-right  |
 
 Parentheses can be used to override precedence:
 
@@ -399,16 +401,16 @@ var result = (2 + 3) * 4       rem: 20, not 14
 
 ### 4.2 Arithmetic Operators
 
-| Operator | Name | Example | Result |
-|----------|------|---------|--------|
-| `+` | Addition | `7 + 3` | `10` |
-| `-` | Subtraction | `7 - 3` | `4` |
-| `*` | Multiplication | `7 * 3` | `21` |
-| `/` | Division | `7 / 3` | `2.333...` |
-| `//` | Integer division | `7 // 3` | `2` |
-| `%` | Modulo | `7 % 3` | `1` |
-| `**` | Exponentiation | `2 ** 10` | `1024` |
-| `-` (prefix) | Negation | `-42` | `-42` |
+| Operator     | Name             | Example   | Result     |
+| ------------ | ---------------- | --------- | ---------- |
+| `+`          | Addition         | `7 + 3`   | `10`       |
+| `-`          | Subtraction      | `7 - 3`   | `4`        |
+| `*`          | Multiplication   | `7 * 3`   | `21`       |
+| `/`          | Division         | `7 / 3`   | `2.333...` |
+| `//`         | Integer division | `7 // 3`  | `2`        |
+| `%`          | Modulo           | `7 % 3`   | `1`        |
+| `**`         | Exponentiation   | `2 ** 10` | `1024`     |
+| `-` (prefix) | Negation         | `-42`     | `-42`      |
 
 **Division behavior:**
 - `/` always produces a float result if either operand is a float
@@ -419,32 +421,32 @@ var result = (2 + 3) * 4       rem: 20, not 14
 
 All comparison operators return a boolean value.
 
-| Operator | Meaning | Example |
-|----------|---------|---------|
-| `==` | Equal to | `x == 5` |
-| `!=` | Not equal to | `x != 5` |
-| `<` | Less than | `x < 5` |
-| `>` | Greater than | `x > 5` |
-| `<=` | Less than or equal | `x <= 5` |
-| `>=` | Greater than or equal | `x >= 5` |
+| Operator | Meaning               | Example  |
+| -------- | --------------------- | -------- |
+| `==`     | Equal to              | `x == 5` |
+| `!=`     | Not equal to          | `x != 5` |
+| `<`      | Less than             | `x < 5`  |
+| `>`      | Greater than          | `x > 5`  |
+| `<=`     | Less than or equal    | `x <= 5` |
+| `>=`     | Greater than or equal | `x >= 5` |
 
 Comparisons work on numbers (integer and float) and strings (lexicographic ordering).
 
 ### 4.4 Logical Operators
 
-| Operator | Meaning | Example |
-|----------|---------|---------|
-| `and` | Both must be true | `x > 0 and x < 100` |
-| `or` | Either can be true | `x < 0 or x > 100` |
-| `not` | Inverts boolean | `not isDone` |
+| Operator | Meaning            | Example             |
+| -------- | ------------------ | ------------------- |
+| `and`    | Both must be true  | `x > 0 and x < 100` |
+| `or`     | Either can be true | `x < 0 or x > 100`  |
+| `not`    | Inverts boolean    | `not isDone`        |
 
 Logical operators use **short-circuit evaluation**: `and` stops if the left side is false; `or` stops if the left side is true.
 
 ### 4.5 String Operator
 
-| Operator | Name | Example | Result |
-|----------|------|---------|--------|
-| `&` | Concatenation | `"Hello" & " " & "World"` | `"Hello World"` |
+| Operator | Name          | Example                   | Result          |
+| -------- | ------------- | ------------------------- | --------------- |
+| `&`      | Concatenation | `"Hello" & " " & "World"` | `"Hello World"` |
 
 The `&` operator converts non-string values to strings automatically:
 
@@ -987,13 +989,13 @@ p.age = 31          rem: modify the field
 Record fields support all PLAIN types:
 
 | Type keyword | Field type |
-|-------------|-----------|
-| `string` | String |
-| `integer` | Integer |
-| `float` | Float |
-| `boolean` | Boolean |
-| `list` | List |
-| `table` | Table |
+| ------------ | ---------- |
+| `string`     | String     |
+| `integer`    | Integer    |
+| `float`      | Float      |
+| `boolean`    | Boolean    |
+| `list`       | List       |
+| `table`      | Table      |
 
 ### 9.5 Record Composition
 
@@ -1140,11 +1142,11 @@ handle
 
 A PLAIN program is organized into three levels:
 
-| Level | Description | Analogy |
-|-------|-------------|---------|
-| **Assembly** | A package of related modules | A library/package |
-| **Module** | A single `.plain` source file | A file/module |
-| **Task** | A function or procedure | A function |
+| Level        | Description                   | Analogy           |
+| ------------ | ----------------------------- | ----------------- |
+| **Assembly** | A package of related modules  | A library/package |
+| **Module**   | A single `.plain` source file | A file/module     |
+| **Task**     | A function or procedure       | A function        |
 
 ### 11.2 The `use:` Statement
 
@@ -1163,11 +1165,11 @@ use:
 
 The `use:` block has three optional sections:
 
-| Section | Purpose | Example |
-|---------|---------|---------|
-| `assemblies:` | Import an entire assembly (package) | `io` |
-| `modules:` | Import a specific module | `io.files`, `utils` |
-| `tasks:` | Import a specific task | `utils.FormatDate` |
+| Section       | Purpose                             | Example             |
+| ------------- | ----------------------------------- | ------------------- |
+| `assemblies:` | Import an entire assembly (package) | `io`                |
+| `modules:`    | Import a specific module            | `io.files`, `utils` |
+| `tasks:`      | Import a specific task              | `utils.FormatDate`  |
 
 ### 11.3 Qualified Names
 
@@ -1206,12 +1208,12 @@ my_project/
 
 PLAIN has four scope levels:
 
-| Level | Where | Lifetime |
-|-------|-------|----------|
-| **Module** | Top level of a file | Entire program execution |
-| **Task** | Inside a task body | While the task is executing |
-| **Block** | Inside `if`, `loop`, `choose`, etc. | While the block is executing |
-| **Parameter** | Task parameter list | While the task is executing |
+| Level         | Where                               | Lifetime                     |
+| ------------- | ----------------------------------- | ---------------------------- |
+| **Module**    | Top level of a file                 | Entire program execution     |
+| **Task**      | Inside a task body                  | While the task is executing  |
+| **Block**     | Inside `if`, `loop`, `choose`, etc. | While the block is executing |
+| **Parameter** | Task parameter list                 | While the task is executing  |
 
 ### 12.2 No Shadowing
 
@@ -1287,69 +1289,69 @@ The following identifiers are reserved and cannot be used as variable, constant,
 
 ### Keywords
 
-| Keyword | Purpose |
-|---------|---------|
-| `task` | Define a task (function/procedure) |
-| `with` | Declare procedure parameters |
-| `using` | Declare function parameters |
-| `deliver` | Return a value from a function |
-| `abort` | Raise an error |
-| `var` | Declare a variable |
-| `fxd` | Declare a constant |
-| `as` | Specify a type annotation |
-| `if` | Conditional branch |
-| `then` | (Reserved for future single-line if) |
-| `else` | Alternative branch |
-| `choose` | Multi-way branch |
-| `choice` | A branch option in choose |
-| `default` | Fallback branch in choose |
-| `loop` | Start a loop |
-| `from` | Start value in counting loop |
-| `to` | End value in counting loop |
-| `step` | Increment in counting loop |
-| `in` | Collection iteration |
-| `exit` | Break out of a loop |
-| `continue` | Skip to next iteration |
-| `attempt` | Begin error handling block |
-| `handle` | Error handler clause |
-| `ensure` | Always-execute clause |
-| `use:` | Begin imports block |
-| `assemblies:` | Import assemblies |
-| `modules:` | Import modules |
-| `tasks:` | Import specific tasks |
-| `record` | Define a record type |
-| `based` | Inherit record fields |
-| `on` | Used with `based` |
-| `of` | Element type in typed collections |
-| `rem:` | Comment (remark) |
-| `note:` | Comment (note) |
+| Keyword       | Purpose                              |
+| ------------- | ------------------------------------ |
+| `task`        | Define a task (function/procedure)   |
+| `with`        | Declare procedure parameters         |
+| `using`       | Declare function parameters          |
+| `deliver`     | Return a value from a function       |
+| `abort`       | Raise an error                       |
+| `var`         | Declare a variable                   |
+| `fxd`         | Declare a constant                   |
+| `as`          | Specify a type annotation            |
+| `if`          | Conditional branch                   |
+| `then`        | (Reserved for future single-line if) |
+| `else`        | Alternative branch                   |
+| `choose`      | Multi-way branch                     |
+| `choice`      | A branch option in choose            |
+| `default`     | Fallback branch in choose            |
+| `loop`        | Start a loop                         |
+| `from`        | Start value in counting loop         |
+| `to`          | End value in counting loop           |
+| `step`        | Increment in counting loop           |
+| `in`          | Collection iteration                 |
+| `exit`        | Break out of a loop                  |
+| `continue`    | Skip to next iteration               |
+| `attempt`     | Begin error handling block           |
+| `handle`      | Error handler clause                 |
+| `ensure`      | Always-execute clause                |
+| `use:`        | Begin imports block                  |
+| `assemblies:` | Import assemblies                    |
+| `modules:`    | Import modules                       |
+| `tasks:`      | Import specific tasks                |
+| `record`      | Define a record type                 |
+| `based`       | Inherit record fields                |
+| `on`          | Used with `based`                    |
+| `of`          | Element type in typed collections    |
+| `rem:`        | Comment (remark)                     |
+| `note:`       | Comment (note)                       |
 
 ### Type Keywords
 
-| Keyword | Short Form | Type |
-|---------|-----------|------|
-| `integer` | `int` | Integer numbers |
-| `float` | `flt` | Floating-point numbers |
-| `string` | `str` | Text strings |
-| `boolean` | `bln` | True/false values |
-| `list` | `lst` | Ordered collections |
-| `table` | `tbl` | Key-value collections |
+| Keyword   | Short Form | Type                   |
+| --------- | ---------- | ---------------------- |
+| `integer` | `int`      | Integer numbers        |
+| `float`   | `flt`      | Floating-point numbers |
+| `string`  | `str`      | Text strings           |
+| `boolean` | `bln`      | True/false values      |
+| `list`    | `lst`      | Ordered collections    |
+| `table`   | `tbl`      | Key-value collections  |
 
 ### Literal Keywords
 
-| Keyword | Meaning |
-|---------|---------|
-| `true` | Boolean true |
-| `false` | Boolean false |
-| `null` | Absence of value |
+| Keyword | Meaning          |
+| ------- | ---------------- |
+| `true`  | Boolean true     |
+| `false` | Boolean false    |
+| `null`  | Absence of value |
 
 ### Logical Operator Keywords
 
-| Keyword | Meaning |
-|---------|---------|
-| `and` | Logical AND |
-| `or` | Logical OR |
-| `not` | Logical NOT |
+| Keyword | Meaning     |
+| ------- | ----------- |
+| `and`   | Logical AND |
+| `or`    | Logical OR  |
+| `not`   | Logical NOT |
 
 ---
 
@@ -1485,32 +1487,32 @@ Block          = { Statement NEWLINE } ;
 
 ### Parser Errors
 
-| Error Message | Meaning | Fix |
-|---------------|---------|-----|
-| `Expected next token to be X, got Y` | The parser expected a specific token but found something else | Check syntax near the indicated line |
-| `No prefix parse function for X` | An unexpected token appeared where an expression was expected | Check for misplaced operators or missing values |
-| `Expected INDENT after ...` | A block-introducing statement wasn't followed by an indented block | Add an indented body after `if`, `loop`, `task`, etc. |
+| Error Message                        | Meaning                                                            | Fix                                                   |
+| ------------------------------------ | ------------------------------------------------------------------ | ----------------------------------------------------- |
+| `Expected next token to be X, got Y` | The parser expected a specific token but found something else      | Check syntax near the indicated line                  |
+| `No prefix parse function for X`     | An unexpected token appeared where an expression was expected      | Check for misplaced operators or missing values       |
+| `Expected INDENT after ...`          | A block-introducing statement wasn't followed by an indented block | Add an indented body after `if`, `loop`, `task`, etc. |
 
 ### Analyzer Errors
 
-| Error Message | Meaning | Fix |
-|---------------|---------|-----|
-| `Variable 'X' already declared` | Attempted to declare a variable that already exists (no shadowing allowed) | Use a different name or assign to the existing variable |
-| `Cannot assign Y to variable 'X' of type Z` | Type mismatch on assignment | Ensure the value matches the variable's type |
-| `Variable 'X' not declared` | Used a variable that hasn't been declared with `var` | Add a `var` declaration before first use |
-| `Cannot assign to parameter 'X'` | Attempted to modify a task parameter | Copy to a local variable: `var local = X` |
-| `Expected 'deliver' statement in task 'X'` | A `using` task doesn't return a value on all paths | Add `deliver` statements to all code paths |
+| Error Message                               | Meaning                                                                    | Fix                                                     |
+| ------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `Variable 'X' already declared`             | Attempted to declare a variable that already exists (no shadowing allowed) | Use a different name or assign to the existing variable |
+| `Cannot assign Y to variable 'X' of type Z` | Type mismatch on assignment                                                | Ensure the value matches the variable's type            |
+| `Variable 'X' not declared`                 | Used a variable that hasn't been declared with `var`                       | Add a `var` declaration before first use                |
+| `Cannot assign to parameter 'X'`            | Attempted to modify a task parameter                                       | Copy to a local variable: `var local = X`               |
+| `Expected 'deliver' statement in task 'X'`  | A `using` task doesn't return a value on all paths                         | Add `deliver` statements to all code paths              |
 
 ### Runtime Errors
 
-| Error Message | Meaning | Fix |
-|---------------|---------|-----|
-| `Division by zero` | Attempted to divide by zero | Check the divisor before dividing |
-| `Index out of range` | List index is negative or >= length | Verify index is within `0` to `len(list) - 1` |
-| `Key not found: 'X'` | Table doesn't contain the specified key | Use `has_key()` to check before accessing |
-| `undefined identifier: X` | Called a task or used a variable that doesn't exist | Check spelling and ensure it's defined |
-| `File not found: X` | The specified file doesn't exist | Verify the file path with `file_exists()` |
-| `Type mismatch` | An operation received an unexpected type | Check the types of your operands |
+| Error Message             | Meaning                                             | Fix                                           |
+| ------------------------- | --------------------------------------------------- | --------------------------------------------- |
+| `Division by zero`        | Attempted to divide by zero                         | Check the divisor before dividing             |
+| `Index out of range`      | List index is negative or >= length                 | Verify index is within `0` to `len(list) - 1` |
+| `Key not found: 'X'`      | Table doesn't contain the specified key             | Use `has_key()` to check before accessing     |
+| `undefined identifier: X` | Called a task or used a variable that doesn't exist | Check spelling and ensure it's defined        |
+| `File not found: X`       | The specified file doesn't exist                    | Verify the file path with `file_exists()`     |
+| `Type mismatch`           | An operation received an unexpected type            | Check the types of your operands              |
 
 ---
 

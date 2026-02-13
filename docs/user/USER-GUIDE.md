@@ -735,6 +735,18 @@ loop i from 0 to len(names) - 1
 
 ## Advanced Console Output
 
+### Controlling Float Precision
+
+You can control the number of decimal places displayed for floating-point numbers using `set_float_precision(n)`. This affects all subsequent `display()` calls and string conversions.
+
+```plain
+set_float_precision(2)      rem: Show 2 decimal places
+display(1.0/3.0)            rem: "0.33"
+
+set_float_precision(-1)     rem: Reset to default (remove trailing zeros)
+display(1.0/3.0)            rem: "0.3333333333333333"
+```
+
 ### Writing Without Newlines
 
 The standard `display()` function always prints a newline at the end. For advanced output like progress bars, you can write directly to standard output:

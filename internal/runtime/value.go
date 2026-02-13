@@ -30,8 +30,18 @@ type FloatValue struct {
 	Val float64
 }
 
+// FloatPrecision controls the number of decimal places for float display
+// -1 means default formatting (standard Go %g)
+// >= 0 means fixed precision
+var FloatPrecision int = -1
+
 func (v *FloatValue) Type() string   { return "float" }
-func (v *FloatValue) String() string { return fmt.Sprintf("%g", v.Val) }
+func (v *FloatValue) String() string {
+	if FloatPrecision < 0 {
+		return fmt.Sprintf("%g", v.Val)
+	}
+	return fmt.Sprintf("%.*f", FloatPrecision, v.Val)
+}
 func (v *FloatValue) IsTruthy() bool { return v.Val != 0 }
 
 // StringValue represents a string

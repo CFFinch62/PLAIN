@@ -45,6 +45,27 @@ display("x =", 10, "y =", 20)     rem: x = 10 y = 20
 **Returns:** null
 
 ---
+		
+		### `set_float_precision(n)`
+		
+		Sets the number of decimal places used when displaying floating-point numbers.
+		
+		```plain
+		display(1.0/3.0)            rem: 0.3333333333333333 (default)
+		set_float_precision(2)
+		display(1.0/3.0)            rem: 0.33
+		set_float_precision(4)
+		display(1.0/3.0)            rem: 0.3333
+		set_float_precision(-1)     rem: Reset to default
+		```
+		
+		**Arguments:**
+		- `n` (integer) — Number of decimal places. Use `-1` for default formatting (standard Go `%g` behavior, which removes trailing zeros).
+		
+		**Returns:** null
+		
+		---
+
 
 ### `get(prompt)`
 

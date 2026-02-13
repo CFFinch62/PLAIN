@@ -12,24 +12,11 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 
 from plain_ide.app.themes import Theme
+from plain_ide.app.utils import get_resource_path
 
 
 class HelpViewer(QDialog):
     """Help/documentation viewer dialog"""
-
-    def _get_resource_path(self, relative_path: str) -> str:
-        """Get absolute path to resource, works for dev and for PyInstaller"""
-        import sys
-        import os
-        if getattr(sys, 'frozen', False):
-            if hasattr(sys, '_MEIPASS'):
-                 base_path = sys._MEIPASS
-            else:
-                 base_path = os.path.dirname(sys.executable)
-        else:
-            base_path = str(Path(__file__).parent.parent.parent)
-
-        return str(Path(base_path) / relative_path)
 
     def __init__(self, parent=None, theme: Theme = None):
         super().__init__(parent)
@@ -71,7 +58,7 @@ class HelpViewer(QDialog):
     def _load_content(self):
         """Load the quick reference markdown and convert to HTML"""
         # Use robust resource path resolution
-        ref_path = self._get_resource_path("docs/quick_reference.md")
+        ref_path = get_resource_path("docs/quick_reference.md")
         
         if Path(ref_path).exists():
             content = Path(ref_path).read_text(encoding='utf-8')

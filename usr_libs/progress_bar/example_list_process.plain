@@ -1,0 +1,67 @@
+rem: ============================================
+rem: example_list_process.plain - List Processing
+rem: ============================================
+rem: Processes a list of items (generates random
+rem: numbers, sorts, and filters), showing progress
+rem: during each stage of the work.
+rem: ============================================
+use:
+    modules:
+        prog_bar
+
+task Main()
+    var intSize = 500
+
+    rem: Stage 1: Generate random data
+    display(v"Stage 1: Generating {intSize} random numbers...")
+    display("")
+
+    prog_bar.Init(intSize)
+    var lstNumbers = []
+    loop i from 0 to intSize
+        append(lstNumbers, random_int(1, 10000))
+        prog_bar.Update(i)
+        sleep(5)
+    prog_bar.Finish()
+    display("")
+
+    rem: Stage 2: Filter for even numbers
+    display("Stage 2: Filtering for even numbers...")
+    display("")
+
+    prog_bar.Init(intSize)
+    var lstEvens = []
+    loop i from 0 to intSize
+        if mod(lstNumbers[i], 2) = 0
+            append(lstEvens, lstNumbers[i])
+        prog_bar.Update(i)
+        sleep(5)
+    prog_bar.Finish()
+    display("")
+
+    rem: Stage 3: Find numbers above average
+    display("Stage 3: Finding above-average values...")
+    display("")
+
+    var intSum = 0
+    var intEvenCount = len(lstEvens)
+    prog_bar.Init(intEvenCount)
+    loop i from 0 to intEvenCount
+        intSum = intSum + lstEvens[i]
+        prog_bar.Update(i)
+        sleep(5)
+    prog_bar.Finish()
+    display("")
+
+    var intAvg = intSum / intEvenCount
+    var intAbove = 0
+    loop i from 0 to intEvenCount
+        if lstEvens[i] > intAvg
+            intAbove = intAbove + 1
+
+    rem: Report results
+    display("--- Results ---")
+    display(v"Total numbers generated: {intSize}")
+    display(v"Even numbers found:      {intEvenCount}")
+    display(v"Average of evens:        {intAvg}")
+    display(v"Above average count:     {intAbove}")

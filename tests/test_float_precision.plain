@@ -1,0 +1,19 @@
+
+display("Default precision (should be standard formatting):")
+display(1.0/3.0)
+display(123.456789)
+
+display("Setting precision to 2:")
+set_float_precision(2)
+display(1.0/3.0)
+display(123.456789)
+
+display("Setting precision to 4:")
+set_float_precision(4)
+display(1.0/3.0)
+display(123.456789)
+
+display("Resetting precision (should be standard formatting):")
+set_float_precision(-1)
+display(1.0/3.0)
+display(123.456789)
