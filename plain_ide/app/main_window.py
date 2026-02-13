@@ -1070,11 +1070,23 @@ class PlainIDEMainWindow(QMainWindow):
     def _toggle_debug_panel(self):
         """Toggle debug panel visibility"""
         visible = not self.debug_panel.isVisible()
-        self.debug_panel.setVisible(visible)
+        
         if visible:
+            # If terminal is on the right, move it to bottom so it doesn't conflict/crowd
+            if self.settings.settings.terminal.position == "right":
+                self._terminal_position_before_debug = "right"
+                self._set_terminal_position("bottom")
+            
+            self.debug_panel.setVisible(True)
             self.main_splitter.setSizes([250, 550, 300])
         else:
+            self.debug_panel.setVisible(False)
             self.main_splitter.setSizes([250, 850, 0])
+            
+            # Restore terminal position if we moved it
+            if self._terminal_position_before_debug == "right":
+                 self._set_terminal_position("right")
+                 self._terminal_position_before_debug = None
 
     def _toggle_breakpoint_at_cursor(self):
         """Toggle breakpoint at current cursor line"""
@@ -1202,7 +1214,8 @@ class PlainIDEMainWindow(QMainWindow):
 
     def _on_debug_terminated(self):
         """Handle debugger terminated event"""
-        self.debug_panel.setVisible(False)
+        # Keep debug panel visible so user can see last state/result
+        # self.debug_panel.setVisible(False) 
         self.debug_panel.set_debugging_active(False)
         self.debug_panel.add_trace("Program terminated.")
         self.terminal.write_line("\n[OK] Debug session finished.",
@@ -1212,10 +1225,10 @@ class PlainIDEMainWindow(QMainWindow):
         for editor in self.editors.values():
             editor.clear_debug_line()
         
-        # Restore terminal position if it was changed for debugging
-        if self._terminal_position_before_debug == "right":
-            self._set_terminal_position("right")
-            self._terminal_position_before_debug = None
+        # Don't restore terminal position immediately, let user close panel manually
+        # if self._terminal_position_before_debug == "right":
+        #    self._set_terminal_position("right")
+        #    self._terminal_position_before_debug = None
 
     def _on_debug_variables(self, variables: dict):
         """Handle variables received from debugger"""

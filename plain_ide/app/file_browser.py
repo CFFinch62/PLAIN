@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QDir
 from PyQt6.QtGui import QFileSystemModel, QAction
+import shutil
 
 from plain_ide.app.themes import Theme
 from plain_ide.app.settings import SettingsManager
@@ -276,6 +277,13 @@ class FileBrowserWidget(QWidget):
 
         menu.addSeparator()
 
+        if index.isValid():
+            delete_action = QAction("Delete", self)
+            delete_action.triggered.connect(lambda: self._delete_item(path))
+            menu.addAction(delete_action)
+
+        menu.addSeparator()
+
         # Show in file manager
         if path:
             reveal_action = QAction("Reveal in File Manager", self)
@@ -312,6 +320,28 @@ class FileBrowserWidget(QWidget):
                 new_path.mkdir()
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Could not create folder: {e}")
+
+    def _delete_item(self, path: str):
+        """Delete a file or folder"""
+        path_obj = Path(path)
+        if not path_obj.exists():
+            return
+
+        item_type = "folder" if path_obj.is_dir() else "file"
+        reply = QMessageBox.question(
+            self, f"Delete {item_type.capitalize()}",
+            f"Are you sure you want to delete this {item_type}?\n{path}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                if path_obj.is_dir():
+                    shutil.rmtree(path)
+                else:
+                    path_obj.unlink()
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Could not delete {item_type}: {e}")
 
     def _reveal_in_file_manager(self, path: str):
         """Open the file location in system file manager"""

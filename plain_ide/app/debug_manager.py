@@ -2,6 +2,7 @@
 
 import shutil
 import sys
+import json
 from pathlib import Path
 from PyQt6.QtCore import QObject, pyqtSignal, QProcess
 
@@ -43,17 +44,24 @@ class DebugManager(QObject):
         # Build command arguments
         # If we found the 'plain' executable, use it directly
         if interpreter.endswith("plain") or interpreter.endswith("plain.exe"):
-             args = [file_path, "--debug"]
+             args = ["--debug", file_path]
              program = interpreter
         else:
-            # Fallback for dev environment (go run) if for some reason we want that
-            # But _find_plain_interpreter should return the binary path
+            # Fallback for dev environment (go run)
             args = ["run", "./cmd/plain/", "--debug", file_path]
             program = "go"
-
+            
         if breakpoints:
-            bp_str = ",".join(str(line) for line in sorted(breakpoints))
-            args.append(f"--breakpoints={bp_str}")
+             bp_str = ",".join(str(line) for line in sorted(breakpoints))
+             args.append(f"--breakpoints={bp_str}")
+        else:
+             # Stop on entry (line 1) if no breakpoints
+             args.append("--breakpoints=1")
+
+        # Message is now constructed earlier, remove old append logic
+        # if breakpoints:
+        #     bp_str = ",".join(str(line) for line in sorted(breakpoints))
+        #     args.append(f"--breakpoints={bp_str}")
 
         # Connect signals - all reading happens in main thread via signals
         self.process.readyReadStandardOutput.connect(self._on_stdout)
@@ -129,8 +137,10 @@ class DebugManager(QObject):
                 try:
                     event = json.loads(line)
                     self._handle_event(event)
-                except json.JSONDecodeError as e:
-                    self.error_received.emit(f"JSON parse error: {e} - data: {line[:100]}")
+                except json.JSONDecodeError:
+                    # Not a JSON event, treat as standard program output
+                    # Restore newline that was stripped
+                    self.output_received.emit(line + "\n")
 
     def _handle_event(self, event: dict):
         """Handle debug event from runtime"""

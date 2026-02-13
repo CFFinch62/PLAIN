@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPlainTextEdit, QHBoxLayout, QPushButton
 from PyQt6.QtCore import Qt, pyqtSignal, QProcess, QThread
-from PyQt6.QtGui import QFont, QColor, QTextCursor, QKeyEvent
+from PyQt6.QtGui import QFont, QColor, QTextCursor, QKeyEvent, QKeySequence
 
 from plain_ide.app.themes import Theme
 from plain_ide.app.settings import SettingsManager

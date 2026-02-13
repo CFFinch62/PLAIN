@@ -6,7 +6,7 @@ Provides search and replace functionality within the code editor
 import re
 from PyQt6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLineEdit, QPushButton,
-    QCheckBox, QLabel
+    QCheckBox, QLabel, QTextEdit
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QTextCursor, QTextCharFormat, QColor, QKeySequence
@@ -223,7 +223,7 @@ class FindReplaceWidget(QWidget):
         # Use extra selections for highlighting (non-destructive)
         selections = []
         for i, (start, end) in enumerate(self._matches):
-            selection = self._editor.ExtraSelection()
+            selection = QTextEdit.ExtraSelection()
             fmt = QTextCharFormat(self._current_format if i == self._current_match else self._highlight_format)
             selection.format = fmt
             cursor = self._editor.textCursor()

@@ -2,13 +2,9 @@
 
 ## Current Language Issues
 
-- need to be able to display floats with a specified amount of decimal places
 
 ## Current IDE Issues
 
-- Need to add 'delete file/folder' to file browser context menu
-- If terminal position is 'right side' and debug panel is selected to be shown it should show and move terminal to center bottom. this does not work. Debug panel will only show if terminal is at bottom before it is shown.
-- When starting the debugger the IDE crashes
 
 ## Future Language Enhancements (Standard Library)
 
