@@ -156,6 +156,8 @@ var zero = 0
 
 **Range:** approximately -9.2 × 10¹⁸ to 9.2 × 10¹⁸
 
+**Binary and hex string conversion:** Integers can be converted to binary or hexadecimal string representations using `to_bin()` and `to_hex()`. The `to_int()` function recognizes `0b` (binary) and `0x` (hex) prefixed strings for reverse conversion. See [STDLIB.md](STDLIB.md#3-type-conversion) for details.
+
 ### 2.2 Float
 
 Numbers with a decimal point. Internally stored as 64-bit IEEE 754 floating-point.

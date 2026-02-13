@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -188,8 +189,23 @@ func GetBuiltins() map[string]*BuiltinValue {
 				case *FloatValue:
 					return NewInteger(int64(arg.Val))
 				case *StringValue:
+					s := strings.TrimSpace(arg.Val)
+					if strings.HasPrefix(s, "0b") || strings.HasPrefix(s, "0B") {
+						i, err := strconv.ParseInt(s[2:], 2, 64)
+						if err != nil {
+							return NewError("cannot convert '%s' to integer", arg.Val)
+						}
+						return NewInteger(i)
+					}
+					if strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
+						i, err := strconv.ParseInt(s[2:], 16, 64)
+						if err != nil {
+							return NewError("cannot convert '%s' to integer", arg.Val)
+						}
+						return NewInteger(i)
+					}
 					var i int64
-					_, err := fmt.Sscanf(arg.Val, "%d", &i)
+					_, err := fmt.Sscanf(s, "%d", &i)
 					if err != nil {
 						return NewError("cannot convert '%s' to integer", arg.Val)
 					}
@@ -233,6 +249,17 @@ func GetBuiltins() map[string]*BuiltinValue {
 				if len(args) != 1 {
 					return NewError("to_string() takes exactly 1 argument")
 				}
+				// Auto-detect binary/hex byte sequences when input is a string
+				if strVal, ok := args[0].(*StringValue); ok {
+					s := strVal.Val
+					if decoded, ok := decodeBinaryBytes(s); ok {
+						return NewString(decoded)
+					}
+					if decoded, ok := decodeHexBytes(s); ok {
+						return NewString(decoded)
+					}
+					return NewString(s)
+				}
 				return NewString(args[0].String())
 			},
 		},
@@ -260,6 +287,68 @@ func GetBuiltins() map[string]*BuiltinValue {
 					return NewBoolean(len(arg.Pairs) > 0)
 				default:
 					return NewBoolean(true)
+				}
+			},
+		},
+		"to_bin": {
+			Name: "to_bin",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("to_bin() takes exactly 1 argument")
+				}
+				switch arg := args[0].(type) {
+				case *IntegerValue:
+					if arg.Val < 0 {
+						return NewString("-" + strconv.FormatInt(-arg.Val, 2))
+					}
+					return NewString(strconv.FormatInt(arg.Val, 2))
+				case *BooleanValue:
+					if arg.Val {
+						return NewString("1")
+					}
+					return NewString("0")
+				case *StringValue:
+					if len(arg.Val) == 0 {
+						return NewString("")
+					}
+					parts := make([]string, len(arg.Val))
+					for i, ch := range arg.Val {
+						parts[i] = fmt.Sprintf("%08b", ch)
+					}
+					return NewString(strings.Join(parts, " "))
+				default:
+					return NewError("to_bin() argument must be an integer, boolean, or string")
+				}
+			},
+		},
+		"to_hex": {
+			Name: "to_hex",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("to_hex() takes exactly 1 argument")
+				}
+				switch arg := args[0].(type) {
+				case *IntegerValue:
+					if arg.Val < 0 {
+						return NewString("-" + strings.ToUpper(strconv.FormatInt(-arg.Val, 16)))
+					}
+					return NewString(strings.ToUpper(strconv.FormatInt(arg.Val, 16)))
+				case *BooleanValue:
+					if arg.Val {
+						return NewString("1")
+					}
+					return NewString("0")
+				case *StringValue:
+					if len(arg.Val) == 0 {
+						return NewString("")
+					}
+					parts := make([]string, len(arg.Val))
+					for i, ch := range arg.Val {
+						parts[i] = fmt.Sprintf("%02X", ch)
+					}
+					return NewString(strings.Join(parts, " "))
+				default:
+					return NewError("to_hex() argument must be an integer, boolean, or string")
 				}
 			},
 		},
@@ -1875,6 +1964,54 @@ func toFloat64(v Value) *float64 {
 	default:
 		return nil
 	}
+}
+
+// decodeBinaryBytes checks if a string is space-separated 8-digit binary bytes
+// and decodes them to the corresponding text string.
+func decodeBinaryBytes(s string) (string, bool) {
+	if len(s) == 0 {
+		return "", false
+	}
+	parts := strings.Split(s, " ")
+	if len(parts) < 1 {
+		return "", false
+	}
+	var result []byte
+	for _, part := range parts {
+		if len(part) != 8 {
+			return "", false
+		}
+		val, err := strconv.ParseUint(part, 2, 8)
+		if err != nil {
+			return "", false
+		}
+		result = append(result, byte(val))
+	}
+	return string(result), true
+}
+
+// decodeHexBytes checks if a string is space-separated 2-digit hex bytes
+// and decodes them to the corresponding text string.
+func decodeHexBytes(s string) (string, bool) {
+	if len(s) == 0 {
+		return "", false
+	}
+	parts := strings.Split(s, " ")
+	if len(parts) < 1 {
+		return "", false
+	}
+	var result []byte
+	for _, part := range parts {
+		if len(part) != 2 {
+			return "", false
+		}
+		val, err := strconv.ParseUint(part, 16, 8)
+		if err != nil {
+			return "", false
+		}
+		result = append(result, byte(val))
+	}
+	return string(result), true
 }
 
 // Helper function to compare two values

@@ -481,6 +481,10 @@ var n = to_int(s)              rem: String → Integer
 var f = to_float(s)            rem: String → Float
 var str = to_string(42)        rem: Any → String
 var b = to_bool(1)             rem: Any → Boolean
+var bin = to_bin(255)           rem: Integer/String/Boolean → Binary string ("11111111")
+var hex = to_hex(255)           rem: Integer/String/Boolean → Hex string ("FF")
+var fromBin = to_int("0b1010")  rem: Binary string → Integer (10)
+var fromHex = to_int("0xFF")    rem: Hex string → Integer (255)
 
 rem: Type checking
 display(is_int(42))            rem: true

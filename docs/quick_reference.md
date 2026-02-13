@@ -298,7 +298,7 @@ has_key(tbl, key) remove(tbl, key)
 
 ### Type Conversion
 ```
-to_string(v) to_int(v) to_float(v) to_bool(v)
+to_string(v) to_int(v) to_float(v) to_bool(v) to_bin(v) to_hex(v)
 ```
 
 ### Type Checking

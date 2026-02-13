@@ -209,16 +209,18 @@ display(type_of(null))      rem: null
 
 ### `to_int(value)`
 
-Converts a value to an integer.
+Converts a value to an integer. Recognizes `0b` (binary) and `0x` (hex) prefixed strings.
 
 ```plain
-display(to_int(3.7))       rem: 3 (truncates toward zero)
-display(to_int("42"))      rem: 42
-display(to_int(true))      rem: 1
-display(to_int(false))     rem: 0
+display(to_int(3.7))          rem: 3 (truncates toward zero)
+display(to_int("42"))         rem: 42
+display(to_int(true))         rem: 1
+display(to_int(false))        rem: 0
+display(to_int("0b101010"))   rem: 42 (binary prefix)
+display(to_int("0xFF"))       rem: 255 (hex prefix)
 ```
 
-**Accepts:** integer (returns as-is), float (truncates), string (parses), boolean (true=1, false=0)
+**Accepts:** integer (returns as-is), float (truncates), string (parses decimal, `0b` binary, or `0x` hex), boolean (true=1, false=0)
 
 **Errors:** If the string cannot be parsed as an integer.
 
@@ -241,15 +243,23 @@ display(to_float("3.14"))   rem: 3.14
 
 ### `to_string(value)`
 
-Converts any value to its string representation.
+Converts any value to its string representation. When given a string, auto-detects binary or hex byte sequences and decodes them to text.
 
 ```plain
-display(to_string(42))      rem: "42"
-display(to_string(true))    rem: "true"
-display(to_string([1, 2]))  rem: "[1, 2]"
+display(to_string(42))                        rem: "42"
+display(to_string(true))                      rem: "true"
+display(to_string([1, 2]))                    rem: "[1, 2]"
+display(to_string("01001000 01101001"))        rem: "Hi" (binary bytes decoded)
+display(to_string("48 69"))                    rem: "Hi" (hex bytes decoded)
+display(to_string("hello"))                    rem: "hello" (not a byte pattern, unchanged)
 ```
 
 **Accepts:** Any type.
+
+**Auto-detection rules (string input only):**
+- Binary bytes: space-separated groups of exactly 8 digits of `0`/`1`
+- Hex bytes: space-separated groups of exactly 2 hex digits
+- If neither pattern matches, the string is returned unchanged
 
 ---
 
@@ -274,6 +284,44 @@ display(to_bool([]))         rem: false (empty list)
 - Lists: empty is false, non-empty is true
 - Tables: empty is false, non-empty is true
 - Everything else: true
+
+### `to_bin(value)`
+
+Converts an integer, boolean, or string to its binary representation as a string.
+
+```plain
+display(to_bin(42))          rem: "101010"
+display(to_bin(0))           rem: "0"
+display(to_bin(-42))         rem: "-101010"
+display(to_bin(true))        rem: "1"
+display(to_bin(false))       rem: "0"
+display(to_bin("Hi"))        rem: "01001000 01101001"
+```
+
+**Conversion rules:**
+- Integers: converted to base-2 digits (negative sign preserved)
+- Booleans: `true` → `"1"`, `false` → `"0"`
+- Strings: each character becomes its 8-bit binary representation, space-separated
+- Floats, lists, tables, and other types produce an error
+
+### `to_hex(value)`
+
+Converts an integer, boolean, or string to its hexadecimal representation as a string (uppercase).
+
+```plain
+display(to_hex(255))         rem: "FF"
+display(to_hex(0))           rem: "0"
+display(to_hex(-42))         rem: "-2A"
+display(to_hex(true))        rem: "1"
+display(to_hex(false))       rem: "0"
+display(to_hex("Hi"))        rem: "48 69"
+```
+
+**Conversion rules:**
+- Integers: converted to base-16 uppercase digits (negative sign preserved)
+- Booleans: `true` → `"1"`, `false` → `"0"`
+- Strings: each character becomes its 2-digit uppercase hex representation, space-separated
+- Floats, lists, tables, and other types produce an error
 
 ---
 
@@ -1556,7 +1604,7 @@ task OnTick with (timer, elapsed)
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | **Console**        | `display`, `get`                                                                                                                       |
 | **Types**          | `is_int`, `is_float`, `is_string`, `is_bool`, `is_list`, `is_table`, `is_null`, `type_of`                                              |
-| **Conversion**     | `to_int`, `to_float`, `to_string`, `to_bool`                                                                                           |
+| **Conversion**     | `to_int`, `to_float`, `to_string`, `to_bool`, `to_bin`, `to_hex`                                                                       |
 | **Strings**        | `len`, `upper`, `lower`, `trim`, `split`, `join`, `substring`, `replace`, `contains`, `starts_with`, `ends_with`                       |
 | **Math**           | `abs`, `sqrt`, `sqr`, `pow`, `round`, `floor`, `ceil`, `min`, `max`, `mod`                                                             |
 | **Trigonometry**   | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`                                                                                   |
