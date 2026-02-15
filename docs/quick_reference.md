@@ -550,6 +550,26 @@ Examples:
 
 ---
 
+## Python ↔ PLAIN Converter
+
+```bash
+# CLI usage
+python3 -m plain_converter p2p input.py -o output.plain
+python3 -m plain_converter plain2py input.plain -o output.py
+python3 -m plain_converter p2p src/ -o plain_src/ -r
+
+# GUI
+python3 -m plain_converter --gui
+
+# IDE: Tools → Convert File (Ctrl+Shift+C)
+```
+
+**Key conversions:** `def`↔`task`, `return`↔`deliver`, `break`↔`exit`, `raise`↔`abort`, `#`↔`rem:`, `f""`↔`v""`, `+`(strings)↔`&`, `@dataclass`↔`record`, `import`↔`use:`, `print`↔`display`
+
+**Options:** `--recursive`, `--verbose`, `--dry-run`, `--stats`, `--strict`, `--add-type-prefixes`, `--gui`
+
+---
+
 ## Implementation Reminders
 
 ### For Go Implementation

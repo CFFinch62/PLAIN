@@ -44,6 +44,12 @@ if plain_exe.exists():
 elif plain_exe_win.exists():
     binaries.append((str(plain_exe_win), '_internal'))  # Windows version
 
+# Collect converter stdlib mapping JSON files
+stdlib_dir = project_root / 'plain_converter' / 'stdlib_mapping'
+if stdlib_dir.exists():
+    for json_file in stdlib_dir.glob('*.json'):
+        theme_datas.append((str(json_file), 'plain_converter/stdlib_mapping'))
+
 # Collect docs
 docs_dir = project_root / 'docs'
 if docs_dir.exists():
@@ -71,6 +77,17 @@ a = Analysis(
         'plain_ide.app.find_replace',
         'plain_ide.app.settings_dialog',
         'plain_ide.app.help_viewer',
+        # Python ↔ PLAIN converter
+        'plain_converter',
+        'plain_converter.main',
+        'plain_converter.gui',
+        'plain_converter.converter.python_to_plain',
+        'plain_converter.converter.plain_to_python',
+        'plain_converter.converter.plain_parser',
+        'plain_converter.utils.naming',
+        'plain_converter.utils.warnings',
+        'plain_converter.utils.formatting',
+        'plain_converter.stdlib_mapping',
     ],
     hookspath=[],
     hooksconfig={},

@@ -1,0 +1,274 @@
+{
+    "_description": "Mapping of Python standard library functions/methods to PLAIN equivalents",
+    "_format": "Each entry maps a Python function/method to its PLAIN equivalent with metadata",
+
+    "builtin_functions": {
+        "print": {
+            "plain_name": "display",
+            "call_style": "function",
+            "notes": "Direct mapping"
+        },
+        "input": {
+            "plain_name": "get",
+            "call_style": "function",
+            "notes": "Direct mapping"
+        },
+        "len": {
+            "plain_name": "length",
+            "call_style": "function",
+            "notes": "Python len() -> PLAIN length()"
+        },
+        "str": {
+            "plain_name": "to_string",
+            "call_style": "function",
+            "notes": "Type conversion"
+        },
+        "int": {
+            "plain_name": "to_int",
+            "call_style": "function",
+            "notes": "Type conversion"
+        },
+        "float": {
+            "plain_name": "to_float",
+            "call_style": "function",
+            "notes": "Type conversion"
+        },
+        "bool": {
+            "plain_name": "to_bool",
+            "call_style": "function",
+            "notes": "Type conversion"
+        },
+        "bin": {
+            "plain_name": "to_bin",
+            "call_style": "function",
+            "notes": "Type conversion"
+        },
+        "hex": {
+            "plain_name": "to_hex",
+            "call_style": "function",
+            "notes": "Type conversion"
+        },
+        "abs": {
+            "plain_name": "abs",
+            "call_style": "function",
+            "notes": "Same name"
+        },
+        "round": {
+            "plain_name": "round",
+            "call_style": "function",
+            "notes": "Same name"
+        },
+        "pow": {
+            "plain_name": "pow",
+            "call_style": "function",
+            "notes": "Same name"
+        },
+        "min": {
+            "plain_name": "min",
+            "call_style": "function",
+            "notes": "Same name"
+        },
+        "max": {
+            "plain_name": "max",
+            "call_style": "function",
+            "notes": "Same name"
+        },
+        "chr": {
+            "plain_name": "chr",
+            "call_style": "function",
+            "notes": "Same name"
+        },
+        "ord": {
+            "plain_name": "ord",
+            "call_style": "function",
+            "notes": "Same name"
+        },
+        "isinstance": {
+            "plain_name": null,
+            "call_style": "special",
+            "notes": "Maps to is_int, is_float, is_string, etc. based on type argument"
+        }
+    },
+
+    "str_methods": {
+        "upper": {
+            "plain_name": "upper",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "s.upper() -> upper(s)"
+        },
+        "lower": {
+            "plain_name": "lower",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "s.lower() -> lower(s)"
+        },
+        "strip": {
+            "plain_name": "trim",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "s.strip() -> trim(s)"
+        },
+        "split": {
+            "plain_name": "split",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "s.split(d) -> split(s, d)"
+        },
+        "join": {
+            "plain_name": "join",
+            "call_style": "function_from_method",
+            "arg_transform": "swap_object_and_first_arg",
+            "notes": "sep.join(lst) -> join(lst, sep) - args reversed"
+        },
+        "replace": {
+            "plain_name": "replace",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "s.replace(old, new) -> replace(s, old, new)"
+        },
+        "startswith": {
+            "plain_name": "starts_with",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "s.startswith(p) -> starts_with(s, p)"
+        },
+        "endswith": {
+            "plain_name": "ends_with",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "s.endswith(s) -> ends_with(s, s)"
+        }
+    },
+
+    "list_methods": {
+        "append": {
+            "plain_name": "append",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "lst.append(x) -> append(lst, x)"
+        },
+        "insert": {
+            "plain_name": "insert",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "lst.insert(i, x) -> insert(lst, i, x)"
+        },
+        "remove": {
+            "plain_name": "remove",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "lst.remove(x) -> remove(lst, x)"
+        },
+        "pop": {
+            "plain_name": "pop",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "lst.pop(i) -> pop(lst, i)"
+        },
+        "sort": {
+            "plain_name": "sort",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "lst.sort() -> sort(lst)"
+        },
+        "reverse": {
+            "plain_name": "reverse",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "lst.reverse() -> reverse(lst)"
+        }
+    },
+
+    "dict_methods": {
+        "keys": {
+            "plain_name": "keys",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "tbl.keys() -> keys(tbl)"
+        },
+        "values": {
+            "plain_name": "values",
+            "call_style": "function_from_method",
+            "arg_transform": "object_becomes_first_arg",
+            "notes": "tbl.values() -> values(tbl)"
+        }
+    },
+
+    "math_module": {
+        "_import": "math",
+        "math.floor": {
+            "plain_name": "floor",
+            "call_style": "function",
+            "notes": "math.floor(x) -> floor(x)"
+        },
+        "math.ceil": {
+            "plain_name": "ceil",
+            "call_style": "function",
+            "notes": "math.ceil(x) -> ceil(x)"
+        },
+        "math.sqrt": {
+            "plain_name": "sqrt",
+            "call_style": "function",
+            "notes": "math.sqrt(x) -> sqrt(x)"
+        },
+        "math.sin": {
+            "plain_name": "sin",
+            "call_style": "function",
+            "notes": "math.sin(x) -> sin(x)"
+        },
+        "math.cos": {
+            "plain_name": "cos",
+            "call_style": "function",
+            "notes": "math.cos(x) -> cos(x)"
+        },
+        "math.tan": {
+            "plain_name": "tan",
+            "call_style": "function",
+            "notes": "math.tan(x) -> tan(x)"
+        }
+    },
+
+    "random_module": {
+        "_import": "random",
+        "random.random": {
+            "plain_name": "random",
+            "call_style": "function",
+            "notes": "random.random() -> random()"
+        },
+        "random.randint": {
+            "plain_name": "random_int",
+            "call_style": "function",
+            "notes": "random.randint(a, b) -> random_int(a, b)"
+        }
+    },
+
+    "os_module": {
+        "_import": "os",
+        "os.path.exists": {
+            "plain_name": "file_exists",
+            "call_style": "function",
+            "notes": "os.path.exists(p) -> file_exists(p)"
+        },
+        "os.remove": {
+            "plain_name": "delete_file",
+            "call_style": "function",
+            "notes": "os.remove(p) -> delete_file(p)"
+        },
+        "os.rename": {
+            "plain_name": "rename_file",
+            "call_style": "function",
+            "notes": "os.rename(old, new) -> rename_file(old, new)"
+        }
+    },
+
+    "operators": {
+        "_description": "Python operators that map to PLAIN functions",
+        "in": {
+            "plain_name": "contains",
+            "call_style": "special",
+            "notes": "x in lst -> contains(lst, x) - operands reversed"
+        }
+    }
+}
+

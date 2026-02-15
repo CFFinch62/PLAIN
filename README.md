@@ -14,6 +14,7 @@ A programming language designed to be approachable without sacrificing competenc
 - ✅ Runtime/Interpreter with full language support
 - ✅ Standard library (core modules)
 - ✅ Integrated IDE with debugging support
+- ✅ Bidirectional Python ↔ PLAIN code converter
 - ✅ Comprehensive documentation and curriculum
 
 ## Features
@@ -29,6 +30,7 @@ A programming language designed to be approachable without sacrificing competenc
 - **Serial port I/O** - Full support for RS-232/RS-485 and virtual COM ports
 - **Network I/O** - TCP/UDP client and server support for IP-based communication
 - **Comprehensive standard library** - 93+ built-in functions for real-world tasks
+- **Python ↔ PLAIN converter** - Bidirectional code translation with CLI, GUI, and IDE integration
 
 ## Quick Example
 
@@ -73,23 +75,50 @@ See the `docs/` directory for complete documentation:
 - **[quick_reference.md](docs/quick_reference.md)** - Syntax cheat sheet
 - **[testing_strategy.md](docs/testing_strategy.md)** - Testing approach
 - **[session_log.md](docs/session_log.md)** - Development progress tracker
+- **[USER-GUIDE.md](docs/user/USER-GUIDE.md)** - Complete user guide
 
 ## Project Structure
 
 ```
-plain/
-├── cmd/plain/          # Interpreter executable
+PLAIN/
+├── cmd/plain/              # Interpreter executable (Go)
 ├── internal/
-│   ├── lexer/         # Tokenization (✅ complete)
-│   ├── token/         # Token definitions (✅ complete)
-│   ├── parser/        # AST construction (✅ complete)
-│   ├── ast/           # AST node definitions (✅ complete)
-│   ├── types/         # Type system (⏳ next)
-│   └── runtime/       # Interpreter (⏳ planned)
-├── examples/          # Example PLAIN programs
-├── docs/              # Complete documentation
-└── tests/             # Test files
+│   ├── lexer/             # Tokenization (✅ complete)
+│   ├── token/             # Token definitions (✅ complete)
+│   ├── parser/            # AST construction (✅ complete)
+│   ├── ast/               # AST node definitions (✅ complete)
+│   ├── types/             # Type system (✅ complete)
+│   └── runtime/           # Interpreter (✅ complete)
+├── plain_ide/              # Integrated IDE (Python/PyQt6)
+├── plain_converter/        # Python ↔ PLAIN code converter
+│   ├── converter/         # Core conversion engines
+│   ├── stdlib_mapping/    # Standard library mapping (JSON)
+│   ├── utils/             # Naming, formatting, warning utilities
+│   └── tests/             # 238 unit tests
+├── examples/               # Example PLAIN programs
+├── docs/                   # Complete documentation
+└── tests/                  # Interpreter test files
 ```
+
+## Python ↔ PLAIN Converter
+
+PLAIN includes a bidirectional code converter that translates between Python and PLAIN:
+
+```bash
+# Convert Python to PLAIN
+python3 -m plain_converter p2p script.py -o script.plain
+
+# Convert PLAIN to Python
+python3 -m plain_converter plain2py program.plain -o program.py
+
+# Batch convert a directory
+python3 -m plain_converter p2p src/ -o plain_src/ --recursive
+
+# Launch the GUI
+python3 -m plain_converter --gui
+```
+
+The converter handles variables, functions/tasks, control flow, error handling, records/dataclasses, standard library mapping, type annotations, imports/modules, and comments. It is also integrated into the IDE via **Tools → Convert File** (`Ctrl+Shift+C`).
 
 ## Design Philosophy
 

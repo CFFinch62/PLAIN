@@ -1,0 +1,16 @@
+rem: Calculate Fibonacci number recursively
+task Fibonacci using (n)
+    if n <= 1
+        deliver n
+
+    var a = Fibonacci(n - 1)
+    var b = Fibonacci(n - 2)
+    deliver a + b
+
+task Main()
+    var count = 10
+
+    loop i from 0 to count
+        var result = Fibonacci(i)
+        display(v"Fibonacci({i}) = {result}")
+

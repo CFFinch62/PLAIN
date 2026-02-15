@@ -1,0 +1,20 @@
+task GetGrade using (score)
+    choose true
+        choice score >= 90
+            deliver "A"
+        choice score >= 80
+            deliver "B"
+        choice score >= 70
+            deliver "C"
+        choice score >= 60
+            deliver "D"
+        default
+            deliver "F"
+
+task Main()
+    var scores = [95, 87, 72, 65, 58]
+
+    loop score in scores
+        var grade = GetGrade(score)
+        display(v"Score {score} = Grade {grade}")
+

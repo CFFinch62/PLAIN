@@ -1,0 +1,5 @@
+task Main()
+    var name = "World"
+    var greeting = v"Hello, {name}!"
+    display(greeting)
+

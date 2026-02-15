@@ -35,6 +35,9 @@
   ('pyi_rth_inspect',
    '/usr/lib/python3/dist-packages/PyInstaller/hooks/rthooks/pyi_rth_inspect.py',
    'PYSOURCE'),
+  ('pyi_rth__tkinter',
+   '/usr/lib/python3/dist-packages/PyInstaller/hooks/rthooks/pyi_rth__tkinter.py',
+   'PYSOURCE'),
   ('pyi_rth_pyqt6',
    '/usr/lib/python3/dist-packages/PyInstaller/hooks/rthooks/pyi_rth_pyqt6.py',
    'PYSOURCE'),
@@ -47,8 +50,8 @@
  [],
  False,
  False,
- 1771125508,
+ 1771169765,
  [('run',
    '/usr/lib/python3/dist-packages/PyInstaller/bootloader/Linux-64bit-intel/run',
    'EXECUTABLE')],
- '/lib/x86_64-linux-gnu/libpython3.13.so.1.0')
+ '/lib/x86_64-linux-gnu/libpython3.13.so')

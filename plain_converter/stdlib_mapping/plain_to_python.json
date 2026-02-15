@@ -1,0 +1,389 @@
+{
+    "_description": "Mapping of PLAIN standard library functions to Python equivalents",
+    "_format": "Each entry maps a PLAIN function to its Python equivalent with metadata",
+
+    "console_io": {
+        "display": {
+            "python_name": "print",
+            "call_style": "function",
+            "import_required": null,
+            "notes": "Direct mapping"
+        },
+        "get": {
+            "python_name": "input",
+            "call_style": "function",
+            "import_required": null,
+            "notes": "Direct mapping"
+        },
+        "clear": {
+            "python_name": "os.system('clear')",
+            "call_style": "special",
+            "import_required": "os",
+            "notes": "Platform-dependent"
+        }
+    },
+
+    "type_conversion": {
+        "to_string": {
+            "python_name": "str",
+            "call_style": "function",
+            "import_required": null
+        },
+        "to_int": {
+            "python_name": "int",
+            "call_style": "function",
+            "import_required": null
+        },
+        "to_float": {
+            "python_name": "float",
+            "call_style": "function",
+            "import_required": null
+        },
+        "to_bool": {
+            "python_name": "bool",
+            "call_style": "function",
+            "import_required": null
+        },
+        "to_bin": {
+            "python_name": "bin",
+            "call_style": "function",
+            "import_required": null
+        },
+        "to_hex": {
+            "python_name": "hex",
+            "call_style": "function",
+            "import_required": null
+        }
+    },
+
+    "type_checking": {
+        "is_int": {
+            "python_name": "isinstance",
+            "call_style": "special",
+            "python_template": "isinstance({0}, int)",
+            "import_required": null
+        },
+        "is_float": {
+            "python_name": "isinstance",
+            "call_style": "special",
+            "python_template": "isinstance({0}, float)",
+            "import_required": null
+        },
+        "is_string": {
+            "python_name": "isinstance",
+            "call_style": "special",
+            "python_template": "isinstance({0}, str)",
+            "import_required": null
+        },
+        "is_bool": {
+            "python_name": "isinstance",
+            "call_style": "special",
+            "python_template": "isinstance({0}, bool)",
+            "import_required": null
+        },
+        "is_list": {
+            "python_name": "isinstance",
+            "call_style": "special",
+            "python_template": "isinstance({0}, list)",
+            "import_required": null
+        },
+        "is_table": {
+            "python_name": "isinstance",
+            "call_style": "special",
+            "python_template": "isinstance({0}, dict)",
+            "import_required": null
+        },
+        "is_null": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "{0} is None",
+            "import_required": null
+        }
+    },
+
+    "math_functions": {
+        "abs": {
+            "python_name": "abs",
+            "call_style": "function",
+            "import_required": null
+        },
+        "round": {
+            "python_name": "round",
+            "call_style": "function",
+            "import_required": null
+        },
+        "floor": {
+            "python_name": "math.floor",
+            "call_style": "function",
+            "import_required": "math"
+        },
+        "ceil": {
+            "python_name": "math.ceil",
+            "call_style": "function",
+            "import_required": "math"
+        },
+        "sqrt": {
+            "python_name": "math.sqrt",
+            "call_style": "function",
+            "import_required": "math"
+        },
+        "sqr": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "{0} ** 2",
+            "import_required": null
+        },
+        "pow": {
+            "python_name": "pow",
+            "call_style": "function",
+            "import_required": null
+        },
+        "min": {
+            "python_name": "min",
+            "call_style": "function",
+            "import_required": null
+        },
+        "max": {
+            "python_name": "max",
+            "call_style": "function",
+            "import_required": null
+        },
+        "sin": {
+            "python_name": "math.sin",
+            "call_style": "function",
+            "import_required": "math"
+        },
+        "cos": {
+            "python_name": "math.cos",
+            "call_style": "function",
+            "import_required": "math"
+        },
+        "tan": {
+            "python_name": "math.tan",
+            "call_style": "function",
+            "import_required": "math"
+        },
+        "random": {
+            "python_name": "random.random",
+            "call_style": "function",
+            "import_required": "random"
+        },
+        "random_int": {
+            "python_name": "random.randint",
+            "call_style": "function",
+            "import_required": "random"
+        }
+    },
+
+    "string_functions": {
+        "length": {
+            "python_name": "len",
+            "call_style": "function",
+            "import_required": null,
+            "notes": "PLAIN length() -> Python len()"
+        },
+        "upper": {
+            "python_name": "upper",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "upper(s) -> s.upper()"
+        },
+        "lower": {
+            "python_name": "lower",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "lower(s) -> s.lower()"
+        },
+        "trim": {
+            "python_name": "strip",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "trim(s) -> s.strip()"
+        },
+        "split": {
+            "python_name": "split",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "split(s, d) -> s.split(d)"
+        },
+        "join": {
+            "python_name": "join",
+            "call_style": "method_from_function",
+            "arg_transform": "swap_and_first_becomes_object",
+            "import_required": null,
+            "notes": "join(lst, sep) -> sep.join(lst) - args reversed"
+        },
+        "substring": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "{0}[{1}:{2}]",
+            "import_required": null,
+            "notes": "substring(s, start, end) -> s[start:end]"
+        },
+        "replace": {
+            "python_name": "replace",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "replace(s, old, new) -> s.replace(old, new)"
+        },
+        "contains": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "{1} in {0}",
+            "import_required": null,
+            "notes": "contains(s, search) -> search in s"
+        },
+        "starts_with": {
+            "python_name": "startswith",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "starts_with(s, p) -> s.startswith(p)"
+        },
+        "ends_with": {
+            "python_name": "endswith",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "ends_with(s, s) -> s.endswith(s)"
+        },
+        "chr": {
+            "python_name": "chr",
+            "call_style": "function",
+            "import_required": null
+        },
+        "ord": {
+            "python_name": "ord",
+            "call_style": "function",
+            "import_required": null
+        }
+    },
+
+    "list_functions": {
+        "append": {
+            "python_name": "append",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "append(lst, x) -> lst.append(x)"
+        },
+        "insert": {
+            "python_name": "insert",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "insert(lst, i, x) -> lst.insert(i, x)"
+        },
+        "remove": {
+            "python_name": "remove",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "remove(lst, x) -> lst.remove(x)"
+        },
+        "pop": {
+            "python_name": "pop",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "pop(lst, i) -> lst.pop(i)"
+        },
+        "sort": {
+            "python_name": "sort",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "sort(lst) -> lst.sort()"
+        },
+        "reverse": {
+            "python_name": "reverse",
+            "call_style": "method_from_function",
+            "arg_transform": "first_arg_becomes_object",
+            "import_required": null,
+            "notes": "reverse(lst) -> lst.reverse()"
+        }
+    },
+
+    "table_functions": {
+        "keys": {
+            "python_name": "keys",
+            "call_style": "special",
+            "python_template": "list({0}.keys())",
+            "import_required": null,
+            "notes": "keys(tbl) -> list(tbl.keys())"
+        },
+        "values": {
+            "python_name": "values",
+            "call_style": "special",
+            "python_template": "list({0}.values())",
+            "import_required": null,
+            "notes": "values(tbl) -> list(tbl.values())"
+        },
+        "has_key": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "{1} in {0}",
+            "import_required": null,
+            "notes": "has_key(tbl, key) -> key in tbl"
+        }
+    },
+
+    "file_io": {
+        "read_file": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "open({0}).read()",
+            "import_required": null
+        },
+        "write_file": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "open({0}, 'w').write({1})",
+            "import_required": null
+        },
+        "append_file": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "open({0}, 'a').write({1})",
+            "import_required": null
+        },
+        "read_lines": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "open({0}).readlines()",
+            "import_required": null
+        },
+        "write_lines": {
+            "python_name": null,
+            "call_style": "special",
+            "python_template": "open({0}, 'w').writelines({1})",
+            "import_required": null
+        },
+        "file_exists": {
+            "python_name": "os.path.exists",
+            "call_style": "function",
+            "import_required": "os"
+        },
+        "delete_file": {
+            "python_name": "os.remove",
+            "call_style": "function",
+            "import_required": "os"
+        },
+        "rename_file": {
+            "python_name": "os.rename",
+            "call_style": "function",
+            "import_required": "os"
+        },
+        "copy_file": {
+            "python_name": "shutil.copy",
+            "call_style": "function",
+            "import_required": "shutil"
+        }
+    }
+}
+

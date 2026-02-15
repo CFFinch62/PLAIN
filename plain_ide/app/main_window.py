@@ -353,6 +353,15 @@ class PlainIDEMainWindow(QMainWindow):
         toggle_debug_panel_action.triggered.connect(self._toggle_debug_panel)
         debug_menu.addAction(toggle_debug_panel_action)
 
+        # Tools menu
+        tools_menu = menubar.addMenu("&Tools")
+
+        convert_action = QAction("Convert File", self)
+        convert_action.setShortcut("Ctrl+Shift+C")
+        convert_action.setToolTip("Convert the current file between Python and PLAIN")
+        convert_action.triggered.connect(self.convert_current_file)
+        tools_menu.addAction(convert_action)
+
         # Help menu
         help_menu = menubar.addMenu("&Help")
 
@@ -686,9 +695,12 @@ class PlainIDEMainWindow(QMainWindow):
         if not isinstance(editor, CodeEditor):
             return
 
-        start_dir = self.current_project_path if self.current_project_path else str(Path.home())
+        # Use suggested save path (e.g. from converter), then editor's own path, then project dir
+        initial_path = getattr(editor, 'suggested_save_path', None) or editor.file_path
+        if not initial_path:
+            initial_path = self.current_project_path if self.current_project_path else str(Path.home())
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save File", start_dir,
+            self, "Save File", initial_path,
             "PLAIN Files (*.plain);;All Files (*)"
         )
         if file_path:
@@ -1010,6 +1022,91 @@ class PlainIDEMainWindow(QMainWindow):
         dialog.tabs.setCurrentIndex(4)
         
         dialog.exec()
+
+    # ── Convert / Tools operations ──────────────────────────────────
+
+    def convert_current_file(self):
+        """Convert the current file between Python and PLAIN."""
+        editor = self.tab_widget.currentWidget()
+        if not isinstance(editor, CodeEditor):
+            QMessageBox.warning(self, "No File", "No file is open to convert.")
+            return
+
+        # Determine direction from file extension (or content hint)
+        file_path = editor.file_path
+        if file_path:
+            ext = Path(file_path).suffix.lower()
+        else:
+            ext = None
+
+        if ext == ".plain":
+            direction = "plain-to-python"
+            new_ext = ".py"
+        elif ext == ".py":
+            direction = "python-to-plain"
+            new_ext = ".plain"
+        else:
+            QMessageBox.warning(
+                self, "Unknown File Type",
+                "Can only convert .plain or .py files.\n"
+                "Please save the file with the appropriate extension first.",
+            )
+            return
+
+        # Get source code directly from editor (supports unsaved changes)
+        source_code = editor.toPlainText()
+        if not source_code.strip():
+            QMessageBox.information(self, "Empty File", "Nothing to convert.")
+            return
+
+        try:
+            if direction == "plain-to-python":
+                from plain_converter.converter.plain_to_python import PlainToPythonConverter
+                converter = PlainToPythonConverter(preserve_comments=True)
+            else:
+                from plain_converter.converter.python_to_plain import PythonToPlainConverter
+                converter = PythonToPlainConverter(preserve_comments=True)
+
+            result = converter.convert(source_code)
+
+            if not result.success:
+                error_msg = "\n".join(result.errors)
+                QMessageBox.critical(self, "Conversion Failed", error_msg)
+                return
+
+            # Open result in a new unsaved tab
+            new_editor = CodeEditor(
+                ui_theme=self.theme_manager.get_current_ui_theme(),
+                syntax_theme=self.theme_manager.get_current_syntax_theme(),
+                settings=self.settings,
+            )
+            new_editor.setPlainText(result.code)
+            new_editor.set_modified(True)
+            new_editor.cursorPositionChanged.connect(self._update_cursor_position)
+
+            tab_name = Path(file_path).stem + new_ext if file_path else f"Untitled{new_ext}"
+            # Store suggested save path so Save dialog opens in the right place
+            if file_path:
+                new_editor.suggested_save_path = str(Path(file_path).parent / tab_name)
+            idx = self.tab_widget.addTab(new_editor, tab_name)
+            self.tab_widget.setCurrentIndex(idx)
+
+            # Status bar summary
+            parts = [f"Converted → {new_ext[1:].upper()}"]
+            if result.warnings:
+                parts.append(f"{len(result.warnings)} warning(s)")
+            self.statusbar.showMessage("  |  ".join(parts), 8000)
+
+            # Show warnings in terminal if any
+            if result.warnings:
+                self.terminal.setVisible(True)
+                src_name = Path(file_path).name if file_path else "file"
+                self.terminal.write_line(f"Conversion warnings for {src_name}:")
+                for w in result.warnings:
+                    self.terminal.write_line(f"  ⚠ {w}")
+
+        except Exception as exc:
+            QMessageBox.critical(self, "Conversion Error", str(exc))
 
     def _show_quick_reference(self):
         """Show the PLAIN quick reference help viewer"""

@@ -25,6 +25,7 @@ PLAIN — **Programming Language: Able, Intuitive, and Natural** — is a teachi
 15. [Debugging](#debugging)
 16. [Best Practices](#best-practices)
 17. [Advanced Console Output](#advanced-console-output)
+18. [Python ↔ PLAIN Converter](#python--plain-converter)
 
 ---
 
@@ -864,6 +865,95 @@ loop i from 0 to total
 write(stdout, "\n")
 close(stdout)
 ```
+
+---
+
+## Python ↔ PLAIN Converter
+
+PLAIN includes a bidirectional code converter that translates between Python and PLAIN. This is useful for porting existing Python projects to PLAIN, or for exporting PLAIN code as Python for use in other environments.
+
+### Using the Converter
+
+There are three ways to use the converter:
+
+**1. Command Line (CLI):**
+
+```bash
+# Convert a Python file to PLAIN
+python3 -m plain_converter p2p script.py -o script.plain
+
+# Convert a PLAIN file to Python
+python3 -m plain_converter plain2py program.plain -o program.py
+
+# Convert to stdout (no -o flag)
+python3 -m plain_converter p2p script.py
+
+# Batch convert a directory
+python3 -m plain_converter p2p src/ -o plain_src/ --recursive
+
+# Dry run (show what would be converted without writing)
+python3 -m plain_converter p2p src/ -o plain_src/ -r --dry-run
+```
+
+**2. Graphical Interface (GUI):**
+
+```bash
+python3 -m plain_converter --gui
+```
+
+This opens a file-picker window where you can select a file, choose the conversion direction, convert, and save the output.
+
+**3. From the IDE:**
+
+Use **Tools → Convert File** (or press `Ctrl+Shift+C`). The IDE auto-detects the file type from the extension (`.plain` → Python, `.py` → PLAIN), converts the current editor content, and opens the result in a new tab.
+
+### What Gets Converted
+
+| Python | PLAIN |
+|--------|-------|
+| `def func(params)` | `task Func with/using (params)` |
+| `return value` | `deliver value` |
+| `x = 5` (first use) | `var x = 5` |
+| `if/elif/else` | `if/else` or `choose/choice/default` |
+| `for i in range(n)` | `loop i from 0 to n-1` |
+| `for item in list` | `loop item in list` |
+| `while cond` | `loop cond` |
+| `break` / `continue` | `exit` / `continue` |
+| `try/except/finally` | `attempt/handle/ensure` |
+| `raise Exception(msg)` | `abort msg` |
+| `# comment` | `rem: comment` |
+| `"""docstring"""` | `note: ...` |
+| `f"Hello {name}"` | `v"Hello {name}"` |
+| `str1 + str2` | `str1 & str2` |
+| `@dataclass class X` | `record X:` |
+| `True/False/None` | `true/false/null` |
+| `print(x)` | `display(x)` |
+| `import x` / `from x import y` | `use:` block |
+
+### CLI Options
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output PATH` | Output file or directory |
+| `-r, --recursive` | Process directories recursively |
+| `-v, --verbose` | Show detailed conversion output |
+| `-q, --quiet` | Suppress non-error output |
+| `--dry-run` | Show what would be converted |
+| `--stats` | Show conversion statistics |
+| `--strict` | Fail on unsupported features |
+| `--add-type-prefixes` | Add PLAIN type prefixes to variable names |
+| `--gui` | Launch graphical interface |
+
+### Limitations
+
+- **Lambdas** — PLAIN has no lambdas; converted to a warning
+- **List/dict comprehensions** — Converted to explicit loops where possible
+- **Generators/yield** — Not supported
+- **Decorators** (except `@dataclass`) — Stripped with a warning
+- **async/await** — Not supported
+- **Serial/Network I/O** — PLAIN builtins have no direct Python equivalent; warnings added
+
+The converter handles the most common Python constructs. Complex or advanced features may require manual adjustment after conversion.
 
 ---
 

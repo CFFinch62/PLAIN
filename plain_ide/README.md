@@ -8,6 +8,7 @@ A modern, feature-rich IDE for the PLAIN programming language with integrated de
 - **Integrated Debugger** - Step through code, set breakpoints, inspect variables
 - **Code Editor** - Modern editing with line numbers, auto-indent, code folding
 - **Project Management** - Organize and manage PLAIN projects
+- **Python ↔ PLAIN Converter** - Convert files between Python and PLAIN via Tools → Convert File (`Ctrl+Shift+C`)
 - **Bookmarks** - Mark and navigate important code locations
 - **Find/Replace** - Powerful search and replace
 - **Themes** - Multiple color themes
