@@ -1,0 +1,9 @@
+rem: Test program for external terminal
+task Main()
+    print("Hello from external terminal!")
+    print("This is a test.")
+    var name = input("Enter your name: ")
+    print("Hello, " & name & "!")
+    print("Press Enter to exit...")
+    input("")
+

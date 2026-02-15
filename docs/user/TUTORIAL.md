@@ -26,6 +26,9 @@ This tutorial will guide you through the PLAIN programming language with practic
 16. [Randomness and Games](#lesson-16-randomness-and-games)
 17. [Modules and Organization](#lesson-17-modules-and-organization)
 18. [Events and Timers](#lesson-18-events-and-timers)
+19. [Serial Port Communication](#lesson-19-serial-port-communication)
+20. [Network Communication](#lesson-20-network-communication)
+21. [Text Graphics and CLI Enhancement](#lesson-21-text-graphics-and-cli-enhancement)
 
 ---
 
@@ -970,6 +973,19 @@ var size = file_size("/tmp/plain_demo.txt")
 | `dir_exists(path)` | Check if a directory exists |
 | `join_path(a, b)` | Join path components |
 | `get_extension(path)` | Get file extension (e.g., ".txt") |
+| `script_dir()` | Get the directory where the script is located |
+
+### Working with Script-Relative Paths
+
+By default, file paths are relative to where you run the program from. To make files relative to your script's location, use `script_dir()`:
+
+```plain
+rem: Create a file in the same directory as this script
+var dataFile = join_path(script_dir(), "data.txt")
+write_file(dataFile, "Hello!")
+
+rem: This works no matter where you run the program from
+```
 
 ### Try It
 
@@ -1163,6 +1179,480 @@ wait_for_events()
 
 ---
 
+## Lesson 19: Serial Port Communication
+
+### Concept: Reading Data from Hardware Devices
+
+Serial ports (RS-232, RS-485, USB-to-serial) are the backbone of data acquisition. PLAIN provides comprehensive serial port support for communicating with GPS receivers, sensors, marine electronics, and industrial equipment.
+
+### Example: `lesson_19_serial.plain`
+
+See `examples/tutorial/lesson_19_serial.plain` for the complete program.
+
+Key patterns:
+
+```plain
+rem: List available serial ports
+var ports = serial_ports()
+loop port in ports
+    display("Found: " & port)
+
+rem: Open a GPS receiver (NMEA 0183 typically uses 4800 baud)
+var gps = serial_open("/dev/ttyUSB0", 4800)
+serial_set_timeout(gps, 5000)    rem: 5-second timeout
+
+rem: Read NMEA sentences line by line
+loop i from 1 to 10
+    var sentence = serial_read_line(gps)
+    display(v"[{i}] {sentence}")
+
+    rem: Parse GPGGA sentences (position data)
+    if starts_with(sentence, "$GPGGA")
+        var fields = split(sentence, ",")
+        display("  Latitude: " & fields[2] & " " & fields[3])
+        display("  Longitude: " & fields[4] & " " & fields[5])
+
+serial_close(gps)
+```
+
+### What's Happening?
+
+- `serial_ports()` — Returns a list of available serial port names
+  - Linux: `/dev/ttyUSB0`, `/dev/ttyACM0`
+  - macOS: `/dev/cu.usbserial-*`
+  - Windows: `COM1`, `COM3`, etc.
+- `serial_open(port, baud)` — Opens a serial port at the specified baud rate
+- `serial_open(port, baud, config)` — Optional third argument for config like `"8N1"` (8 data bits, no parity, 1 stop bit)
+- `serial_set_timeout(port, ms)` — Sets read timeout in milliseconds
+- `serial_read_line(port)` — Reads until newline (perfect for NMEA, Modbus ASCII, etc.)
+- `serial_read(port, count)` — Reads up to N bytes (for binary protocols)
+- `serial_write(port, data)` — Sends data to the device
+- `serial_available(port)` — Checks if data is waiting to be read
+- `serial_flush(port)` — Clears the input buffer
+- `serial_close(port)` — Closes the connection
+
+### Common Use Cases
+
+**NMEA 0183 GPS Data:**
+```plain
+rem: Read position from GPS
+var gps = serial_open("/dev/ttyUSB0", 4800)
+serial_set_timeout(gps, 5000)
+
+loop forever
+    var sentence = serial_read_line(gps)
+    if starts_with(sentence, "$GPGGA")
+        rem: Parse position data
+        var fields = split(sentence, ",")
+        display("Position: " & fields[2] & "," & fields[4])
+```
+
+**Industrial Sensor (Modbus ASCII):**
+```plain
+rem: Query a sensor
+var sensor = serial_open("COM3", 9600, "8N1")
+serial_set_timeout(sensor, 1000)
+
+rem: Send query command
+serial_write(sensor, ":010300000002FA\r\n")
+
+rem: Read response
+var response = serial_read_line(sensor)
+display("Sensor response: " & response)
+
+serial_close(sensor)
+```
+
+**Binary Protocol:**
+```plain
+rem: Read fixed-size binary packets
+var device = serial_open("/dev/ttyACM0", 115200)
+serial_set_timeout(device, 500)
+
+loop forever
+    if serial_available(device)
+        var packet = serial_read(device, 16)  rem: Read 16 bytes
+        display("Packet: " & to_hex(packet))
+```
+
+### Hardware Control Signals
+
+For devices that require hardware handshaking:
+
+```plain
+var port = serial_open("COM1", 9600)
+
+rem: Control DTR and RTS lines
+serial_set_dtr(port, true)     rem: Assert DTR
+serial_set_rts(port, true)     rem: Assert RTS
+
+rem: Check modem status lines
+var signals = serial_get_signals(port)
+if signals["cts"]
+    display("Clear To Send is active")
+if signals["dsr"]
+    display("Data Set Ready is active")
+```
+
+### Try It
+
+1. Connect a USB-to-serial adapter and list available ports with `serial_ports()`
+2. If you have a GPS receiver, read and parse NMEA sentences
+3. Create a simple serial terminal that echoes everything it receives
+4. Write a data logger that saves serial data to a file with timestamps
+
+### Key Takeaways
+
+✓ `serial_ports()` lists available ports on your system
+✓ `serial_open()` connects to a device; always `serial_close()` when done
+✓ `serial_read_line()` is perfect for text-based protocols (NMEA, Modbus ASCII)
+✓ `serial_read()` is for binary protocols or fixed-size packets
+✓ Set timeouts with `serial_set_timeout()` to prevent blocking forever
+✓ PLAIN handles all the low-level details — you focus on your data
+
+---
+
+## Lesson 20: Network Communication
+
+### Concept: TCP/UDP Data Acquisition Over IP
+
+Many modern devices communicate over TCP/IP networks instead of serial ports. PLAIN provides full TCP and UDP support for network-based data acquisition, including NMEA over IP, REST APIs, and custom protocols.
+
+### Example: `lesson_20_network.plain`
+
+See `examples/tutorial/lesson_20_network.plain` for the complete program.
+
+Key patterns:
+
+```plain
+rem: TCP Client - Connect to NMEA server
+var conn = net_connect("192.168.1.100", 10110, "tcp")
+net_set_timeout(conn, 5000)
+
+rem: Read data line by line
+loop i from 1 to 10
+    var sentence = net_read_line(conn)
+    display(v"[{i}] {sentence}")
+
+net_close(conn)
+
+rem: TCP Server - Listen for connections
+var listener = net_listen(8080)
+display("Server listening on port 8080...")
+
+var client = net_accept(listener)  rem: Blocks until connection
+display("Client connected!")
+
+net_write(client, "Welcome to PLAIN server!\r\n")
+var request = net_read_line(client)
+display("Client sent: " & request)
+
+net_close(client)
+net_close(listener)
+```
+
+### What's Happening?
+
+**Client Functions:**
+- `net_connect(host, port, protocol)` — Connect to a server
+  - `protocol` is `"tcp"` or `"udp"` (defaults to `"tcp"`)
+  - Returns a network connection handle
+- `net_read_line(conn)` — Read until newline (like serial)
+- `net_read(conn, count)` — Read up to N bytes
+- `net_write(conn, data)` — Send data to the server
+- `net_set_timeout(conn, ms)` — Set read timeout
+- `net_close(conn)` — Close the connection
+
+**Server Functions:**
+- `net_listen(port)` — Create a TCP server listening on a port
+- `net_accept(listener)` — Wait for and accept a client connection (blocks)
+- Use `net_write()`, `net_read_line()`, etc. with the client connection
+- `net_close(listener)` — Stop the server
+
+### Common Use Cases
+
+**NMEA 0183 Over IP (TCP):**
+```plain
+rem: Many marine electronics broadcast NMEA over TCP
+var gps = net_connect("192.168.1.100", 10110, "tcp")
+net_set_timeout(gps, 5000)
+
+loop forever
+    var sentence = net_read_line(gps)
+    if starts_with(sentence, "$GPGGA")
+        var fields = split(sentence, ",")
+        display("Position: " & fields[2] & "," & fields[4])
+
+net_close(gps)
+```
+
+**Simple HTTP-like Request:**
+```plain
+rem: Send a simple HTTP GET request
+var conn = net_connect("example.com", 80, "tcp")
+net_set_timeout(conn, 3000)
+
+net_write(conn, "GET / HTTP/1.0\r\nHost: example.com\r\n\r\n")
+
+rem: Read response
+loop i from 1 to 20
+    var line = net_read_line(conn)
+    display(line)
+    if len(line) = 0
+        exit
+
+net_close(conn)
+```
+
+**UDP Data Acquisition:**
+```plain
+rem: Receive UDP broadcast data (e.g., sensor network)
+var sock = net_connect("0.0.0.0", 5000, "udp")
+net_set_timeout(sock, 10000)
+
+loop i from 1 to 100
+    var data = net_read(sock, 1024)
+    display(v"Packet {i}: {data}")
+
+net_close(sock)
+```
+
+**Simple Echo Server:**
+```plain
+rem: TCP echo server
+var listener = net_listen(9999)
+display("Echo server running on port 9999")
+
+loop forever
+    var client = net_accept(listener)
+    display("Client connected")
+
+    loop forever
+        var line = net_read_line(client)
+        if len(line) = 0
+            exit
+        display("Received: " & line)
+        net_write(client, "Echo: " & line & "\r\n")
+
+    net_close(client)
+    display("Client disconnected")
+
+net_close(listener)
+```
+
+### Try It
+
+1. Connect to a public time server and read the response
+2. Create a simple chat server that accepts connections and echoes messages
+3. If you have network-enabled sensors, read their data over TCP
+4. Build a data logger that receives UDP broadcasts and saves them to a file
+
+### Key Takeaways
+
+✓ `net_connect()` creates TCP or UDP client connections
+✓ `net_listen()` and `net_accept()` create TCP servers
+✓ Network I/O uses the same patterns as serial I/O (read_line, read, write)
+✓ Always set timeouts to prevent blocking forever
+✓ TCP is connection-oriented; UDP is connectionless
+✓ PLAIN handles all socket details — you focus on your protocol
+
+---
+
+## Lesson 21: Text Graphics and CLI Enhancement
+
+### Concept: Building Better Terminal UIs
+
+Modern terminals support ANSI escape codes for positioning text, colors, and drawing. PLAIN provides high-level functions for creating professional-looking CLI interfaces without dealing with raw escape codes.
+
+### Example: `lesson_21_text_graphics.plain`
+
+See `examples/tutorial/lesson_21_text_graphics.plain` for the complete program.
+
+Key patterns:
+
+```plain
+rem: Clear screen and position text
+clear()
+text_at(10, 5, "Hello at column 10, row 5")
+text_at(10, 6, "This is one line below")
+
+rem: Add colors
+text_color("cyan")
+text_at(10, 8, "This text is cyan")
+text_color("red", "yellow")
+text_at(10, 9, "Red text on yellow background")
+text_color("default")
+
+rem: Draw lines
+draw_line(5, 12, 40, "h")        rem: Horizontal line, 40 chars
+draw_line(5, 14, 10, "v")        rem: Vertical line, 10 chars
+draw_line(5, 16, 30, "h", "=")   rem: Custom character
+
+rem: Draw boxes
+draw_box(5, 20, 50, 8, "Status Panel")
+text_at(7, 22, "Temperature: 72.5°F")
+text_at(7, 23, "Humidity: 45%")
+text_at(7, 24, "Status: ")
+text_color("green")
+text_at(15, 24, "NORMAL")
+text_color("default")
+```
+
+### What's Happening?
+
+- `clear()` — Clears the screen and moves cursor to top-left
+- `text_at(x, y, text)` — Positions cursor and prints text
+  - Coordinates are 1-based: (1, 1) is top-left corner
+  - `x` is column (left-right), `y` is row (top-bottom)
+- `text_color(foreground [, background])` — Sets text colors
+  - Valid colors: `"black"`, `"red"`, `"green"`, `"yellow"`, `"blue"`, `"magenta"`, `"cyan"`, `"white"`, `"default"`
+  - Use `"default"` to reset to terminal defaults
+- `draw_line(x, y, length, direction [, char])` — Draws a line
+  - `direction` is `"h"` (horizontal) or `"v"` (vertical)
+  - Optional `char` parameter (default: `"-"` for horizontal, `"|"` for vertical)
+- `draw_box(x, y, width, height [, title])` — Draws a bordered box
+  - Uses Unicode box-drawing characters
+  - Optional title appears centered at the top
+
+### Common Use Cases
+
+**Dashboard Display:**
+```plain
+task Main()
+    clear()
+
+    rem: Header
+    text_color("cyan")
+    draw_box(1, 1, 70, 3, "System Monitor v1.0")
+    text_color("default")
+
+    rem: CPU Panel
+    text_color("green")
+    draw_box(2, 5, 33, 6, "CPU")
+    text_color("default")
+    text_at(4, 7, "Usage: 45%")
+    text_at(4, 8, "Temp:  68°C")
+    text_at(4, 9, "Speed: 3.2 GHz")
+
+    rem: Memory Panel
+    text_color("blue")
+    draw_box(37, 5, 33, 6, "Memory")
+    text_color("default")
+    text_at(39, 7, "Used:  8.2 GB")
+    text_at(39, 8, "Free:  7.8 GB")
+    text_at(39, 9, "Total: 16 GB")
+
+    rem: Status bar at bottom
+    text_color("white", "blue")
+    text_at(1, 24, "Press Q to quit" & "                                                  ")
+    text_color("default")
+```
+
+**Progress Bar:**
+```plain
+task ShowProgress with (percent)
+    var barWidth = 40
+    var filled = round(barWidth * percent / 100)
+
+    text_at(5, 10, "Progress: [")
+    text_color("green")
+    draw_line(17, 10, filled, "h", "█")
+    text_color("default")
+    draw_line(17 + filled, 10, barWidth - filled, "h", "░")
+    text_at(17 + barWidth + 1, 10, v"] {percent}%")
+
+task Main()
+    clear()
+    loop i from 0 to 100 step 10
+        ShowProgress(i)
+        sleep(200)
+```
+
+**Menu System:**
+```plain
+task ShowMenu()
+    clear()
+
+    text_color("yellow")
+    draw_box(10, 5, 50, 12, "Main Menu")
+    text_color("default")
+
+    text_at(15, 8, "1. Start Data Acquisition")
+    text_at(15, 9, "2. View Logs")
+    text_at(15, 10, "3. Settings")
+    text_at(15, 11, "4. Help")
+    text_at(15, 12, "5. Exit")
+
+    text_at(15, 14, "Enter choice: ")
+
+task Main()
+    ShowMenu()
+    var choice = get("")
+
+    choose choice
+        choice "1"
+            text_color("green")
+            text_at(15, 16, "Starting acquisition...")
+        choice "5"
+            text_color("red")
+            text_at(15, 16, "Goodbye!")
+        default
+            text_color("yellow")
+            text_at(15, 16, "Invalid choice")
+    text_color("default")
+```
+
+**Real-Time Data Display:**
+```plain
+task DisplaySensorData with (temp, humidity, pressure)
+    rem: Update sensor panel without clearing screen
+    text_color("cyan")
+    text_at(5, 10, v"Temperature: {temp}°F   ")
+    text_at(5, 11, v"Humidity:    {humidity}%    ")
+    text_at(5, 12, v"Pressure:    {pressure} hPa ")
+
+    rem: Color-coded status
+    text_at(5, 13, "Status: ")
+    if temp > 80
+        text_color("red")
+        text_at(13, 13, "HOT    ")
+    else
+        text_color("green")
+        text_at(13, 13, "NORMAL ")
+    text_color("default")
+
+task Main()
+    clear()
+    draw_box(3, 8, 40, 8, "Sensor Monitor")
+
+    rem: Simulate real-time updates
+    loop i from 1 to 20
+        var temp = 70 + random_int(-5, 15)
+        var humidity = 40 + random_int(-10, 20)
+        var pressure = 1013 + random_int(-5, 5)
+
+        DisplaySensorData(temp, humidity, pressure)
+        sleep(500)
+```
+
+### Try It
+
+1. Create a colorful welcome screen for a program with a title box and menu
+2. Build a progress bar that updates as a loop runs
+3. Design a dashboard that displays multiple data panels side by side
+4. Create a "loading" animation using positioned text and colors
+
+### Key Takeaways
+
+✓ `clear()` and `text_at()` give you full control over screen layout
+✓ `text_color()` makes output more readable and visually appealing
+✓ `draw_line()` and `draw_box()` create structure without manual formatting
+✓ Combine these with loops and timers for dynamic, real-time displays
+✓ Perfect for dashboards, menus, progress indicators, and data monitors
+✓ Works in PLAIN IDE terminal and most modern terminals (Linux, macOS, Windows 10+)
+
+---
+
 ## What's Next? 🚀
 
 Congratulations — you've completed the PLAIN tutorial! You now know how to:
@@ -1174,6 +1664,9 @@ Congratulations — you've completed the PLAIN tutorial! You now know how to:
 - Work with lists, tables, strings, records, and files
 - Handle errors gracefully
 - Use randomness, modules, and timers
+- Communicate with hardware via serial ports (RS-232, USB-to-serial)
+- Build network applications with TCP/UDP
+- Create professional CLI interfaces with colors, positioning, and graphics
 
 ### Keep Learning
 
@@ -1185,11 +1678,20 @@ Congratulations — you've completed the PLAIN tutorial! You now know how to:
 
 Here are some projects to practice your skills:
 
+**Beginner Projects:**
 1. **To-Do List Manager** — Add, remove, and display tasks (use lists and files)
 2. **Number Guessing Game** — The computer picks a number, the player guesses (use random and loops)
 3. **Contact Book** — Store contacts in a table, save/load from a file
 4. **Quiz Game** — Multiple choice questions with scoring (use lists, records, and random)
 5. **Text Adventure** — A simple story game with choices (use tasks and choose)
 6. **Grade Calculator** — Extend the gradebook with weighted grades and more features
+
+**Advanced Projects (Using New Features):**
+7. **GPS Data Logger** — Read NMEA sentences from a GPS receiver and log position data to a file (serial ports)
+8. **Weather Station Monitor** — Display real-time sensor data in a colorful dashboard (text graphics + serial/network)
+9. **Network Chat Application** — Build a simple chat server and client (TCP networking)
+10. **Marine Electronics Display** — Parse and display NMEA data from multiple sources (serial + network + text graphics)
+11. **Industrial Data Acquisition** — Read Modbus data from sensors and create a live monitoring dashboard
+12. **Remote Sensor Network** — Collect UDP broadcasts from multiple sensors and visualize the data
 
 Happy coding! 🎉

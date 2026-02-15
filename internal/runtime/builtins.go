@@ -38,6 +38,18 @@ func (v *BuiltinValue) IsTruthy() bool { return true }
 // Scanner for input
 var inputScanner = bufio.NewScanner(os.Stdin)
 
+// Global variable to store the script directory
+var scriptDirectory string = "."
+
+// SetScriptDirectory sets the directory of the currently executing script
+func SetScriptDirectory(dir string) {
+	if dir == "" {
+		scriptDirectory = "."
+	} else {
+		scriptDirectory = dir
+	}
+}
+
 // GetBuiltins returns a map of built-in functions
 func GetBuiltins() map[string]*BuiltinValue {
 	return map[string]*BuiltinValue{
@@ -1598,6 +1610,25 @@ func GetBuiltins() map[string]*BuiltinValue {
 				if !ok {
 					return NewError("open() second argument must be a string")
 				}
+
+				// Handle special device files for stdout/stderr
+				// On Unix/Linux, /dev/stdout and /dev/stderr exist as special files
+				// On Windows, they don't exist, so we need to map them to os.Stdout/os.Stderr
+				if path.Val == "/dev/stdout" {
+					// Only allow write/append modes for stdout
+					if mode.Val == "w" || mode.Val == "a" {
+						return &FileHandleValue{Path: path.Val, Mode: mode.Val, Handle: os.Stdout, IsBinary: false}
+					}
+					return NewError("open() /dev/stdout can only be opened in write ('w') or append ('a') mode")
+				}
+				if path.Val == "/dev/stderr" {
+					// Only allow write/append modes for stderr
+					if mode.Val == "w" || mode.Val == "a" {
+						return &FileHandleValue{Path: path.Val, Mode: mode.Val, Handle: os.Stderr, IsBinary: false}
+					}
+					return NewError("open() /dev/stderr can only be opened in write ('w') or append ('a') mode")
+				}
+
 				var file *os.File
 				var err error
 				isBinary := false
@@ -1639,6 +1670,13 @@ func GetBuiltins() map[string]*BuiltinValue {
 				if handle.Handle == nil {
 					return NewError("close() file already closed")
 				}
+
+				// Don't actually close stdout/stderr - just mark the handle as closed
+				if handle.Path == "/dev/stdout" || handle.Path == "/dev/stderr" {
+					handle.Handle = nil
+					return NULL
+				}
+
 				file := handle.Handle.(*os.File)
 				err := file.Close()
 				handle.Handle = nil
@@ -2022,6 +2060,19 @@ func GetBuiltins() map[string]*BuiltinValue {
 				abs, err := filepath.Abs(path.Val)
 				if err != nil {
 					return NewError("absolute_path() failed: %s", err.Error())
+				}
+				return NewString(abs)
+			},
+		},
+		"script_dir": {
+			Name: "script_dir",
+			Fn: func(args ...Value) Value {
+				if len(args) != 0 {
+					return NewError("script_dir() takes no arguments")
+				}
+				abs, err := filepath.Abs(scriptDirectory)
+				if err != nil {
+					return NewError("script_dir() failed: %s", err.Error())
 				}
 				return NewString(abs)
 			},

@@ -519,6 +519,10 @@ rem: Handle-based file I/O (for more control)
 var file = open("data.txt", "r")
 var line = read_line(file)
 close(file)
+
+rem: Use script_dir() to create files relative to your script
+var dataFile = join_path(script_dir(), "data.txt")
+write_file(dataFile, "This file is in the script's directory!")
 ```
 
 ### Serial Port Communication

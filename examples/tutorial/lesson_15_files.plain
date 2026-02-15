@@ -2,6 +2,10 @@ rem: Lesson 15 - Working with Files
 rem: Reading and writing files on disk
 
 task Main()
+    rem: Note: This lesson uses /tmp for temporary files
+    rem: To create files in the same directory as your script, use:
+    rem:   var filePath = join_path(script_dir(), "myfile.txt")
+
     rem: Writing a file using write_lines
     display("=== Writing Files ===")
     var lines = ["Hello from PLAIN!", "This is line 2.", "This is line 3."]
@@ -58,6 +62,14 @@ task Main()
     display("Joined path: " & path)
     var ext = get_extension("/tmp/plain_demo.txt")
     display("Extension: " & ext)
+
+    rem: Script directory - files relative to this script
+    display("")
+    display("=== Script Directory ===")
+    var scriptPath = script_dir()
+    display("This script is located in: " & scriptPath)
+    display("Tip: Use join_path(script_dir(), \"file.txt\") to create")
+    display("     files in the same directory as your script!")
 
     rem: Cleanup
     delete_file("/tmp/plain_demo.txt")

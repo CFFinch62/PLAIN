@@ -24,6 +24,9 @@ func New() *Evaluator {
 
 // NewWithBaseDir creates an Evaluator with a specific base directory for modules
 func NewWithBaseDir(baseDir string) *Evaluator {
+	// Set the script directory for built-in functions to use
+	SetScriptDirectory(baseDir)
+
 	e := &Evaluator{
 		builtins:      GetBuiltins(),
 		baseDir:       baseDir,

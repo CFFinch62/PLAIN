@@ -220,6 +220,15 @@ func TestPathOps(t *testing.T) {
 	if _, ok := result.(*StringValue); !ok {
 		t.Errorf("absolute_path failed: %s", result.String())
 	}
+
+	// script_dir
+	SetScriptDirectory("/test/script/dir")
+	result = builtins["script_dir"].Fn()
+	if str, ok := result.(*StringValue); !ok {
+		t.Errorf("script_dir failed: %s", result.String())
+	} else if !filepath.IsAbs(str.Val) {
+		t.Errorf("script_dir should return absolute path, got: %s", str.Val)
+	}
 }
 
 // TestFileIOErrors tests error handling

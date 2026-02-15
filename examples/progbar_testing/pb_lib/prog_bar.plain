@@ -20,13 +20,13 @@ task Init with (intLimit)
     stdout = open("/dev/stdout", "a")
 
 task Update with (intCurrent)
-    var intPercent = (intCurrent * 100) / intTotal
-    var intFilled = (intCurrent * intWidth) / intTotal
+    var intPercent = to_int((intCurrent * 100) / intTotal)
+    var intFilled = to_int((intCurrent * intWidth) / intTotal)
     var strBar = chr(13) & "Progress: ["
-    loop j from 0 to to_int(intFilled)
-        strBar = strBar & "#"
-    loop j from to_int(intFilled) to intWidth
-        strBar = strBar & " "
+    loop i from 0 to intFilled
+        strBar = strBar & chr(9608)
+    loop j from intFilled to intWidth - 1
+        strBar = strBar & chr(9617)
     strBar = strBar & v"] {intPercent}%"
     write(stdout, strBar)
 

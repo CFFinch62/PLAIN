@@ -7,7 +7,10 @@ echo =========================================
 echo Building PLAIN v%VERSION% for Windows
 echo =========================================
 
-cd ..
+:: Get the directory where this script is located
+set SCRIPT_DIR=%~dp0
+:: Navigate to project root (parent of scripts directory)
+cd /d "%SCRIPT_DIR%\.."
 
 :: 1. Build Interpreter
 echo.
@@ -54,6 +57,14 @@ mkdir "%PACKAGE_PATH%"
 
 :: Copy build output
 xcopy /E /I /Q "dist\plain-ide" "%PACKAGE_PATH%"
+
+:: Copy Interpreter to root
+echo   - Copying interpreter...
+copy plain.exe "%PACKAGE_PATH%\" >nul
+if %errorlevel% neq 0 (
+    echo Error: Failed to copy plain.exe
+    exit /b %errorlevel%
+)
 
 :: Copy Documentation
 copy README.md "%PACKAGE_PATH%\" >nul

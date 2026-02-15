@@ -347,6 +347,7 @@ dir_exists(path) create_dir(path)
 delete_dir(path) list_dir(path)
 join_path(part1, part2) split_path(path)
 get_extension(path) absolute_path(path)
+script_dir()                        rem: get script's directory
 ```
 
 ---

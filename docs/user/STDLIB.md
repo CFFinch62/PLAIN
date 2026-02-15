@@ -1520,6 +1520,25 @@ display(abs)             rem: /home/user/project/data.txt (full path)
 
 ---
 
+### `script_dir()`
+
+Returns the absolute path of the directory containing the currently executing script.
+
+```plain
+var dir = script_dir()
+display(dir)             rem: /home/user/project/examples
+
+rem: Use it to create files in the script's directory
+var dataFile = join_path(script_dir(), "data.txt")
+write_file(dataFile, "Hello!")
+```
+
+**Returns:** string (absolute path to script directory)
+
+**Note:** This is useful for making file paths relative to the script location rather than the current working directory.
+
+---
+
 ## 15. Timing and Events
 
 ### `sleep(milliseconds)`

@@ -100,7 +100,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='images/plain_icon_256.png',
+    icon='images/favicon.ico',
 )
 
 coll = COLLECT(

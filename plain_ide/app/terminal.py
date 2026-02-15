@@ -335,21 +335,34 @@ class TerminalWidget(QWidget):
         if sys.platform == "win32":
             # Windows: cmd /k keeps window open
             # command_template is likely "start cmd /k"
-            # We want: start cmd /k "plain file.plain"
-            # verify if start is in use
+            #
+            # Due to complex quoting issues with start/cmd/subprocess, especially when
+            # launched from PowerShell, we'll create a temporary batch file instead
+
+            # Convert paths to absolute Windows paths to avoid issues with relative paths
+            # and mixed path separators
+            plain_executable_abs = str(Path(plain_executable).resolve())
+            file_path_abs = str(Path(file_path).resolve())
+
+            # Get the directory containing the file to run
+            file_dir = str(Path(file_path).parent.resolve())
+
+            # Create a temporary batch file to execute the command
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.bat', delete=False) as f:
+                f.write('@echo off\n')
+                f.write(f'cd /d "{file_dir}"\n')
+                f.write(f'"{plain_executable_abs}" "{file_path_abs}"\n')
+                f.write('echo.\n')
+                f.write('pause\n')
+                temp_batch = f.name
+
+            # Now launch the batch file in a new cmd window
             if cmd_parts[0] == "start":
-                 # start is a shell command, not an executable
-                 # usage: start "title" program args...
-                 # But subprocess.Popen with shell=True handles it better or just executing command
-                 pass
-            
-            # For simplicity on Windows with "start cmd /k":
-            # We construct the arguments for cmd
-            # cmd /k plain file.plain
-            
-            # Implementation for Windows "start cmd /k" specifically is tricky via Popen list
-            # simpler to use shell=True with string
-            win_cmd = f'{command_template} "{plain_executable}" "{file_path}"'
+                win_cmd = f'start "" "{temp_batch}"'
+            else:
+                win_cmd = f'{command_template} "{temp_batch}"'
+
             subprocess.Popen(win_cmd, shell=True)
             
         elif sys.platform == "darwin":
@@ -399,18 +412,18 @@ class TerminalWidget(QWidget):
         """Find the PLAIN interpreter using multiple strategies"""
         import shutil
         import sys
-        
+
         # Strategy 1: Check settings for configured path
         if self.settings and self.settings.settings.plain_interpreter_path:
             path = Path(self.settings.settings.plain_interpreter_path)
             if path.exists() and path.is_file():
                 return str(path)
-        
+
         # Strategy 2: Check PATH
         plain_in_path = shutil.which("plain")
         if plain_in_path:
             return plain_in_path
-        
+
         # Strategy 3: Check same directory as IDE executable
         if getattr(sys, 'frozen', False):
             # Running as compiled executable
@@ -418,16 +431,27 @@ class TerminalWidget(QWidget):
         else:
             # Running from source
             exe_dir = Path(__file__).parent.parent.parent
-        
+
+        # On Windows, check for .exe extension
+        if sys.platform == "win32":
+            plain_exe = exe_dir / "plain.exe"
+            if plain_exe.exists():
+                return str(plain_exe)
+
         plain_exe = exe_dir / "plain"
         if plain_exe.exists():
             return str(plain_exe)
-        
+
         # Strategy 4: Check ../plain (for installed IDE where plain is in parent dir)
+        if sys.platform == "win32":
+            parent_plain = exe_dir.parent / "plain.exe"
+            if parent_plain.exists():
+                return str(parent_plain)
+
         parent_plain = exe_dir.parent / "plain"
         if parent_plain.exists():
             return str(parent_plain)
-        
+
         return None
     
     def stop_execution(self):

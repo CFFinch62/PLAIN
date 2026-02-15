@@ -2,8 +2,26 @@
 
 ## Current Language Issues
 
+### All platforms
+
+### Linux
+
+### Mac
+
+### Windows
+
 
 ## Current IDE Issues
+
+### All platforms
+
+### Linux
+
+### Mac
+
+### Windows
+
+- When changing font or font size in the settings dialog, the font or font size is not applied to the editor until after the ide is closed and relaunched. it should be applied immediately when 'apply' or 'ok'buttons are clicked or .
 
 
 ## UI/UX Enhancement Roadmap
