@@ -10,10 +10,14 @@
 
 ### Windows
 
+- build flattens examples folder. it should copy entire contents with sub-folders to releases without flattening
+
 
 ## Current IDE Issues
 
 ### All platforms
+
+- chnages to font and font size in the settings dialog are not applied to the editor until after the current file ide is closed and reopened or if ide is closed and reopened. it should be applied immediately when 'apply' or 'ok'buttons are clicked or when the dialog is closed.
 
 ### Linux
 

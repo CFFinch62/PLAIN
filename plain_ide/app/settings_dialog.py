@@ -398,29 +398,36 @@ class SettingsDialog(QDialog):
         # Theme - save both UI and syntax themes
         new_ui_theme = self.ui_theme_combo.currentData()
         new_syntax_theme = self.syntax_theme_combo.currentData()
-        
+
         if new_ui_theme:
             s.theme.ui_theme = new_ui_theme
             s.theme.current_theme = new_ui_theme  # Keep for backward compatibility
             self.theme_manager.set_ui_theme(new_ui_theme)
-        
+
         if new_syntax_theme:
             s.theme.syntax_theme = new_syntax_theme
             self.theme_manager.set_syntax_theme(new_syntax_theme)
 
         # Terminal
-        # Terminal
         s.terminal.font_family = self.terminal_font_input.currentText()
         s.terminal.font_size = self.terminal_font_size_spin.value()
         s.terminal.external_terminal_command = self.ext_term_input.text().strip()
+
+        # Runtime
+        s.plain_interpreter_path = self.interpreter_path_input.text().strip()
+
+        self.settings_manager.save()
+
+        # Emit signal so main window can apply settings immediately
+        self.settings_applied.emit()
 
     def _auto_detect_terminal(self):
         """Auto-detect the best external terminal command"""
         import shutil
         import sys
-        
+
         command = ""
-        
+
         if sys.platform == "win32":
             command = "start cmd /k"
         elif sys.platform == "darwin":
@@ -435,24 +442,16 @@ class SettingsDialog(QDialog):
                 ("xterm", "xterm -e"),
                 ("urxvt", "urxvt -e"),
             ]
-            
+
             for term, cmd_template in terminals:
                 if shutil.which(term):
                     command = cmd_template
                     break
-        
+
         if command:
             self.ext_term_input.setText(command)
         else:
             self.ext_term_input.setPlaceholderText("No supported terminal found")
-
-        # Runtime
-        s.plain_interpreter_path = self.interpreter_path_input.text().strip()
-
-        self.settings_manager.save()
-
-        # Emit signal so main window can apply settings immediately
-        self.settings_applied.emit()
 
     def _ok_clicked(self):
         """Apply and close"""

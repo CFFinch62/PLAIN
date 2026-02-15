@@ -84,23 +84,39 @@ class CodeEditor(QPlainTextEdit):
         """Apply editor settings"""
         if self.settings:
             s = self.settings.settings.editor
+
+            # Set font programmatically - this is critical for immediate update
             font = QFont(s.font_family, s.font_size)
             font.setStyleHint(QFont.StyleHint.Monospace)
             self.setFont(font)
+
+            # Also set font on line number area
+            self.line_number_area.setFont(font)
+
+            # Update tab stop distance
             self.setTabStopDistance(s.tab_width * self.fontMetrics().horizontalAdvance(' '))
+
+            # Update word wrap
             self.setLineWrapMode(
                 QPlainTextEdit.LineWrapMode.WidgetWidth if s.word_wrap
                 else QPlainTextEdit.LineWrapMode.NoWrap
             )
+
             # Update line number visibility
             self.line_number_area.setVisible(s.show_line_numbers)
             self.update_line_number_area_width(0)
+
             # Re-highlight current line based on settings
             self.highlight_current_line()
 
             # Re-apply UI theme to update stylesheet with new font settings
             if self.ui_theme:
                 self.apply_ui_theme(self.ui_theme)
+
+            # Force immediate visual update
+            self.update()
+            self.viewport().update()
+            self.line_number_area.update()
     
     def apply_ui_theme(self, ui_theme: UITheme):
         """Apply UI theme to editor"""

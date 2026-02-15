@@ -186,6 +186,10 @@ class TerminalWidget(QWidget):
                 background-color: {theme.button_hover};
             }}
         """)
+
+        # Update viewport to ensure changes are visible
+        self.output.viewport().update()
+        self.output.update()
     
     def clear(self):
         """Clear terminal output"""

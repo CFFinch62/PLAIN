@@ -77,11 +77,10 @@ if exist docs (
     xcopy /E /I /Q "docs" "%PACKAGE_PATH%\docs"
 )
 
-:: Copy Examples
+:: Copy Examples (preserve directory structure)
 if exist examples (
-    mkdir "%PACKAGE_PATH%\examples"
     echo   - Copying examples...
-    for /r examples %%f in (*.plain) do copy "%%f" "%PACKAGE_PATH%\examples\" >nul
+    xcopy /E /I /Q "examples" "%PACKAGE_PATH%\examples"
 )
 
 :: Create Zip
