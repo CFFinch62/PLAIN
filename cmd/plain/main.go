@@ -21,6 +21,36 @@ func main() {
 		return
 	}
 
+	// Parse global flags (--project-root)
+	projectRoot := ""
+	args := os.Args[1:]
+	filteredArgs := []string{}
+
+	for i := 0; i < len(args); i++ {
+		if strings.HasPrefix(args[i], "--project-root=") {
+			projectRoot = strings.TrimPrefix(args[i], "--project-root=")
+		} else if args[i] == "--project-root" {
+			if i+1 < len(args) {
+				projectRoot = args[i+1]
+				i++ // Skip next arg
+			} else {
+				fmt.Println("Error: --project-root requires a directory path")
+				os.Exit(1)
+			}
+		} else {
+			filteredArgs = append(filteredArgs, args[i])
+		}
+	}
+
+	// Reconstruct os.Args with filtered arguments
+	os.Args = append([]string{os.Args[0]}, filteredArgs...)
+
+	// No arguments after filtering - start REPL
+	if len(os.Args) < 2 {
+		repl.StartDefault()
+		return
+	}
+
 	// Check for -repl flag to explicitly start REPL
 	if os.Args[1] == "-repl" || os.Args[1] == "-i" {
 		repl.StartDefault()
@@ -78,13 +108,13 @@ func main() {
 				breakpoints = parseBreakpoints(bpStr)
 			}
 		}
-		runFileDebug(filename, breakpoints)
+		runFileDebugWithRoot(filename, breakpoints, projectRoot)
 		return
 	}
 
 	// Normal execution - run the PLAIN file
 	if strings.HasSuffix(os.Args[1], ".plain") || !strings.HasPrefix(os.Args[1], "-") {
-		runFile(os.Args[1])
+		runFileWithRoot(os.Args[1], projectRoot)
 		return
 	}
 
@@ -106,8 +136,17 @@ func printUsage() {
 	fmt.Println("  plain --debug <file.plain>     Run in debug mode (for IDE integration)")
 	fmt.Println("  plain -help, -h                Show this help message")
 	fmt.Println("")
+	fmt.Println("Global options:")
+	fmt.Println("  --project-root=<dir>           Set project root for module resolution")
+	fmt.Println("  --project-root <dir>           (allows imports from project root instead of file directory)")
+	fmt.Println("")
 	fmt.Println("Debug options:")
 	fmt.Println("  --breakpoints=1,5,10           Set initial breakpoints at lines 1, 5, 10")
+	fmt.Println("")
+	fmt.Println("Examples:")
+	fmt.Println("  plain myfile.plain")
+	fmt.Println("  plain --project-root=/path/to/project solutions/solution1.plain")
+	fmt.Println("  plain --project-root=. solutions/solution1.plain")
 }
 
 func showTokens(filename string) {
@@ -230,6 +269,10 @@ func analyzeFile(filename string) {
 }
 
 func runFile(filename string) {
+	runFileWithRoot(filename, "")
+}
+
+func runFileWithRoot(filename string, projectRoot string) {
 	// Read the file
 	content, err := os.ReadFile(filename)
 	if err != nil {
@@ -267,8 +310,16 @@ func runFile(filename string) {
 		os.Exit(1)
 	}
 
-	// Create runtime evaluator and execute with base directory for module resolution
-	baseDir := filepath.Dir(filename)
+	// Determine base directory for module resolution
+	var baseDir string
+	if projectRoot != "" {
+		// Use specified project root
+		baseDir = projectRoot
+	} else {
+		// Default: use directory of the file being run
+		baseDir = filepath.Dir(filename)
+	}
+
 	eval := runtime.NewWithBaseDir(baseDir)
 	env := runtime.NewEnvironment()
 
@@ -299,6 +350,10 @@ func parseBreakpoints(s string) []int {
 
 // runFileDebug runs a PLAIN file in debug mode
 func runFileDebug(filename string, breakpoints []int) {
+	runFileDebugWithRoot(filename, breakpoints, "")
+}
+
+func runFileDebugWithRoot(filename string, breakpoints []int, projectRoot string) {
 	// Read the file
 	content, err := os.ReadFile(filename)
 	if err != nil {
@@ -334,8 +389,16 @@ func runFileDebug(filename string, breakpoints []int) {
 		os.Exit(1)
 	}
 
-	// Create runtime evaluator and debugger
-	baseDir := filepath.Dir(filename)
+	// Determine base directory for module resolution
+	var baseDir string
+	if projectRoot != "" {
+		// Use specified project root
+		baseDir = projectRoot
+	} else {
+		// Default: use directory of the file being run
+		baseDir = filepath.Dir(filename)
+	}
+
 	eval := runtime.NewWithBaseDir(baseDir)
 	env := runtime.NewEnvironment()
 

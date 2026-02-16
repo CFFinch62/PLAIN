@@ -76,6 +76,7 @@ class Settings:
     window: WindowSettings = field(default_factory=WindowSettings)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     plain_interpreter_path: str = ""  # Path to PLAIN interpreter (auto-detected if empty)
+    project_root_path: str = ""  # Project root for module resolution (optional)
     recent_files: List[str] = field(default_factory=list)
     bookmarks: List[str] = field(default_factory=list)
     session: SessionSettings = field(default_factory=SessionSettings)
@@ -113,6 +114,8 @@ class SettingsManager:
             settings.terminal = TerminalSettings(**data['terminal'])
         if 'plain_interpreter_path' in data:
             settings.plain_interpreter_path = data['plain_interpreter_path']
+        if 'project_root_path' in data:
+            settings.project_root_path = data['project_root_path']
         if 'recent_files' in data:
             settings.recent_files = data['recent_files']
         if 'bookmarks' in data:
@@ -130,6 +133,7 @@ class SettingsManager:
             'window': asdict(self.settings.window),
             'terminal': asdict(self.settings.terminal),
             'plain_interpreter_path': self.settings.plain_interpreter_path,
+            'project_root_path': self.settings.project_root_path,
             'recent_files': self.settings.recent_files[:20],  # Keep last 20
             'bookmarks': self.settings.bookmarks,
             'session': asdict(self.settings.session),

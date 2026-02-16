@@ -1,0 +1,26 @@
+rem: Test if list assignment creates a copy or a reference
+
+task Main()
+    var nums = [1, 2, 3, 4]
+    var muns = nums
+    
+    display("Initial state:")
+    display("nums:", nums)
+    display("muns:", muns)
+    display("")
+    
+    rem: Modify muns
+    append(muns, 5)
+    muns[0] = 99
+    
+    display("After modifying muns (append 5, set first element to 99):")
+    display("nums:", nums)
+    display("muns:", muns)
+    display("")
+    
+    rem: Check if they're the same
+    if nums[0] == 99
+        display("RESULT: muns is a REFERENCE to nums (they share the same data)")
+    else
+        display("RESULT: muns is a COPY of nums (they are separate)")
+

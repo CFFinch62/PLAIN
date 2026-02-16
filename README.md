@@ -106,13 +106,13 @@ PLAIN includes a bidirectional code converter that translates between Python and
 
 ```bash
 # Convert Python to PLAIN
-python3 -m plain_converter p2p script.py -o script.plain
+python3 -m plain_converter py2plain script.py -o script.plain
 
 # Convert PLAIN to Python
 python3 -m plain_converter plain2py program.plain -o program.py
 
 # Batch convert a directory
-python3 -m plain_converter p2p src/ -o plain_src/ --recursive
+python3 -m plain_converter py2plain src/ -o plain_src/ --recursive
 
 # Launch the GUI
 python3 -m plain_converter --gui

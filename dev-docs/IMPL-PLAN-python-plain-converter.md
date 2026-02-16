@@ -847,7 +847,7 @@ plain-convert <direction> <input> [options]
 
 ### Directions
 
-- `python-to-plain` or `p2p` - Convert Python to PLAIN
+- `python-to-plain` or `py2plain` - Convert Python to PLAIN
 - `plain-to-python` or `plain2py` - Convert PLAIN to Python
 
 ### Basic Usage
@@ -899,19 +899,19 @@ plain-convert python-to-plain src/ -o plain_src/ --recursive
 
 ```bash
 # Convert with type prefixes
-plain-convert p2p calculator.py -o calculator.plain --add-type-prefixes
+plain-convert py2plain calculator.py -o calculator.plain --add-type-prefixes
 
 # Batch convert with warnings
-plain-convert p2p src/ -o plain_src/ -r --warnings
+plain-convert py2plain src/ -o plain_src/ -r --warnings
 
 # Dry run to see what would happen
 plain-convert plain2py examples/ -o python_examples/ -r --dry-run
 
 # Strict mode (fail on unsupported features)
-plain-convert p2p advanced.py --strict
+plain-convert py2plain advanced.py --strict
 
 # Quiet mode with stats
-plain-convert p2p src/ -o plain_src/ -r -q --stats
+plain-convert py2plain src/ -o plain_src/ -r -q --stats
 ```
 
 ### Exit Codes
@@ -1231,7 +1231,7 @@ task Main()
 - ✅ Created project directory structure with all packages
 - ✅ Created __init__.py files for all packages
 - ✅ Set up CLI framework with argparse (main.py - 331 lines)
-  - All conversion directions (p2p, plain2py)
+  - All conversion directions (py2plain, plain2py)
   - Output, conversion, processing, and control options
   - File collection with glob patterns and recursion
   - Dry-run, stats, strict mode support

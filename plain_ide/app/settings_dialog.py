@@ -293,7 +293,7 @@ class SettingsDialog(QDialog):
         path_layout.addWidget(browse_btn)
 
         interpreter_layout.addLayout(path_layout)
-        
+
         info_lbl = QLabel("Leave empty to auto-detect the interpreter in your PATH or program directory.")
         info_lbl.setWordWrap(True)
         info_lbl.setStyleSheet("color: gray; font-style: italic;")
@@ -301,6 +301,36 @@ class SettingsDialog(QDialog):
 
         interpreter_group.setLayout(interpreter_layout)
         layout.addWidget(interpreter_group)
+
+        # Project Root group
+        project_root_group = QGroupBox("Project Root (Module Resolution)")
+        project_root_layout = QVBoxLayout()
+
+        proj_lbl = QLabel("Project root directory for module imports:")
+        project_root_layout.addWidget(proj_lbl)
+
+        proj_path_layout = QHBoxLayout()
+        self.project_root_input = QLineEdit()
+        self.project_root_input.setPlaceholderText("Optional - leave empty to use file's directory")
+        proj_path_layout.addWidget(self.project_root_input)
+
+        proj_browse_btn = QPushButton("Browse...")
+        proj_browse_btn.clicked.connect(self._browse_project_root)
+        proj_path_layout.addWidget(proj_browse_btn)
+
+        project_root_layout.addLayout(proj_path_layout)
+
+        proj_info_lbl = QLabel(
+            "When set, all module imports will be resolved from this directory.\n"
+            "This allows files in subdirectories to import from parent directories.\n"
+            "Example: Set to '/path/to/project' to allow 'solutions/file.plain' to import from 'lib/'."
+        )
+        proj_info_lbl.setWordWrap(True)
+        proj_info_lbl.setStyleSheet("color: gray; font-style: italic;")
+        project_root_layout.addWidget(proj_info_lbl)
+
+        project_root_group.setLayout(project_root_layout)
+        layout.addWidget(project_root_group)
 
         layout.addStretch()
         return tab
@@ -313,6 +343,15 @@ class SettingsDialog(QDialog):
         )
         if file_path:
             self.interpreter_path_input.setText(file_path)
+
+    def _browse_project_root(self):
+        """Open directory dialog to select project root"""
+        dir_path = QFileDialog.getExistingDirectory(
+            self, "Select Project Root Directory", "",
+            QFileDialog.Option.ShowDirsOnly
+        )
+        if dir_path:
+            self.project_root_input.setText(dir_path)
 
     def _load_current_settings(self):
         """Load current settings into the dialog"""
@@ -348,6 +387,7 @@ class SettingsDialog(QDialog):
 
         # Runtime
         self.interpreter_path_input.setText(s.plain_interpreter_path)
+        self.project_root_input.setText(s.project_root_path)
 
     def _update_preview(self):
         """Update the theme preview swatch"""
@@ -415,6 +455,7 @@ class SettingsDialog(QDialog):
 
         # Runtime
         s.plain_interpreter_path = self.interpreter_path_input.text().strip()
+        s.project_root_path = self.project_root_input.text().strip()
 
         self.settings_manager.save()
 

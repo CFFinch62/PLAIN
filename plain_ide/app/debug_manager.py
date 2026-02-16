@@ -44,13 +44,19 @@ class DebugManager(QObject):
         # Build command arguments
         # If we found the 'plain' executable, use it directly
         if interpreter.endswith("plain") or interpreter.endswith("plain.exe"):
-             args = ["--debug", file_path]
+             args = []
+
+             # Add --project-root flag if configured
+             if self.settings and self.settings.settings.project_root_path:
+                 args.extend(["--project-root", self.settings.settings.project_root_path])
+
+             args.extend(["--debug", file_path])
              program = interpreter
         else:
             # Fallback for dev environment (go run)
             args = ["run", "./cmd/plain/", "--debug", file_path]
             program = "go"
-            
+
         if breakpoints:
              bp_str = ",".join(str(line) for line in sorted(breakpoints))
              args.append(f"--breakpoints={bp_str}")

@@ -6,8 +6,8 @@ Usage:
     plain-convert <direction> <input> [options]
 
 Directions:
-    python-to-plain (p2p)    Convert Python code to PLAIN
-    plain-to-python (plain2py)  Convert PLAIN code to Python
+    python-to-plain (py2plain)    Convert Python code to PLAIN
+    plain-to-python (plain2py)     Convert PLAIN code to Python
 """
 
 import argparse
@@ -24,9 +24,9 @@ def create_parser() -> argparse.ArgumentParser:
         prog="plain-convert",
         description="Bidirectional code converter between Python and PLAIN",
         epilog="Examples:\n"
-               "  plain-convert p2p input.py -o output.plain\n"
+               "  plain-convert py2plain input.py -o output.plain\n"
                "  plain-convert plain2py input.plain -o output.py\n"
-               "  plain-convert p2p src/ -o plain_src/ --recursive\n",
+               "  plain-convert py2plain src/ -o plain_src/ --recursive\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
 
@@ -47,7 +47,7 @@ def create_parser() -> argparse.ArgumentParser:
         "direction",
         nargs="?",
         default=None,
-        choices=["python-to-plain", "p2p", "plain-to-python", "plain2py"],
+        choices=["python-to-plain", "py2plain", "plain-to-python", "plain2py"],
         help="Conversion direction",
     )
 
@@ -171,7 +171,7 @@ def create_parser() -> argparse.ArgumentParser:
 def normalize_direction(direction: str) -> str:
     """Normalize direction aliases to full names."""
     aliases = {
-        "p2p": "python-to-plain",
+        "py2plain": "python-to-plain",
         "plain2py": "plain-to-python",
     }
     return aliases.get(direction, direction)

@@ -301,6 +301,9 @@ class PythonToPlainConverter:
             return []  # Skip global statements
         if isinstance(node, ast.Nonlocal):
             return []  # Skip nonlocal statements
+        # Handle Python 3.10+ match/case statements
+        if hasattr(ast, 'Match') and isinstance(node, ast.Match):
+            return self._convert_match(node, indent)
 
         # Unsupported statement
         self.result.add_warning(
@@ -549,6 +552,71 @@ class PythonToPlainConverter:
                     lines.extend(self._convert_body(current.orelse, indent + 2))
             break
 
+        return lines
+
+    def _convert_match(self, node: ast.Match, indent: int) -> list[str]:
+        """Convert Python 3.10+ match/case to PLAIN choose/choice/default."""
+        prefix = INDENT * indent
+        lines = []
+
+        # Convert the subject expression
+        subject = self._convert_expr(node.subject)
+        lines.append(f"{prefix}choose {subject}")
+
+        # Track if we have a wildcard case
+        has_wildcard = False
+
+        # Convert each case
+        for case in node.cases:
+            # Check if this is a wildcard pattern (case _:)
+            if hasattr(ast, 'MatchAs') and isinstance(case.pattern, ast.MatchAs):
+                if case.pattern.name is None:  # This is the _ wildcard
+                    has_wildcard = True
+                    lines.append(f"{prefix}{INDENT}default")
+                    lines.extend(self._convert_body(case.body, indent + 2))
+                else:
+                    # case x: (capture pattern) - treat as default with variable binding
+                    has_wildcard = True
+                    lines.append(f"{prefix}{INDENT}default")
+                    # Add a comment about the captured variable
+                    lines.append(f"{prefix}{INDENT}{INDENT}rem: captured as {case.pattern.name}")
+                    lines.extend(self._convert_body(case.body, indent + 2))
+            # Literal pattern (case 10:, case "hello":, etc.)
+            elif hasattr(ast, 'MatchValue') and isinstance(case.pattern, ast.MatchValue):
+                value = self._convert_expr(case.pattern.value)
+                lines.append(f"{prefix}{INDENT}choice {value}")
+                lines.extend(self._convert_body(case.body, indent + 2))
+            # Or pattern (case 1 | 2 | 3:)
+            elif hasattr(ast, 'MatchOr') and isinstance(case.pattern, ast.MatchOr):
+                # For or patterns, we need to create multiple choice clauses
+                for pattern in case.pattern.patterns:
+                    if hasattr(ast, 'MatchValue') and isinstance(pattern, ast.MatchValue):
+                        value = self._convert_expr(pattern.value)
+                        lines.append(f"{prefix}{INDENT}choice {value}")
+                        lines.extend(self._convert_body(case.body, indent + 2))
+                    else:
+                        # Complex pattern in OR - add warning
+                        self.result.add_warning(
+                            WarningCategory.LOSSY_CONVERSION,
+                            f"Complex pattern in match/case OR clause may not convert perfectly",
+                            line=getattr(case, 'lineno', None),
+                        )
+                        lines.append(f"{prefix}{INDENT}rem: MANUAL FIX: complex OR pattern")
+            # Sequence pattern, mapping pattern, class pattern, etc.
+            else:
+                # For complex patterns, add a warning and a comment
+                self.result.add_warning(
+                    WarningCategory.LOSSY_CONVERSION,
+                    f"Complex match pattern ({type(case.pattern).__name__}) converted to default - manual review needed",
+                    line=getattr(case, 'lineno', None),
+                )
+                if not has_wildcard:
+                    has_wildcard = True
+                    lines.append(f"{prefix}{INDENT}default")
+                    lines.append(f"{prefix}{INDENT}{INDENT}rem: MANUAL FIX: complex pattern {type(case.pattern).__name__}")
+                    lines.extend(self._convert_body(case.body, indent + 2))
+
+        self.result.increment_stat("match_statements_converted")
         return lines
 
     def _convert_for(self, node: ast.For, indent: int) -> list[str]:

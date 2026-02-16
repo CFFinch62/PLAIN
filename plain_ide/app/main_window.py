@@ -691,12 +691,12 @@ class PlainIDEMainWindow(QMainWindow):
 
     def save_file_as(self):
         """Save the current file with a new name"""
-        editor = self.tab_widget.currentWidget()
-        if not isinstance(editor, CodeEditor):
+        current_editor = self.tab_widget.currentWidget()
+        if not isinstance(current_editor, CodeEditor):
             return
 
         # Use suggested save path (e.g. from converter), then editor's own path, then project dir
-        initial_path = getattr(editor, 'suggested_save_path', None) or editor.file_path
+        initial_path = getattr(current_editor, 'suggested_save_path', None) or current_editor.file_path
         if not initial_path:
             initial_path = self.current_project_path if self.current_project_path else str(Path.home())
         file_path, _ = QFileDialog.getSaveFileName(
@@ -704,7 +704,25 @@ class PlainIDEMainWindow(QMainWindow):
             "PLAIN Files (*.plain);;All Files (*)"
         )
         if file_path:
-            self._save_editor(editor, file_path)
+            # Create a NEW editor with the same content
+            new_editor = CodeEditor(
+                ui_theme=self.theme_manager.get_current_ui_theme(),
+                syntax_theme=self.theme_manager.get_current_syntax_theme(),
+                settings=self.settings
+            )
+            new_editor.setPlainText(current_editor.toPlainText())
+            new_editor.cursorPositionChanged.connect(self._update_cursor_position)
+            new_editor.file_modified.connect(lambda m, p=file_path: self._on_file_modified(p, m))
+
+            # Save the new editor to the new file
+            self._save_editor(new_editor, file_path)
+
+            # Add new editor as a new tab
+            self.editors[file_path] = new_editor
+            idx = self.tab_widget.addTab(new_editor, Path(file_path).name)
+            self.tab_widget.setCurrentIndex(idx)
+
+            # Original editor remains unchanged and associated with its original file
 
     def _save_editor(self, editor: CodeEditor, file_path: str):
         """Save editor content to file"""

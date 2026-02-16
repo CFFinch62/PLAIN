@@ -270,18 +270,66 @@ task Main()
 
 ### Base Directory
 
-The `baseDir` is set to the directory containing the main `.plain` file being run:
+By default, the `baseDir` is set to the directory containing the main `.plain` file being run:
 
 ```go
 baseDir := filepath.Dir(filename)  // directory of the .plain file being run
 ```
 
+However, you can override this with the `--project-root` flag to use a different base directory for module resolution.
+
 ### Path Resolution Rules
 
-1. `baseDir` is set to the directory containing the main `.plain` file
+1. `baseDir` is set to:
+   - The directory specified by `--project-root` flag (if provided), OR
+   - The directory containing the main `.plain` file (default)
 2. Module path `["mathlib", "geometry"]` resolves to `<baseDir>/mathlib/geometry.plain`
 3. Root module `["helpers"]` resolves to `<baseDir>/helpers.plain`
 4. File must exist or you get: `"module not found: mathlib.geometry"`
+
+### Using `--project-root` for Parent Directory Imports
+
+**The Problem:** By default, PLAIN can only import modules from the file's directory and subdirectories. It cannot import from parent directories.
+
+**The Solution:** Use the `--project-root` flag to set a common base directory for all imports.
+
+**Example:**
+
+```
+my_project/
+├── lib/
+│   ├── utils.plain
+│   └── helpers.plain
+└── solutions/
+    ├── solution1.plain
+    └── solution2.plain
+```
+
+**Without `--project-root`:**
+```bash
+cd my_project/solutions
+plain solution1.plain
+# Can only import from solutions/ and subdirectories
+# Cannot import from ../lib/
+```
+
+**With `--project-root`:**
+```bash
+cd my_project
+plain --project-root=. solutions/solution1.plain
+# Can import from lib/, solutions/, and any subdirectory
+```
+
+**In solution1.plain:**
+```plain
+use:
+    tasks:
+        lib.utils.SomeTask    # Works with --project-root!
+```
+
+**IDE Configuration:** The PLAIN IDE can be configured to automatically use `--project-root`. See [IDE_Project_Root_Setup.md](IDE_Project_Root_Setup.md) for instructions.
+
+**See also:** [Project_Root_Flag.md](Project_Root_Flag.md) for complete documentation.
 
 ### Runtime Behavior
 

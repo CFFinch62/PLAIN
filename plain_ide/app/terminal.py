@@ -242,11 +242,11 @@ class TerminalWidget(QWidget):
         if self.process is not None:
             self.write_line("[!] A program is already running!", self.theme.warning if self.theme else None)
             return
-        
+
         # Find PLAIN executable using multiple strategies
         if plain_executable is None:
             plain_executable = self._find_plain_interpreter()
-        
+
         if not plain_executable:
             self.clear()
             self.write_line("[ERROR] PLAIN interpreter not found!", self.theme.error if self.theme else None)
@@ -255,18 +255,30 @@ class TerminalWidget(QWidget):
             self.write_line("  1. In your PATH, or")
             self.write_line("  2. In the same directory as the IDE")
             return
-        
+
         self.clear()
         self.write_line(f"[>] Running: {file_path}", self.theme.info if self.theme else None)
         self.write_line(f"[>] Interpreter: {plain_executable}", self.theme.info if self.theme else None)
+
+        # Build command arguments
+        args = []
+
+        # Add --project-root flag if configured
+        if self.settings and self.settings.settings.project_root_path:
+            project_root = self.settings.settings.project_root_path
+            args.extend(["--project-root", project_root])
+            self.write_line(f"[>] Project Root: {project_root}", self.theme.info if self.theme else None)
+
+        args.append(file_path)
+
         self.write_line("-" * 50)
-        
+
         self.process = QProcess(self)
         self.process.readyReadStandardOutput.connect(self._on_stdout)
         self.process.readyReadStandardError.connect(self._on_stderr)
         self.process.finished.connect(self._on_finished)
 
-        self.process.start(plain_executable, [file_path])
+        self.process.start(plain_executable, args)
         self.stop_btn.setEnabled(True)
 
         # Enable input so user can provide input when program requests it

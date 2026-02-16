@@ -247,6 +247,41 @@ go run ./cmd/plain-ide/
 - **Debugger** with breakpoints, stepping, and variable inspection
 - **Session persistence** — remembers open files and layout
 - **Bookmarks** for quick navigation within files
+- **Project root configuration** — set a base directory for module imports (see [Configuring Project Root](#configuring-project-root-for-modules))
+
+### Configuring Project Root for Modules
+
+If your project has shared libraries in a common directory, you can configure the IDE to use a **project root** for module resolution. This allows files in subdirectories to import from parent directories.
+
+**Example Project Structure:**
+```
+my_project/
+├── lib/              # Shared library modules
+│   ├── utils.plain
+│   └── helpers.plain
+└── solutions/        # Your solution files
+    ├── solution1.plain
+    └── solution2.plain
+```
+
+**To configure:**
+
+1. Open **Settings → Preferences** (`Ctrl+,`)
+2. Go to the **Runtime** tab
+3. In "Project Root (Module Resolution)", click **Browse...**
+4. Select your project root directory (e.g., `/path/to/my_project`)
+5. Click **OK**
+
+**Now your solution files can import from lib:**
+```plain
+use:
+    tasks:
+        lib.utils.SomeTask
+```
+
+When you run files with `F5`, the IDE automatically passes `--project-root` to the interpreter, allowing imports from the project root instead of just the file's directory.
+
+**See also:** [IDE_Project_Root_Setup.md](IDE_Project_Root_Setup.md) for detailed instructions.
 
 ---
 
@@ -262,6 +297,15 @@ Usage:
   plain -analyze <file.plain>        Run semantic analysis
   plain --debug <file.plain>         Run in debug mode
   plain -help, -h                    Show help message
+
+Global options:
+  --project-root=<dir>               Set project root for module resolution
+  --project-root <dir>               (allows imports from project root)
+
+Examples:
+  plain myfile.plain
+  plain --project-root=/path/to/project solutions/solution1.plain
+  plain --project-root=. solutions/solution1.plain
 ```
 
 ### Developer Flags
@@ -274,6 +318,32 @@ These flags are useful for understanding how PLAIN processes your code:
 | `-parse`   | Shows the abstract syntax tree (AST) the parser builds       |
 | `-analyze` | Runs semantic analysis to check for errors without executing |
 | `--debug`  | Runs in debug mode with breakpoint support                   |
+
+### Project Root Flag
+
+The `--project-root` flag sets the base directory for module resolution. This is useful when your project has shared libraries in a common directory.
+
+**Without `--project-root`:** Modules are resolved from the directory containing the file being run.
+
+**With `--project-root`:** Modules are resolved from the specified directory, allowing files in subdirectories to import from parent directories.
+
+**Example:**
+```bash
+# Project structure:
+# my_project/
+#   lib/utils.plain
+#   solutions/solution1.plain
+
+# Run from anywhere:
+cd /path/to/my_project
+plain --project-root=. solutions/solution1.plain
+
+# Now solution1.plain can import from lib/
+```
+
+**See also:** [Project_Root_Flag.md](Project_Root_Flag.md) for detailed documentation.
+
+**IDE Users:** The PLAIN IDE can be configured to automatically use `--project-root`. See [Configuring Project Root](#configuring-project-root-for-modules) above.
 
 ---
 
