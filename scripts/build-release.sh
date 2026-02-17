@@ -73,7 +73,12 @@ rm -rf "${PACKAGE_PATH}"
 mkdir -p "${PACKAGE_PATH}"
 
 # Copy the build output (which contains the IDE and the bundled interpreter)
-cp -r dist/plain-ide/* "${PACKAGE_PATH}/"
+# Use ditto on macOS to preserve all metadata and avoid Dropbox sync issues
+if [ "$GOOS" = "darwin" ]; then
+    ditto dist/plain-ide "${PACKAGE_PATH}"
+else
+    cp -r dist/plain-ide/* "${PACKAGE_PATH}/"
+fi
 
 # Copy standalone interpreter to root directory (in addition to _internal)
 echo "  → Copying standalone interpreter to release root..."

@@ -1,5 +1,6 @@
 """Debug manager for PLAIN IDE - handles communication with the Go runtime debugger"""
 
+import os
 import shutil
 import sys
 import json
@@ -32,7 +33,9 @@ class DebugManager(QObject):
             self.stop_debug()
 
         self.process = QProcess(self)
-        self.process.setWorkingDirectory(str(Path(__file__).parent.parent.parent))
+        # Resolve working directory to absolute path (handles Windows paths correctly)
+        working_dir = Path(__file__).parent.parent.parent.resolve()
+        self.process.setWorkingDirectory(str(working_dir))
 
         # Build command arguments
         # Determine interpreter to use
@@ -40,6 +43,9 @@ class DebugManager(QObject):
         if not interpreter:
             self.error_received.emit("PLAIN interpreter not found. Please configure it in settings.")
             return False
+
+        # Normalize file path to use OS-appropriate separators
+        normalized_file_path = os.path.normpath(file_path)
 
         # Build command arguments
         # If we found the 'plain' executable, use it directly
@@ -50,11 +56,12 @@ class DebugManager(QObject):
              if self.settings and self.settings.settings.project_root_path:
                  args.extend(["--project-root", self.settings.settings.project_root_path])
 
-             args.extend(["--debug", file_path])
+             args.extend(["--debug", normalized_file_path])
              program = interpreter
         else:
             # Fallback for dev environment (go run)
-            args = ["run", "./cmd/plain/", "--debug", file_path]
+            # Go accepts forward slashes on all platforms, including Windows
+            args = ["run", "./cmd/plain", "--debug", normalized_file_path]
             program = "go"
 
         if breakpoints:
@@ -78,7 +85,12 @@ class DebugManager(QObject):
         self.process.start(program, args)
 
         if not self.process.waitForStarted(5000):
-            self.error_received.emit("Failed to start debug process")
+            error_msg = f"Failed to start debug process\n"
+            error_msg += f"Program: {program}\n"
+            error_msg += f"Args: {args}\n"
+            error_msg += f"Working dir: {self.process.workingDirectory()}\n"
+            error_msg += f"Error: {self.process.errorString()}"
+            self.error_received.emit(error_msg)
             return False
 
         self._debugging = True
@@ -191,22 +203,25 @@ class DebugManager(QObject):
 
     def _find_plain_interpreter(self) -> str:
         """Find the PLAIN interpreter"""
+        # Determine the executable name based on platform
+        exe_name = "plain.exe" if sys.platform == "win32" else "plain"
+
         # Strategy 1: Check settings for configured path
         if self.settings and self.settings.settings.plain_interpreter_path:
             path = Path(self.settings.settings.plain_interpreter_path)
             if path.exists():
                 return str(path)
-        
+
         # Strategy 2: Check same directory as IDE executable (frozen)
         if getattr(sys, 'frozen', False):
             exe_dir = Path(sys.executable).parent
-            plain_exe = exe_dir / "plain"
+            plain_exe = exe_dir / exe_name
             if plain_exe.exists():
                 return str(plain_exe)
         else:
             # Strategy 3: Check development build location
-            # If running from source, look in project root/plain
-            dev_plain = Path(__file__).parent.parent.parent / "plain"
+            # If running from source, look in project root/plain or plain.exe
+            dev_plain = Path(__file__).parent.parent.parent / exe_name
             if dev_plain.exists():
                 return str(dev_plain)
 
@@ -218,6 +233,6 @@ class DebugManager(QObject):
         # Fallback to 'go run' only if we are in source dev mode and go is available
         # This preserves old behavior for development if 'plain' binary is missing
         if not getattr(sys, 'frozen', False) and shutil.which("go"):
-            return "go" 
+            return "go"
 
         return None

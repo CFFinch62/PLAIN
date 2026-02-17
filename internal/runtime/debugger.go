@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"plain/internal/ast"
+	"plain/internal/token"
 	"sort"
 	"strings"
 	"sync"
@@ -225,20 +226,39 @@ func (d *Debugger) waitForCommand() {
 
 // sendVariables sends current variable state to IDE
 func (d *Debugger) sendVariables() {
-	vars := make(map[string]interface{})
+	// Collect all variables from all scopes
+	allVars := make(map[string]interface{})
+
 	if d.env != nil {
-		for name, val := range d.env.store {
-			vars[name] = map[string]interface{}{
-				"value": val.String(),
-				"type":  getTypeName(val),
-			}
-		}
+		// Collect from current scope and all parent scopes
+		collectAllVariables(d.env, allVars)
 	}
+
 	d.sendEvent(DebugEvent{
 		Event:     "variables",
-		Variables: vars,
+		Variables: allVars,
 		CallStack: d.callStack,
 	})
+}
+
+// collectAllVariables recursively collects variables from all scopes
+func collectAllVariables(env *Environment, vars map[string]interface{}) {
+	if env == nil {
+		return
+	}
+
+	// First collect from parent scopes (so local variables override)
+	if env.parent != nil {
+		collectAllVariables(env.parent, vars)
+	}
+
+	// Then add/override with current scope variables
+	for name, val := range env.store {
+		vars[name] = map[string]interface{}{
+			"value": val.String(),
+			"type":  getTypeName(val),
+		}
+	}
 }
 
 // getTypeName returns a human-readable type name
@@ -296,7 +316,13 @@ func (d *Debugger) onStatement(node ast.Node, env *Environment) bool {
 	}
 
 	line := d.getNodeLine(node)
-	if line == 0 || line == d.currentLine {
+	if line == 0 {
+		return true // Continue execution
+	}
+
+	// Don't skip same line in step mode (needed for loop iterations)
+	// Only skip if we're in run mode and it's the same line
+	if line == d.currentLine && d.mode == DebugRun {
 		return true // Continue execution
 	}
 
@@ -465,9 +491,228 @@ func (d *Debugger) evalStatementDebug(stmt ast.Statement, env *Environment) Valu
 		return d.evalLoopDebug(s, env)
 	case *ast.ChooseStatement:
 		return d.evalChooseDebug(s, env)
+	case *ast.ExpressionStatement:
+		// Intercept expression statements to handle function calls
+		return d.evalExpressionDebug(s.Expression, env)
+	case *ast.VarStatement:
+		return d.evalVarStatementDebug(s, env)
+	case *ast.AssignStatement:
+		return d.evalAssignStatementDebug(s, env)
+	case *ast.DeliverStatement:
+		return d.evalDeliverStatementDebug(s, env)
 	default:
 		return d.evaluator.Eval(stmt, env)
 	}
+}
+
+// evalVarStatementDebug handles variable declarations with debug hooks
+func (d *Debugger) evalVarStatementDebug(stmt *ast.VarStatement, env *Environment) Value {
+	var val Value = NULL
+	if stmt.Value != nil {
+		val = d.evalExpressionDebug(stmt.Value, env)
+		if isError(val) {
+			return val
+		}
+	}
+
+	env.Define(stmt.Name.Value, val)
+	return NULL
+}
+
+// evalAssignStatementDebug handles assignments with debug hooks
+func (d *Debugger) evalAssignStatementDebug(stmt *ast.AssignStatement, env *Environment) Value {
+	var val Value
+
+	// Check if this is a compound assignment (+=, -=, etc.)
+	isCompound := false
+	var operator string
+
+	switch stmt.Token.Type {
+	case token.PLUS_EQ:
+		isCompound = true
+		operator = "+"
+	case token.MINUS_EQ:
+		isCompound = true
+		operator = "-"
+	case token.TIMES_EQ:
+		isCompound = true
+		operator = "*"
+	case token.DIV_EQ:
+		isCompound = true
+		operator = "/"
+	case token.MOD_EQ:
+		isCompound = true
+		operator = "%"
+	case token.CONCAT_EQ:
+		isCompound = true
+		operator = "&"
+	}
+
+	if isCompound {
+		// Get the current value of the variable
+		var currentVal Value
+		switch target := stmt.Name.(type) {
+		case *ast.Identifier:
+			var ok bool
+			currentVal, ok = env.Get(target.Value)
+			if !ok {
+				return NewError("undefined variable: %s", target.Value)
+			}
+		case *ast.IndexExpression:
+			currentVal = d.evaluator.Eval(target, env)
+			if isError(currentVal) {
+				return currentVal
+			}
+		case *ast.DotExpression:
+			currentVal = d.evaluator.Eval(target, env)
+			if isError(currentVal) {
+				return currentVal
+			}
+		}
+
+		// Evaluate the right-hand side with debug hooks
+		rightVal := d.evalExpressionDebug(stmt.Value, env)
+		if isError(rightVal) {
+			return rightVal
+		}
+
+		// Perform the operation
+		val = d.evaluator.evalBinaryOperation(currentVal, operator, rightVal)
+		if isError(val) {
+			return val
+		}
+	} else {
+		// Regular assignment - evaluate the value expression with debug hooks
+		val = d.evalExpressionDebug(stmt.Value, env)
+		if isError(val) {
+			return val
+		}
+	}
+
+	// Handle the assignment target
+	switch target := stmt.Name.(type) {
+	case *ast.Identifier:
+		if !env.Set(target.Value, val) {
+			return NewError("undefined variable: %s", target.Value)
+		}
+	case *ast.IndexExpression:
+		// For index assignments, we need to evaluate the container and index
+		left := d.evaluator.Eval(target.Left, env)
+		if isError(left) {
+			return left
+		}
+		index := d.evaluator.Eval(target.Index, env)
+		if isError(index) {
+			return index
+		}
+
+		switch container := left.(type) {
+		case *ListValue:
+			idx, ok := index.(*IntegerValue)
+			if !ok {
+				return NewError("list index must be integer")
+			}
+			if idx.Val < 0 || idx.Val >= int64(len(container.Elements)) {
+				return NewError("list index out of range: %d", idx.Val)
+			}
+			container.Elements[idx.Val] = val
+		case *TableValue:
+			key, ok := index.(*StringValue)
+			if !ok {
+				return NewError("table key must be string")
+			}
+			container.Pairs[key.Val] = val
+		case *RecordValue:
+			key, ok := index.(*StringValue)
+			if !ok {
+				return NewError("record field name must be string")
+			}
+			if _, exists := container.Fields[key.Val]; !exists {
+				return NewError("record %s has no field '%s'", container.TypeName, key.Val)
+			}
+			container.Fields[key.Val] = val
+		default:
+			return NewError("index assignment not supported for %s", left.Type())
+		}
+	case *ast.DotExpression:
+		// For dot assignments
+		left := d.evaluator.Eval(target.Left, env)
+		if isError(left) {
+			return left
+		}
+
+		switch obj := left.(type) {
+		case *RecordValue:
+			if _, exists := obj.Fields[target.Right.Value]; !exists {
+				return NewError("record %s has no field '%s'", obj.TypeName, target.Right.Value)
+			}
+			obj.Fields[target.Right.Value] = val
+		default:
+			return NewError("dot assignment not supported for %s", left.Type())
+		}
+	}
+
+	return NULL
+}
+
+// evalDeliverStatementDebug handles return statements with debug hooks
+func (d *Debugger) evalDeliverStatementDebug(stmt *ast.DeliverStatement, env *Environment) Value {
+	if stmt.ReturnValue == nil {
+		return &ReturnValue{Val: NULL}
+	}
+
+	val := d.evalExpressionDebug(stmt.ReturnValue, env)
+	if isError(val) {
+		return val
+	}
+
+	return &ReturnValue{Val: val}
+}
+
+// evalExpressionDebug evaluates an expression with debug hooks
+func (d *Debugger) evalExpressionDebug(expr ast.Expression, env *Environment) Value {
+	// Intercept call expressions to step into functions
+	if callExpr, ok := expr.(*ast.CallExpression); ok {
+		return d.evalCallExpressionDebug(callExpr, env)
+	}
+	// For all other expressions, use the regular evaluator
+	return d.evaluator.Eval(expr, env)
+}
+
+// evalCallExpressionDebug handles function calls with debug hooks
+func (d *Debugger) evalCallExpressionDebug(call *ast.CallExpression, env *Environment) Value {
+	fn := d.evaluator.Eval(call.Function, env)
+	if isError(fn) {
+		return fn
+	}
+
+	// Evaluate arguments
+	var args []Value
+	for _, arg := range call.Arguments {
+		argVal := d.evaluator.Eval(arg, env)
+		if isError(argVal) {
+			return argVal
+		}
+		args = append(args, argVal)
+	}
+
+	// Check if it's a user-defined task (not a builtin)
+	if taskVal, ok := fn.(*TaskValue); ok {
+		// Get the function name for the call stack
+		funcName := "anonymous"
+		if ident, ok := call.Function.(*ast.Identifier); ok {
+			funcName = ident.Value
+		}
+
+		// Push call frame
+		d.pushCall(funcName, d.currentLine)
+		result := d.applyFunctionDebug(taskVal, args, env)
+		d.popCall()
+		return result
+	}
+
+	// For builtins and other callables, use regular evaluation
+	return d.evaluator.applyFunction(fn, args)
 }
 
 // evalBlockDebug evaluates a block with debug hooks
@@ -500,7 +745,8 @@ func isControlFlow(v Value) bool {
 
 // evalIfDebug evaluates an if statement with debug hooks
 func (d *Debugger) evalIfDebug(stmt *ast.IfStatement, env *Environment) Value {
-	condition := d.evaluator.Eval(stmt.Condition, env)
+	// Use evalExpressionDebug to allow stepping into function calls in conditions
+	condition := d.evalExpressionDebug(stmt.Condition, env)
 	if isError(condition) {
 		return condition
 	}
@@ -516,10 +762,133 @@ func (d *Debugger) evalIfDebug(stmt *ast.IfStatement, env *Environment) Value {
 
 // evalLoopDebug evaluates a loop with debug hooks
 func (d *Debugger) evalLoopDebug(stmt *ast.LoopStatement, env *Environment) Value {
-	// Delegate to evaluator for loop setup, but we need to handle the body ourselves
-	// This is complex - for now, use the regular evaluator
-	// TODO: Implement full loop debugging with step-through
-	return d.evaluator.Eval(stmt, env)
+	loopEnv := NewEnclosedEnvironment(env)
+
+	// Counting loop: loop i from start to end [step n]
+	if stmt.Variable != nil && stmt.Start != nil && stmt.End != nil {
+		startVal := d.evaluator.Eval(stmt.Start, env)
+		if isError(startVal) {
+			return startVal
+		}
+		endVal := d.evaluator.Eval(stmt.End, env)
+		if isError(endVal) {
+			return endVal
+		}
+
+		start, ok1 := startVal.(*IntegerValue)
+		end, ok2 := endVal.(*IntegerValue)
+		if !ok1 || !ok2 {
+			return NewError("loop range must be integers")
+		}
+
+		step := int64(1)
+		if stmt.Step != nil {
+			stepVal := d.evaluator.Eval(stmt.Step, env)
+			if stepInt, ok := stepVal.(*IntegerValue); ok {
+				step = stepInt.Val
+			}
+		}
+
+		for i := start.Val; (step > 0 && i <= end.Val) || (step < 0 && i >= end.Val); i += step {
+			loopEnv.Define(stmt.Variable.Value, NewInteger(i))
+
+			result := d.evalBlockDebug(stmt.Body, loopEnv)
+
+			switch result.(type) {
+			case *BreakValue:
+				return NULL
+			case *ContinueValue:
+				continue
+			case *ReturnValue, *ErrorValue:
+				return result
+			}
+		}
+
+		return NULL
+	}
+
+	// Iteration loop: loop item in collection
+	if stmt.Variable != nil && stmt.Iterable != nil {
+		iterVal := d.evaluator.Eval(stmt.Iterable, env)
+		if isError(iterVal) {
+			return iterVal
+		}
+
+		switch coll := iterVal.(type) {
+		case *ListValue:
+			for _, elem := range coll.Elements {
+				loopEnv.Define(stmt.Variable.Value, elem)
+				result := d.evalBlockDebug(stmt.Body, loopEnv)
+
+				switch result.(type) {
+				case *BreakValue:
+					return NULL
+				case *ContinueValue:
+					continue
+				case *ReturnValue, *ErrorValue:
+					return result
+				}
+			}
+		case *StringValue:
+			for _, ch := range coll.Val {
+				loopEnv.Define(stmt.Variable.Value, NewString(string(ch)))
+				result := d.evalBlockDebug(stmt.Body, loopEnv)
+
+				switch result.(type) {
+				case *BreakValue:
+					return NULL
+				case *ContinueValue:
+					continue
+				case *ReturnValue, *ErrorValue:
+					return result
+				}
+			}
+		default:
+			return NewError("cannot iterate over %s", iterVal.Type())
+		}
+
+		return NULL
+	}
+
+	// Conditional loop: loop condition
+	if stmt.Condition != nil {
+		for {
+			condition := d.evaluator.Eval(stmt.Condition, env)
+			if isError(condition) {
+				return condition
+			}
+			if !isTruthy(condition) {
+				break
+			}
+
+			result := d.evalBlockDebug(stmt.Body, loopEnv)
+
+			switch result.(type) {
+			case *BreakValue:
+				return NULL
+			case *ContinueValue:
+				continue
+			case *ReturnValue, *ErrorValue:
+				return result
+			}
+		}
+
+		return NULL
+	}
+
+	// Infinite loop
+	for {
+		result := d.evalBlockDebug(stmt.Body, loopEnv)
+
+		switch result.(type) {
+		case *BreakValue:
+			return NULL
+		case *ContinueValue:
+			continue
+		case *ReturnValue, *ErrorValue:
+			return result
+		}
+	}
 }
 
 // evalChooseDebug evaluates a choose statement with debug hooks
@@ -554,12 +923,12 @@ func (d *Debugger) applyFunctionDebug(fn *TaskValue, args []Value, outerEnv *Env
 	// Create new environment for function
 	funcEnv := NewEnclosedEnvironment(fn.Env)
 
-	// Bind parameters
+	// Bind parameters - use Define to create new variables
 	for i, param := range fn.Parameters {
 		if i < len(args) {
-			funcEnv.Set(param, args[i])
+			funcEnv.Define(param, args[i])
 		} else {
-			funcEnv.Set(param, NULL)
+			funcEnv.Define(param, NULL)
 		}
 	}
 
