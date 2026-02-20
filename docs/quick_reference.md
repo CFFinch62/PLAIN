@@ -277,7 +277,8 @@ chr(code) ord(str)
 ### Math
 ```
 abs(n) sqrt(n) sqr(n) pow(base, exp)
-round(n) floor(n) ceil(n) min(a,b) max(a,b)
+round(n) floor(n) ceil(n)
+min(a,b) max(a,b) min(lst) max(lst)
 sin(a) cos(a) tan(a) asin(v) acos(v) atan(v) atan2(y,x)
 log(n) log10(n) log2(n) exp(n)
 random() random_int(min, max) random_choice(lst)
@@ -288,6 +289,7 @@ random() random_int(min, max) random_choice(lst)
 len(lst) append(lst, item) insert(lst, idx, item)
 remove(lst, item) pop(lst, idx)
 sort(lst) reverse(lst) contains(lst, item)
+min(lst) max(lst) sum(lst)
 ```
 
 ### Table

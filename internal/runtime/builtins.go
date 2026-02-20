@@ -955,35 +955,71 @@ func GetBuiltins() map[string]*BuiltinValue {
 		"min": {
 			Name: "min",
 			Fn: func(args ...Value) Value {
-				if len(args) != 2 {
-					return NewError("min() takes exactly 2 arguments")
+				// min(list) - find minimum element in a list
+				if len(args) == 1 {
+					lst, ok := args[0].(*ListValue)
+					if !ok {
+						return NewError("min() with 1 argument requires a list")
+					}
+					if len(lst.Elements) == 0 {
+						return NewError("min() argument is an empty list")
+					}
+					best := lst.Elements[0]
+					for _, elem := range lst.Elements[1:] {
+						if compareValues(elem, best) < 0 {
+							best = elem
+						}
+					}
+					return best
 				}
-				a := toFloat64(args[0])
-				b := toFloat64(args[1])
-				if a == nil || b == nil {
-					return NewError("min() arguments must be numbers")
+				// min(a, b) - compare two numbers
+				if len(args) == 2 {
+					a := toFloat64(args[0])
+					b := toFloat64(args[1])
+					if a == nil || b == nil {
+						return NewError("min() arguments must be numbers")
+					}
+					if *a <= *b {
+						return args[0]
+					}
+					return args[1]
 				}
-				if *a <= *b {
-					return args[0]
-				}
-				return args[1]
+				return NewError("min() takes 1 argument (list) or 2 arguments (numbers)")
 			},
 		},
 		"max": {
 			Name: "max",
 			Fn: func(args ...Value) Value {
-				if len(args) != 2 {
-					return NewError("max() takes exactly 2 arguments")
+				// max(list) - find maximum element in a list
+				if len(args) == 1 {
+					lst, ok := args[0].(*ListValue)
+					if !ok {
+						return NewError("max() with 1 argument requires a list")
+					}
+					if len(lst.Elements) == 0 {
+						return NewError("max() argument is an empty list")
+					}
+					best := lst.Elements[0]
+					for _, elem := range lst.Elements[1:] {
+						if compareValues(elem, best) > 0 {
+							best = elem
+						}
+					}
+					return best
 				}
-				a := toFloat64(args[0])
-				b := toFloat64(args[1])
-				if a == nil || b == nil {
-					return NewError("max() arguments must be numbers")
+				// max(a, b) - compare two numbers
+				if len(args) == 2 {
+					a := toFloat64(args[0])
+					b := toFloat64(args[1])
+					if a == nil || b == nil {
+						return NewError("max() arguments must be numbers")
+					}
+					if *a >= *b {
+						return args[0]
+					}
+					return args[1]
 				}
-				if *a >= *b {
-					return args[0]
-				}
-				return args[1]
+				return NewError("max() takes 1 argument (list) or 2 arguments (numbers)")
 			},
 		},
 		"mod": {
@@ -1350,6 +1386,50 @@ func GetBuiltins() map[string]*BuiltinValue {
 					lst.Elements[i], lst.Elements[j] = lst.Elements[j], lst.Elements[i]
 				}
 				return NULL
+			},
+		},
+		"sum": {
+			Name: "sum",
+			Fn: func(args ...Value) Value {
+				if len(args) != 1 {
+					return NewError("sum() takes exactly 1 argument")
+				}
+				lst, ok := args[0].(*ListValue)
+				if !ok {
+					return NewError("sum() argument must be a list")
+				}
+				if len(lst.Elements) == 0 {
+					return NewInteger(0)
+				}
+				// Check if all elements are integers or if any are floats
+				hasFloat := false
+				for _, elem := range lst.Elements {
+					switch elem.(type) {
+					case *IntegerValue:
+						// ok
+					case *FloatValue:
+						hasFloat = true
+					default:
+						return NewError("sum() list elements must be numbers")
+					}
+				}
+				if hasFloat {
+					var total float64
+					for _, elem := range lst.Elements {
+						switch v := elem.(type) {
+						case *IntegerValue:
+							total += float64(v.Val)
+						case *FloatValue:
+							total += v.Val
+						}
+					}
+					return NewFloat(total)
+				}
+				var total int64
+				for _, elem := range lst.Elements {
+					total += elem.(*IntegerValue).Val
+				}
+				return NewInteger(total)
 			},
 		},
 

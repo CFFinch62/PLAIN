@@ -539,6 +539,12 @@ display(contains(colors, "blue"))  rem: true/false
 rem: Transform
 sort(colors)                   rem: Sort in place
 reverse(colors)                rem: Reverse in place
+
+rem: Analyze
+var scores = [85, 92, 78, 95, 88]
+display(min(scores))           rem: 78
+display(max(scores))           rem: 95
+display(sum(scores))           rem: 438
 ```
 
 ### Tables

@@ -1,0 +1,20 @@
+# SCAT - Source Code Analysis Tool Requirements
+# Multi-language code complexity analyzer
+
+# Core dependencies
+# No external dependencies required for core functionality (CLI mode)
+
+# GUI dependencies (required for GUI mode)
+PyQt6>=6.0.0
+
+# Development and testing dependencies (optional)
+# pytest>=7.0.0
+# pytest-cov>=4.0.0
+
+# Installation:
+# For CLI only: No additional packages needed (Python 3.8+ standard library)
+# For GUI: pip install PyQt6
+# For development: pip install pytest pytest-cov
+
+# The tool is designed to work with Python 3.8+ standard library for core functionality
+# GUI requires PyQt6 for the graphical interface

@@ -568,6 +568,117 @@ func TestReverse(t *testing.T) {
 	}
 }
 
+func TestMinList(t *testing.T) {
+	builtins := GetBuiltins()
+	fn := builtins["min"].Fn
+
+	// min of integer list
+	list := &ListValue{Elements: []Value{NewInteger(5), NewInteger(2), NewInteger(8), NewInteger(1)}}
+	result := fn(list)
+	if iv, ok := result.(*IntegerValue); !ok || iv.Val != 1 {
+		t.Errorf("min([5,2,8,1]) should return 1, got %v", result)
+	}
+
+	// min of float list
+	flist := &ListValue{Elements: []Value{NewFloat(3.5), NewFloat(1.2), NewFloat(4.8)}}
+	result = fn(flist)
+	if fv, ok := result.(*FloatValue); !ok || fv.Val != 1.2 {
+		t.Errorf("min([3.5,1.2,4.8]) should return 1.2, got %v", result)
+	}
+
+	// min of string list
+	slist := &ListValue{Elements: []Value{NewString("cherry"), NewString("apple"), NewString("banana")}}
+	result = fn(slist)
+	if sv, ok := result.(*StringValue); !ok || sv.Val != "apple" {
+		t.Errorf("min([cherry,apple,banana]) should return apple, got %v", result)
+	}
+
+	// min of empty list should error
+	empty := &ListValue{Elements: []Value{}}
+	result = fn(empty)
+	if _, ok := result.(*ErrorValue); !ok {
+		t.Error("min([]) should return an error")
+	}
+
+	// min(a, b) still works
+	result = fn(NewInteger(10), NewInteger(3))
+	if iv, ok := result.(*IntegerValue); !ok || iv.Val != 3 {
+		t.Errorf("min(10, 3) should return 3, got %v", result)
+	}
+}
+
+func TestMaxList(t *testing.T) {
+	builtins := GetBuiltins()
+	fn := builtins["max"].Fn
+
+	// max of integer list
+	list := &ListValue{Elements: []Value{NewInteger(5), NewInteger(2), NewInteger(8), NewInteger(1)}}
+	result := fn(list)
+	if iv, ok := result.(*IntegerValue); !ok || iv.Val != 8 {
+		t.Errorf("max([5,2,8,1]) should return 8, got %v", result)
+	}
+
+	// max of string list
+	slist := &ListValue{Elements: []Value{NewString("cherry"), NewString("apple"), NewString("banana")}}
+	result = fn(slist)
+	if sv, ok := result.(*StringValue); !ok || sv.Val != "cherry" {
+		t.Errorf("max([cherry,apple,banana]) should return cherry, got %v", result)
+	}
+
+	// max of empty list should error
+	empty := &ListValue{Elements: []Value{}}
+	result = fn(empty)
+	if _, ok := result.(*ErrorValue); !ok {
+		t.Error("max([]) should return an error")
+	}
+
+	// max(a, b) still works
+	result = fn(NewInteger(3), NewInteger(10))
+	if iv, ok := result.(*IntegerValue); !ok || iv.Val != 10 {
+		t.Errorf("max(3, 10) should return 10, got %v", result)
+	}
+}
+
+func TestSum(t *testing.T) {
+	builtins := GetBuiltins()
+	fn := builtins["sum"].Fn
+
+	// sum of integers
+	list := &ListValue{Elements: []Value{NewInteger(1), NewInteger(2), NewInteger(3)}}
+	result := fn(list)
+	if iv, ok := result.(*IntegerValue); !ok || iv.Val != 6 {
+		t.Errorf("sum([1,2,3]) should return 6, got %v", result)
+	}
+
+	// sum of floats
+	flist := &ListValue{Elements: []Value{NewFloat(1.5), NewFloat(2.5), NewFloat(3.0)}}
+	result = fn(flist)
+	if fv, ok := result.(*FloatValue); !ok || fv.Val != 7.0 {
+		t.Errorf("sum([1.5,2.5,3.0]) should return 7.0, got %v", result)
+	}
+
+	// sum of mixed int/float returns float
+	mlist := &ListValue{Elements: []Value{NewInteger(1), NewFloat(2.5), NewInteger(3)}}
+	result = fn(mlist)
+	if fv, ok := result.(*FloatValue); !ok || fv.Val != 6.5 {
+		t.Errorf("sum([1,2.5,3]) should return 6.5, got %v", result)
+	}
+
+	// sum of empty list returns 0
+	empty := &ListValue{Elements: []Value{}}
+	result = fn(empty)
+	if iv, ok := result.(*IntegerValue); !ok || iv.Val != 0 {
+		t.Errorf("sum([]) should return 0, got %v", result)
+	}
+
+	// sum of non-numbers should error
+	slist := &ListValue{Elements: []Value{NewString("a"), NewString("b")}}
+	result = fn(slist)
+	if _, ok := result.(*ErrorValue); !ok {
+		t.Error("sum([strings]) should return an error")
+	}
+}
+
 // ============================================================
 // Table Operation Tests
 // ============================================================

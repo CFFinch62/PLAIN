@@ -141,12 +141,14 @@
         "min": {
             "python_name": "min",
             "call_style": "function",
-            "import_required": null
+            "import_required": null,
+            "notes": "min(a,b) or min(list) -> Python min(a,b) or min(list)"
         },
         "max": {
             "python_name": "max",
             "call_style": "function",
-            "import_required": null
+            "import_required": null,
+            "notes": "max(a,b) or max(list) -> Python max(a,b) or max(list)"
         },
         "sin": {
             "python_name": "math.sin",
@@ -306,6 +308,12 @@
             "arg_transform": "first_arg_becomes_object",
             "import_required": null,
             "notes": "reverse(lst) -> lst.reverse()"
+        },
+        "sum": {
+            "python_name": "sum",
+            "call_style": "function",
+            "import_required": null,
+            "notes": "sum(lst) -> sum(lst)"
         }
     },
 

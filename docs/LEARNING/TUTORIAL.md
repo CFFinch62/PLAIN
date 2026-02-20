@@ -422,12 +422,15 @@ See `examples/tutorial/lesson_06_lists.plain` for the complete program.
 - `sort(list)` and `reverse(list)` — Reorder the list in place
 - `contains(list, item)` — Checks if an item is in the list
 - `len(list)` — Returns how many items are in the list
+- `min(list)` and `max(list)` — Find the smallest or largest element (works with numbers and strings)
+- `sum(list)` — Add up all the numbers in a list
 
 ### Try It
 
 1. Create a list of 5 animals, then add 2 more with `append()`
 2. Sort the animal list alphabetically, then reverse it
 3. Write a numbered list using a loop counter: `1. cat`, `2. dog`, etc.
+4. Create a list of test scores and use `min()`, `max()`, and `sum()` to find the lowest, highest, and total
 
 ### Key Takeaways
 
@@ -435,6 +438,7 @@ See `examples/tutorial/lesson_06_lists.plain` for the complete program.
 ✓ Indexing starts at 0 (first item is `list[0]`)
 ✓ `append()`, `insert()`, `remove()`, `pop()` modify the list
 ✓ `sort()`, `reverse()`, `contains()`, `len()` are essential list tools
+✓ `min()`, `max()`, `sum()` analyze list contents without modifying the list
 
 ---
 

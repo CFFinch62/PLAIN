@@ -133,7 +133,7 @@ This curriculum is designed to be flexible across educational contexts:
 |-----------|---------|
 | **Topics** | Lists (creation, access, modification), tables (key-value pairs), iterating over collections, list/table operations |
 | **Tutorial Lessons** | Lesson 6 (Lists), Lesson 7 (Tables) |
-| **Concepts** | `append`, `remove`, `sort`, `keys`, `values`, `has_key`, `len` |
+| **Concepts** | `append`, `remove`, `sort`, `min`, `max`, `sum`, `keys`, `values`, `has_key`, `len` |
 | **Classroom Activity** | "Data organizer" — students enter data interactively and see it organized in different ways |
 | **Assignment** | **Contact List Manager** — Store names and phone numbers in a table, with options to add, look up, remove, and list all contacts |
 
@@ -431,7 +431,7 @@ Enter operation (+, -, *, /): *
 1. Store data for at least 3 students, each with at least 4 grades
 2. Calculate each student's average
 3. Calculate the class average
-4. Determine the highest and lowest averages
+4. Determine the highest and lowest averages (hint: try `min()` and `max()` on a list)
 5. Display a formatted report
 6. Use tasks for organization (at least 3 separate tasks)
 7. Use functions for calculations (at least 2 `using` tasks)

@@ -116,6 +116,18 @@ display("After reverse(myList):", myList)
 remove(myList, 3)
 display("After remove(myList, 3):", myList)
 
+var nums = [7, 2, 9, 1, 5]
+display("min(nums):", min(nums))
+display("max(nums):", max(nums))
+display("sum(nums):", sum(nums))
+
+var words = ["cherry", "apple", "banana"]
+display("min(words):", min(words))
+display("max(words):", max(words))
+
+var prices = [9.99, 4.50, 12.00]
+display("sum(prices):", sum(prices))
+
 rem: =========================================
 rem: Table Operations
 rem: =========================================

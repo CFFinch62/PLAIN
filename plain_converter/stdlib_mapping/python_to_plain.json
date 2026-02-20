@@ -66,12 +66,17 @@
         "min": {
             "plain_name": "min",
             "call_style": "function",
-            "notes": "Same name"
+            "notes": "Same name - supports min(a,b) and min(list)"
         },
         "max": {
             "plain_name": "max",
             "call_style": "function",
-            "notes": "Same name"
+            "notes": "Same name - supports max(a,b) and max(list)"
+        },
+        "sum": {
+            "plain_name": "sum",
+            "call_style": "function",
+            "notes": "Same name - sum(list)"
         },
         "chr": {
             "plain_name": "chr",

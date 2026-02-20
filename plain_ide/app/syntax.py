@@ -68,7 +68,7 @@ class PlainHighlighter(QSyntaxHighlighter):
         self.rules.append((re.compile(type_prefixes), self._create_format(syntax.type)))
         
         # Built-in functions
-        builtins = r'\b(display|input|len|type|type_of|to_string|to_int|to_float|to_bool|to_bin|to_hex|abs|round|floor|ceil|min|max|random|append|remove|contains|keys|values|now|wait|sleep|time|date)\b'
+        builtins = r'\b(display|input|len|type|type_of|to_string|to_int|to_float|to_bool|to_bin|to_hex|abs|round|floor|ceil|min|max|sum|random|append|remove|contains|keys|values|now|wait|sleep|time|date)\b'
         self.rules.append((re.compile(builtins), self._create_format(syntax.builtin)))
         
         # Boolean literals

@@ -722,29 +722,45 @@ display(ceil(-1.7))     rem: -1
 
 ---
 
-### `min(a, b)`
+### `min(a, b)` / `min(list)`
 
-Returns the smaller of two numbers.
+Returns the smaller of two numbers, or the minimum element of a list.
 
 ```plain
 display(min(5, 3))      rem: 3
 display(min(-1, 1))     rem: -1
+
+var nums = [7, 2, 9, 1, 5]
+display(min(nums))      rem: 1
+
+var words = ["cherry", "apple", "banana"]
+display(min(words))     rem: apple
 ```
 
-**Returns:** The original value (preserves integer/float type).
+**Returns:** The original value (preserves integer/float type). When called with a list, returns the smallest element. Works with lists of numbers or strings.
+
+**Errors:** If the list is empty.
 
 ---
 
-### `max(a, b)`
+### `max(a, b)` / `max(list)`
 
-Returns the larger of two numbers.
+Returns the larger of two numbers, or the maximum element of a list.
 
 ```plain
 display(max(5, 3))      rem: 5
 display(max(-1, 1))     rem: 1
+
+var nums = [7, 2, 9, 1, 5]
+display(max(nums))      rem: 9
+
+var words = ["cherry", "apple", "banana"]
+display(max(words))     rem: cherry
 ```
 
-**Returns:** The original value (preserves integer/float type).
+**Returns:** The original value (preserves integer/float type). When called with a list, returns the largest element. Works with lists of numbers or strings.
+
+**Errors:** If the list is empty.
 
 ---
 
@@ -1066,6 +1082,44 @@ display(contains(fruits, "grape"))     rem: false
 ```
 
 **Note:** Also works with strings — see [§4 String Operations](#4-string-operations).
+
+---
+
+### `min(list)` / `max(list)`
+
+When called with a list argument, `min` and `max` return the minimum or maximum element. Works with lists of numbers or strings.
+
+```plain
+var scores = [85, 92, 78, 95, 88]
+display(min(scores))    rem: 78
+display(max(scores))    rem: 95
+
+var names = ["Zara", "Alice", "Mike"]
+display(min(names))     rem: Alice
+display(max(names))     rem: Zara
+```
+
+**Errors:** If the list is empty.
+
+**Note:** Also available as `min(a, b)` and `max(a, b)` for comparing two numbers — see [§6 Math — Basic](#6-math--basic).
+
+---
+
+### `sum(list)`
+
+Returns the sum of all numbers in a list.
+
+```plain
+var nums = [1, 2, 3, 4, 5]
+display(sum(nums))              rem: 15
+
+var prices = [9.99, 4.50, 12.00]
+display(sum(prices))            rem: 26.49
+```
+
+**Returns:** An integer if all elements are integers; a float if any element is a float. Returns `0` for an empty list.
+
+**Errors:** If any element is not a number.
 
 ---
 
@@ -2193,7 +2247,7 @@ display("Done.")
 | **Trigonometry**   | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`                                                                                   |
 | **Logarithms**     | `log`, `log10`, `log2`, `exp`                                                                                                          |
 | **Random**         | `random`, `random_int`, `random_choice`                                                                                                |
-| **Lists**          | `len`, `append`, `insert`, `remove`, `pop`, `sort`, `reverse`, `contains`                                                              |
+| **Lists**          | `len`, `append`, `insert`, `remove`, `pop`, `sort`, `reverse`, `contains`, `min`, `max`, `sum`                                         |
 | **Tables**         | `len`, `keys`, `values`, `has_key`, `remove`                                                                                           |
 | **Files (simple)** | `read_file`, `write_file`, `append_file`, `read_lines`, `write_lines`, `read_binary`, `write_binary`, `append_binary`                  |
 | **Files (handle)** | `open`, `close`, `read`, `read_line`, `read_bytes`, `write`, `write_line`                                                              |

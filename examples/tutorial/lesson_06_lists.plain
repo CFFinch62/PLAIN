@@ -50,6 +50,20 @@ task Main()
         display(v"{intItem}. {item}")
         intItem = intItem + 1
 
+    rem: Finding min, max, and sum
+    display("")
+    display("=== List Analysis ===")
+    var lstScores = [85, 92, 78, 95, 88]
+    display("Scores: " & lstScores)
+    display("Lowest:  " & min(lstScores))
+    display("Highest: " & max(lstScores))
+    display("Total:   " & sum(lstScores))
+
+    rem: min and max work with strings too
+    var lstNames = ["Zara", "Alice", "Mike"]
+    display("First alphabetically: " & min(lstNames))
+    display("Last alphabetically:  " & max(lstNames))
+
     rem: Building a list in a loop
     var lstSquares = []
     loop i from 1 to 5
