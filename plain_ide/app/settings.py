@@ -6,7 +6,7 @@ Handles loading, saving, and managing user preferences
 import json
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
-from typing import List
+from typing import List, Optional
 
 
 def get_config_dir() -> Path:
@@ -27,6 +27,14 @@ class EditorSettings:
     word_wrap: bool = False
     highlight_current_line: bool = True
     bracket_matching: bool = True
+
+
+@dataclass
+class FileBrowserSettings:
+    """File browser settings"""
+    show_hidden_files: bool = False
+    bookmarks: List[str] = field(default_factory=list)
+    last_directory: str = ""
 
 
 @dataclass
@@ -72,13 +80,13 @@ class SessionSettings:
 class Settings:
     """All IDE settings"""
     editor: EditorSettings = field(default_factory=EditorSettings)
+    file_browser: FileBrowserSettings = field(default_factory=FileBrowserSettings)
     theme: ThemeSettings = field(default_factory=ThemeSettings)
     window: WindowSettings = field(default_factory=WindowSettings)
     terminal: TerminalSettings = field(default_factory=TerminalSettings)
     plain_interpreter_path: str = ""  # Path to PLAIN interpreter (auto-detected if empty)
     project_root_path: str = ""  # Project root for module resolution (optional)
     recent_files: List[str] = field(default_factory=list)
-    bookmarks: List[str] = field(default_factory=list)
     session: SessionSettings = field(default_factory=SessionSettings)
 
 
@@ -106,6 +114,16 @@ class SettingsManager:
         
         if 'editor' in data:
             settings.editor = EditorSettings(**data['editor'])
+        if 'file_browser' in data:
+            fb = data['file_browser']
+            settings.file_browser = FileBrowserSettings(
+                show_hidden_files=fb.get('show_hidden_files', False),
+                bookmarks=fb.get('bookmarks', []),
+                last_directory=fb.get('last_directory', ''),
+            )
+        elif 'bookmarks' in data:
+            # Migrate legacy flat bookmarks list
+            settings.file_browser.bookmarks = data['bookmarks']
         if 'theme' in data:
             settings.theme = ThemeSettings(**data['theme'])
         if 'window' in data:
@@ -118,8 +136,6 @@ class SettingsManager:
             settings.project_root_path = data['project_root_path']
         if 'recent_files' in data:
             settings.recent_files = data['recent_files']
-        if 'bookmarks' in data:
-            settings.bookmarks = data['bookmarks']
         if 'session' in data:
             settings.session = SessionSettings(**data['session'])
 
@@ -129,13 +145,13 @@ class SettingsManager:
         """Save settings to file"""
         data = {
             'editor': asdict(self.settings.editor),
+            'file_browser': asdict(self.settings.file_browser),
             'theme': asdict(self.settings.theme),
             'window': asdict(self.settings.window),
             'terminal': asdict(self.settings.terminal),
             'plain_interpreter_path': self.settings.plain_interpreter_path,
             'project_root_path': self.settings.project_root_path,
             'recent_files': self.settings.recent_files[:20],  # Keep last 20
-            'bookmarks': self.settings.bookmarks,
             'session': asdict(self.settings.session),
         }
         
@@ -155,13 +171,13 @@ class SettingsManager:
 
     def add_bookmark(self, path: str):
         """Add a folder to bookmarks"""
-        if path not in self.settings.bookmarks:
-            self.settings.bookmarks.append(path)
+        if path not in self.settings.file_browser.bookmarks:
+            self.settings.file_browser.bookmarks.append(path)
             self.save()
 
     def remove_bookmark(self, path: str):
         """Remove a folder from bookmarks"""
-        if path in self.settings.bookmarks:
-            self.settings.bookmarks.remove(path)
+        if path in self.settings.file_browser.bookmarks:
+            self.settings.file_browser.bookmarks.remove(path)
             self.save()
 
