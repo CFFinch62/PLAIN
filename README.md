@@ -4,6 +4,8 @@
 
 A programming language designed to be approachable without sacrificing competence. PLAIN prioritizes clear thinking over clever syntax, natural readability over terse notation, and honest capability over complex features.
 
+![PLAIN IDE](images/plain_ide.png)
+
 ## Status
 
 🔒 **Private Beta** - All Core Features Complete
