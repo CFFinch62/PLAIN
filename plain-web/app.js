@@ -922,6 +922,7 @@ window.initApp = async function (monaco) {
     value: EXAMPLES[0].code,
     language: "plain",
     theme: "plain-dark",
+    autoIndent: "full",
     fontSize: 14,
     fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
     minimap: { enabled: false },

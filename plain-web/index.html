@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PLAIN Language Playground</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <header>
@@ -16,6 +18,8 @@
     </div>
     <select id="contentSelect" title="Load an example program or tutorial"></select>
     <div class="header-right">
+      <a href="../plain/index.html" target="_blank" rel="noopener" style="margin-right: 15px;">Need to see the bigger
+        picture, check out the PLAIN website ↗</a>
       <a href="https://github.com/CFFinch62/plain-language" target="_blank" rel="noopener">GitHub ↗</a>
     </div>
   </header>
@@ -37,8 +41,7 @@
           Pre-supplied inputs &nbsp;·&nbsp; one answer per line, consumed by get()
         </div>
         <textarea id="inputArea"
-          placeholder="Leave empty if your program does not call get()&#10;Example programs that use get() have sample inputs pre-filled."
-        ></textarea>
+          placeholder="Leave empty if your program does not call get()&#10;Example programs that use get() have sample inputs pre-filled."></textarea>
       </div>
     </div>
 
@@ -79,7 +82,8 @@
             <li>Comments start with <code>rem:</code></li>
             <li>String concat uses <code>&amp;</code> not <code>+</code></li>
             <li>Use <code>to_string()</code> to convert numbers</li>
-            <li><a href="https://github.com/CFFinch62/plain-language" target="_blank">Download the desktop app</a> for the full language</li>
+            <li><a href="https://github.com/CFFinch62/plain-language" target="_blank">Download the desktop app</a> for
+              the full language</li>
           </ul>
         </div>
       </div>
@@ -111,8 +115,8 @@
 
   <!-- Monaco AMD loader -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"
-          onerror="document.getElementById('output').textContent='FAILED: Could not load Monaco from CDN. Check your internet connection.'; document.getElementById('output').className='has-error';">
-  </script>
+    onerror="document.getElementById('output').textContent='FAILED: Could not load Monaco from CDN. Check your internet connection.'; document.getElementById('output').className='has-error';">
+    </script>
   <script>
     document.getElementById("output").textContent = "Step 2: Monaco loader ready, loading editor module…";
 
@@ -127,5 +131,5 @@
     });
   </script>
 </body>
-</html>
 
+</html>

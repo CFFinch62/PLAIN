@@ -5,6 +5,42 @@
 window.registerPlainLanguage = function registerPlainLanguage(monaco) {
   monaco.languages.register({ id: "plain" });
 
+  const blockStarterPattern = /^\s*(?:task\b.*|record\b.*|choose\b.*|choice\b.*|default\b\s*|else\b\s*|loop\b.*|attempt\b\s*|handle\b.*|ensure\b\s*|if\b(?!.*\bthen\b).*)$/i;
+  const outdentClausePattern = /^\s*(?:else\b|choice\b|default\b|handle\b|ensure\b).*$/i;
+
+  monaco.languages.setLanguageConfiguration("plain", {
+    comments: {
+      lineComment: "rem:",
+    },
+    brackets: [
+      ["(", ")"],
+      ["[", "]"],
+      ["{", "}"],
+    ],
+    autoClosingPairs: [
+      { open: "(", close: ")" },
+      { open: "[", close: "]" },
+      { open: "{", close: "}" },
+      { open: '"', close: '"', notIn: ["string", "comment"] },
+    ],
+    surroundingPairs: [
+      { open: "(", close: ")" },
+      { open: "[", close: "]" },
+      { open: "{", close: "}" },
+      { open: '"', close: '"' },
+    ],
+    indentationRules: {
+      increaseIndentPattern: blockStarterPattern,
+      decreaseIndentPattern: outdentClausePattern,
+    },
+    onEnterRules: [
+      {
+        beforeText: blockStarterPattern,
+        action: { indentAction: monaco.languages.IndentAction.Indent },
+      },
+    ],
+  });
+
   monaco.languages.setMonarchTokensProvider("plain", {
     defaultToken: "",
     tokenPostfix: ".plain",
