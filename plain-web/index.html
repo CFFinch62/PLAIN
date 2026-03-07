@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PLAIN Language Playground</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <h1>PLAIN <span>Playground</span></h1>
+    <div class="mode-toggle" aria-label="Content mode selector">
+      <button id="examplesModeBtn" class="active" type="button">Examples</button>
+      <button id="tutorialsModeBtn" type="button">Tutorials</button>
+    </div>
+    <select id="contentSelect" title="Load an example program or tutorial"></select>
+    <div class="header-right">
+      <a href="https://github.com/CFFinch62/plain-language" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left: Monaco editor -->
+    <div class="panel">
+      <div class="panel-label">Editor &nbsp;·&nbsp; Ctrl+Enter to run</div>
+      <div id="editorContainer"></div>
+    </div>
+
+    <!-- Right: output on top, input below -->
+    <div class="panel right-col">
+      <div class="panel-label">Output</div>
+      <div id="output">(output will appear here)</div>
+
+      <div class="input-pane">
+        <div class="panel-label">
+          Pre-supplied inputs &nbsp;·&nbsp; one answer per line, consumed by get()
+        </div>
+        <textarea id="inputArea"
+          placeholder="Leave empty if your program does not call get()&#10;Example programs that use get() have sample inputs pre-filled."
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Bottom toolbar -->
+    <div class="toolbar">
+      <button id="runBtn" disabled>Loading…</button>
+      <button id="resetLessonBtn" hidden>Reset lesson</button>
+      <button id="clearEditorBtn">Clear editor</button>
+      <button id="clearBtn">Clear output</button>
+      <span id="statusBar"></span>
+    </div>
+
+    <!-- Info panel -->
+    <details class="info-panel">
+      <summary>About this Playground</summary>
+      <div class="info-body">
+        <div>
+          <strong style="color:#cba6f7">What works here</strong>
+          <ul>
+            <li>All PLAIN arithmetic, logic, strings</li>
+            <li>Tasks, loops, choose/choice, records</li>
+            <li>Lists and tables</li>
+            <li>User input via <code>get()</code> — pre-fill the inputs box</li>
+          </ul>
+        </div>
+        <div>
+          <strong style="color:#f38ba8">Not available in the playground</strong>
+          <ul>
+            <li>File I/O (read_file, write_file, …)</li>
+            <li>Serial port &amp; networking builtins</li>
+            <li><code>use:</code> module imports</li>
+            <li>TUI / terminal cursor control</li>
+          </ul>
+        </div>
+        <div>
+          <strong style="color:#89b4fa">Tips</strong>
+          <ul>
+            <li>Comments start with <code>rem:</code></li>
+            <li>String concat uses <code>&amp;</code> not <code>+</code></li>
+            <li>Use <code>to_string()</code> to convert numbers</li>
+            <li><a href="https://github.com/CFFinch62/plain-language" target="_blank">Download the desktop app</a> for the full language</li>
+          </ul>
+        </div>
+      </div>
+    </details>
+  </main>
+
+  <!-- Catch any JS errors and show them on the page -->
+  <script>
+    window.addEventListener("error", function (e) {
+      var out = document.getElementById("output");
+      if (out) {
+        out.textContent = "JS ERROR: " + e.message + "\nFile: " + e.filename + "\nLine: " + e.lineno;
+        out.className = "has-error";
+      }
+    });
+  </script>
+
+  <!-- Go WASM runtime -->
+  <script src="wasm_exec.js"></script>
+  <!-- PLAIN language definition for Monaco (exposes window.registerPlainLanguage) -->
+  <script src="plain-lang.js"></script>
+  <!-- App data, helpers, event wiring (exposes window.initApp) -->
+  <script src="app.js"></script>
+
+  <!-- Step indicator so we can see where loading stops -->
+  <script>
+    document.getElementById("output").textContent = "Step 1: scripts loaded, fetching Monaco from CDN…";
+  </script>
+
+  <!-- Monaco AMD loader -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"
+          onerror="document.getElementById('output').textContent='FAILED: Could not load Monaco from CDN. Check your internet connection.'; document.getElementById('output').className='has-error';">
+  </script>
+  <script>
+    document.getElementById("output").textContent = "Step 2: Monaco loader ready, loading editor module…";
+
+    require.config({ paths: { vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs" } });
+
+    require(["vs/editor/editor.main"], function () {
+      document.getElementById("output").textContent = "Step 3: Monaco editor module loaded, initialising app…";
+      window.initApp(monaco).catch(function (err) {
+        document.getElementById("output").textContent = "initApp ERROR: " + err.message + "\n" + (err.stack || "");
+        document.getElementById("output").className = "has-error";
+      });
+    });
+  </script>
+</body>
+</html>
+

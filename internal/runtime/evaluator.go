@@ -1288,6 +1288,12 @@ func (e *Evaluator) evalRecordLiteral(lit *ast.RecordLiteral, env *Environment) 
 
 // evalUseStatement handles import statements
 func (e *Evaluator) evalUseStatement(stmt *ast.UseStatement, env *Environment) Value {
+	if PlaygroundMode {
+		return NewError(
+			"use: imports are not available in the web playground.\n" +
+				"Download the desktop app for the full PLAIN experience.",
+		)
+	}
 	// Process task-level imports (most specific - import specific tasks directly)
 	for _, taskExpr := range stmt.Tasks {
 		pathParts := e.dotExpressionToPath(taskExpr)
