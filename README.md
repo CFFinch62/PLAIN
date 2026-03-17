@@ -2,7 +2,7 @@
 
 **PLAIN** = **P**rogramming **L**anguage - **A**ble, **I**ntuitive, and **N**atural
 
-A programming language designed to be approachable without sacrificing competence. PLAIN prioritizes clear thinking over clever syntax, natural readability over terse notation, and honest capability over complex features.
+A programming language designed to be approachable without sacrificing competence. PLAIN prioritizes clear thinking over clever syntax, natural readability over terse notation, and honest capability over complex features. PLAIN is the second of 3 teaching languages developed by Fragillidae Software. The others are STEPS (verbose English like entry langauge) and FORGE (staically typed systems prorgamming language with easir beginner entry than C).
 
 ![PLAIN IDE](images/plain_ide.png)
 
