@@ -263,6 +263,68 @@ display(value)              rem: output to console
 get(prompt)                 rem: input from user
 clear()                     rem: clear console screen
 set_float_precision(n)      rem: set float decimal places (-1 for default)
+text_at(x, y, text)         rem: print at column x, row y (1-based)
+text_color(fg [, bg])       rem: set ANSI color ("red", "cyan", "default", ...)
+draw_line(x, y, len, dir)   rem: draw horizontal ("h") or vertical ("v") line
+draw_box(x, y, w, h [, title])  rem: draw Unicode box with optional title
+```
+
+### Terminal UI (desktop only — not available in web playground)
+```
+rem: Screen
+screen_size()               rem: [cols, rows] terminal dimensions
+screen_alt()                rem: switch to alternate screen buffer
+screen_main()               rem: restore main screen buffer
+
+rem: Cursor
+cursor_show()               rem: make cursor visible
+cursor_hide()               rem: hide cursor (prevents flicker during drawing)
+cursor_pos(x, y)            rem: move cursor without printing
+
+rem: Raw mode + keyboard input
+set_raw_mode()              rem: immediate keypresses, no echo
+set_cooked_mode()           rem: restore normal terminal mode (always call on exit)
+get_key()                   rem: block until keypress, return name ("UP", "ENTER", ...)
+get_event()                 rem: block until key or mouse event, return table
+
+rem: Mouse (also requires set_raw_mode)
+mouse_enable()              rem: start receiving mouse click/move events
+mouse_disable()             rem: stop mouse events
+
+rem: Text attributes
+text_reset()                rem: clear all attributes and colors
+text_bold()                 rem: bold / bright
+text_dim()                  rem: dim / faint
+text_italic()               rem: italic
+text_underline()            rem: underline
+text_blink()                rem: blink
+text_reverse()              rem: swap fg/bg colors (highlight)
+text_strike()               rem: strikethrough
+
+rem: Extended color
+text_color_256(fg [, bg])   rem: 256-color palette index 0-255
+text_color_rgb(r, g, b)     rem: 24-bit true color (r, g, b each 0-255)
+text_color_rgb(r,g,b,br,bg,bb)  rem: with background color too
+```
+
+### get_key() key names
+```
+"ENTER"  "TAB"  "SHIFT_TAB"  "BACKSPACE"  "SPACE"  "ESCAPE"
+"UP"  "DOWN"  "LEFT"  "RIGHT"
+"HOME"  "END"  "PGUP"  "PGDN"  "INS"  "DEL"
+"F1" – "F12"
+"CTRL_A" – "CTRL_Z"
+"a" – "z"  "A" – "Z"  "0" – "9"  (printable characters)
+```
+
+### get_event() table fields
+```
+rem: Key event
+{type: "key", key: "UP"}
+
+rem: Mouse event
+{type: "mouse", action: "press"|"release"|"move",
+ button: "left"|"middle"|"right"|"none", x: col, y: row}
 ```
 
 ### String

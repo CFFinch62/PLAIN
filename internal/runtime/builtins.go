@@ -2371,6 +2371,9 @@ func GetBuiltins() map[string]*BuiltinValue {
 	for k, v := range getNetBuiltins() {
 		builtins[k] = v
 	}
+	for k, v := range getTUIBuiltins() {
+		builtins[k] = v
+	}
 	return builtins
 }
 

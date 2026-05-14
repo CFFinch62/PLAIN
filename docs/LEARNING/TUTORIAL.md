@@ -1646,14 +1646,258 @@ task Main()
 3. Design a dashboard that displays multiple data panels side by side
 4. Create a "loading" animation using positioned text and colors
 
+### Additional Text Styling
+
+Beyond the 8 named colors, PLAIN supports **text attributes** and **extended color** for richer output:
+
+```plain
+rem: Text attributes (all cleared by text_reset)
+text_bold()
+display("Bold text")
+text_reset()
+
+text_underline()
+display("Underlined text")
+text_reset()
+
+text_reverse()                  rem: swap fg/bg (great for highlighting)
+display(" Highlighted item ")
+text_reset()
+
+rem: Also available: text_dim(), text_italic(), text_blink(), text_strike()
+```
+
+```plain
+rem: 256-color palette (0-255)
+text_color_256(196)             rem: bright red
+display("256-color text")
+text_reset()
+
+rem: 24-bit true color (r, g, b each 0-255)
+text_color_rgb(255, 140, 0)     rem: orange
+display("True-color text")
+text_reset()
+
+rem: With background color
+text_color_rgb(0, 0, 0, 255, 215, 0)    rem: black text on gold
+display("Gold background")
+text_reset()
+```
+
 ### Key Takeaways
 
 ✓ `clear()` and `text_at()` give you full control over screen layout
 ✓ `text_color()` makes output more readable and visually appealing
 ✓ `draw_line()` and `draw_box()` create structure without manual formatting
+✓ `text_bold()`, `text_underline()`, `text_reverse()` and other attribute functions add emphasis
+✓ `text_color_256()` and `text_color_rgb()` unlock the full color range of modern terminals
+✓ `text_reset()` clears all active attributes and colors at once
 ✓ Combine these with loops and timers for dynamic, real-time displays
-✓ Perfect for dashboards, menus, progress indicators, and data monitors
 ✓ Works in PLAIN IDE terminal and most modern terminals (Linux, macOS, Windows 10+)
+
+---
+
+## Lesson 22: Interactive Terminal Programs
+
+### Concept: Real-Time Keyboard and Mouse Input
+
+The text graphics in Lesson 21 are great for dashboards and static displays, but they still use `get()`, which waits for the user to press Enter. **Raw mode** unlocks real-time input: every keypress is delivered immediately, making it possible to build interactive menus, games, and live data monitors that respond to arrow keys, function keys, and mouse clicks.
+
+> **Desktop only.** Raw mode is not available in the web playground — these programs must be run with the `plain` command-line interpreter.
+
+### The Key Pattern
+
+```plain
+set_raw_mode()      rem: turn off line buffering and echo
+screen_alt()        rem: save current terminal, enter full-screen
+cursor_hide()       rem: suppress cursor flicker
+
+attempt
+    loop
+        rem: ... draw your screen ...
+        var key = get_key()     rem: blocks until a key is pressed
+        rem: ... react to key ...
+ensure
+    cursor_show()
+    screen_main()           rem: restore terminal before exit
+    set_cooked_mode()       rem: ALWAYS restore — never skip this
+```
+
+Always put `screen_main()` and `set_cooked_mode()` inside `ensure` so they run even if your program aborts. Forgetting `set_cooked_mode()` leaves the terminal in an unusable state.
+
+### Example: Arrow-Key Menu
+
+```plain
+task DrawMenu with (options, sel)
+    var i = 0
+    loop item in options
+        cursor_pos(8, 5 + i)
+        if i == sel
+            text_reverse()
+            text_bold()
+            display(v" {item} ")
+            text_reset()
+        else
+            display(v" {item} ")
+        i += 1
+
+task Main()
+    var options = ["Play Game", "High Scores", "Settings", "Quit"]
+    var sel = 0
+
+    set_raw_mode()
+    screen_alt()
+    cursor_hide()
+    attempt
+        loop
+            clear()
+            text_color_rgb(255, 200, 50)
+            draw_box(5, 2, 35, len(options) + 5, "Main Menu")
+            text_reset()
+            DrawMenu(options, sel)
+            text_dim()
+            text_at(5, len(options) + 8, "UP/DOWN: move  ENTER: select  Q: quit")
+            text_reset()
+
+            var key = get_key()
+            if key == "UP" and sel > 0
+                sel -= 1
+            if key == "DOWN" and sel < len(options) - 1
+                sel += 1
+            if key == "ENTER"
+                exit
+            if key == "q" or key == "Q"
+                sel = len(options) - 1
+                exit
+    ensure
+        cursor_show()
+        screen_main()
+        set_cooked_mode()
+
+    display(v"You chose: {options[sel]}")
+```
+
+### What's Happening?
+
+- `set_raw_mode()` — keypresses are delivered one at a time, no Enter needed
+- `screen_alt()` — the program gets a clean full-screen canvas; original terminal restores on exit
+- `cursor_hide()` — prevents the cursor from jumping around while drawing
+- `get_key()` — blocks until the next keypress, returns a name string like `"UP"` or `"ENTER"`
+- `text_reverse()` / `text_bold()` — highlights the selected item by swapping colors and making it bold
+- `text_reset()` — clears those attributes so the next item draws normally
+- `ensure` block — guarantees clean exit no matter what
+
+### Reading Mouse Events
+
+When you want mouse clicks as well as keyboard, use `get_event()` with `mouse_enable()`. The result is a table with a `type` field — `"key"` or `"mouse"`:
+
+```plain
+task Main()
+    set_raw_mode()
+    screen_alt()
+    cursor_hide()
+    mouse_enable()
+
+    attempt
+        loop
+            clear()
+            text_at(1, 1, "Click anywhere or press Q to quit")
+
+            var e = get_event()
+            if e.type == "key" and (e.key == "q" or e.key == "Q")
+                exit
+            if e.type == "mouse" and e.action == "press"
+                text_color("cyan")
+                text_at(e.x, e.y, "*")
+                text_reset()
+    ensure
+        mouse_disable()
+        cursor_show()
+        screen_main()
+        set_cooked_mode()
+```
+
+Mouse event fields:
+
+| Field | Meaning |
+|---|---|
+| `e.type` | `"mouse"` |
+| `e.action` | `"press"`, `"release"`, or `"move"` |
+| `e.button` | `"left"`, `"middle"`, `"right"`, or `"none"` |
+| `e.x` | Column where the event occurred |
+| `e.y` | Row where the event occurred |
+
+### Using screen_size() for Responsive Layouts
+
+`screen_size()` returns `[cols, rows]` so your program can adapt to different terminal sizes:
+
+```plain
+var sz = screen_size()
+var width = sz[0]
+var height = sz[1]
+
+rem: Draw a box that fills the whole terminal
+draw_box(1, 1, width, height, "Full Screen")
+
+rem: Center some text
+var msg = "Hello, PLAIN TUI!"
+var cx = (width - len(msg)) / 2
+text_at(cx, height / 2, msg)
+```
+
+### Combining TUI with Timers
+
+Because `get_key()` blocks, you cannot use it directly with the timer system. For programs that need both real-time input and periodic updates (like a clock or animated game), the usual pattern is to use a short `sleep()` loop and check if data is available — or structure the program so timers update a shared state that the input loop reads and redraws:
+
+```plain
+var count = 0
+var running = true
+
+task Tick()
+    count += 1
+
+task Main()
+    var timer = create_timer(1000, Tick)
+    start_timer(timer)
+
+    set_raw_mode()
+    screen_alt()
+    cursor_hide()
+
+    attempt
+        loop running
+            clear()
+            text_at(5, 5, v"Counter: {count}")
+            text_dim()
+            text_at(5, 7, "Press Q to quit")
+            text_reset()
+
+            rem: Process pending events briefly before redrawing
+            rem: (for purely timer-driven updates, use a short sleep here)
+            sleep(100)
+    ensure
+        cancel_timer(timer)
+        cursor_show()
+        screen_main()
+        set_cooked_mode()
+```
+
+### Try It
+
+1. Build an arrow-key menu with at least 5 options and an action for each
+2. Create a "paint" program where mouse clicks draw colored characters
+3. Make a countdown timer that displays in the center of the screen and counts down in real time
+4. Build a simple keyboard reaction game — press the displayed key as fast as possible
+
+### Key Takeaways
+
+✓ `set_raw_mode()` + `get_key()` unlock real-time keyboard input — no Enter required
+✓ `get_event()` + `mouse_enable()` add mouse click and movement tracking
+✓ `screen_alt()` gives your TUI a clean canvas and restores the terminal on exit
+✓ Always wrap TUI cleanup in `ensure` — `set_cooked_mode()` must always run
+✓ `text_reverse()` is the simplest way to highlight a selected menu item
+✓ `screen_size()` makes layouts adapt to the actual terminal dimensions
+✓ These features are desktop-only; the web playground does not support raw mode
 
 ---
 
@@ -1671,6 +1915,7 @@ Congratulations — you've completed the PLAIN tutorial! You now know how to:
 - Communicate with hardware via serial ports (RS-232, USB-to-serial)
 - Build network applications with TCP/UDP
 - Create professional CLI interfaces with colors, positioning, and graphics
+- Build full-screen interactive TUI programs with real-time keyboard and mouse input
 
 ### Keep Learning
 
@@ -1697,5 +1942,8 @@ Here are some projects to practice your skills:
 10. **Marine Electronics Display** — Parse and display NMEA data from multiple sources (serial + network + text graphics)
 11. **Industrial Data Acquisition** — Read Modbus data from sensors and create a live monitoring dashboard
 12. **Remote Sensor Network** — Collect UDP broadcasts from multiple sensors and visualize the data
+13. **Interactive TUI File Manager** — Browse directories with arrow keys and open/delete files (raw mode + file I/O)
+14. **Terminal Snake Game** — Classic snake game using arrow keys and real-time screen updates
+15. **Mouse-Driven Paint App** — Draw colored characters anywhere on screen with mouse clicks and drags
 
 Happy coding! 🎉

@@ -25,7 +25,8 @@ PLAIN — **Programming Language: Able, Intuitive, and Natural** — is a teachi
 15. [Debugging](#debugging)
 16. [Best Practices](#best-practices)
 17. [Advanced Console Output](#advanced-console-output)
-18. [Python ↔ PLAIN Converter](#python--plain-converter)
+18. [Interactive TUI Programs](#interactive-tui-programs)
+19. [Python ↔ PLAIN Converter](#python--plain-converter)
 
 ---
 
@@ -51,6 +52,7 @@ PLAIN is a programming language built for **learning**. It was designed from the
 PLAIN is designed for learning, but it's also capable of real-world applications:
 
 - **Console applications** — Interactive programs with user input and output
+- **Terminal UI (TUI)** — Full-screen interactive programs with menus, panels, real-time input, and mouse support
 - **File processing** — Read, write, and manipulate text and binary files
 - **Data analysis** — Process CSV files, calculate statistics, generate reports
 - **Serial communication** — Interface with GPS receivers, sensors, and instruments via RS-232/RS-485
@@ -59,7 +61,7 @@ PLAIN is designed for learning, but it's also capable of real-world applications
 - **Automation scripts** — Automate repetitive tasks with file operations and timers
 - **Educational projects** — Learn programming concepts with immediate, practical applications
 
-With 93+ built-in functions covering strings, math, files, networking, serial I/O, and more, PLAIN grows with you from "Hello, World!" to real hardware interfacing.
+With 115+ built-in functions covering strings, math, files, networking, serial I/O, TUI, and more, PLAIN grows with you from "Hello, World!" to full-screen interactive applications.
 
 ### Design Philosophy
 
@@ -940,6 +942,192 @@ loop i from 0 to total
 
 write(stdout, "\n")
 close(stdout)
+```
+
+---
+
+## Interactive TUI Programs
+
+The functions in this section go beyond simple text positioning to give PLAIN programs full control over the terminal: real-time keypress handling, mouse events, alternate screen buffers, and rich text styling. Together they enable genuinely interactive, full-screen terminal applications.
+
+> **Desktop only.** These functions are not available in the web playground. They require a terminal that supports ANSI/VT100 escape codes (Linux, macOS, Windows Terminal).
+
+### The Raw Mode Pattern
+
+The foundation of any interactive TUI is **raw mode**. In normal (cooked) mode, the terminal buffers input and waits for Enter before passing it to your program. In raw mode, every keypress is delivered immediately. The standard pattern is:
+
+```plain
+set_raw_mode()
+screen_alt()        rem: optional: save current terminal, enter full-screen
+cursor_hide()       rem: optional: suppress cursor flicker
+
+rem: ... your interactive loop here ...
+
+cursor_show()
+screen_main()       rem: optional: restore original terminal
+set_cooked_mode()   rem: ALWAYS restore before exit
+```
+
+> Always wrap your TUI loop in an `attempt/ensure` block so `set_cooked_mode()` and `screen_main()` are called even if your program crashes. Leaving the terminal in raw mode makes it unusable until you restart the shell.
+
+```plain
+set_raw_mode()
+screen_alt()
+attempt
+    rem: ... TUI loop ...
+ensure
+    screen_main()
+    set_cooked_mode()
+```
+
+### Reading Keyboard Input
+
+`get_key()` blocks until the user presses a key and returns a string name. It works for all keys — printable characters, arrow keys, function keys, and control combinations:
+
+```plain
+set_raw_mode()
+loop
+    var key = get_key()
+    if key == "q" or key == "Q"
+        exit
+    if key == "UP"
+        display("Arrow up!")
+    if key == "ENTER"
+        display("Enter pressed")
+    if key == "CTRL_C"
+        exit
+set_cooked_mode()
+```
+
+**Common key names:**
+
+| Key | String |
+|---|---|
+| Arrow keys | `"UP"`, `"DOWN"`, `"LEFT"`, `"RIGHT"` |
+| Enter / Return | `"ENTER"` |
+| Escape | `"ESCAPE"` |
+| Space | `"SPACE"` |
+| Tab / Shift+Tab | `"TAB"`, `"SHIFT_TAB"` |
+| Backspace | `"BACKSPACE"` |
+| Delete / Insert | `"DEL"`, `"INS"` |
+| Home / End | `"HOME"`, `"END"` |
+| Page Up / Down | `"PGUP"`, `"PGDN"` |
+| Function keys | `"F1"` – `"F12"` |
+| Ctrl combinations | `"CTRL_A"` – `"CTRL_Z"` |
+| Printable keys | `"a"`, `"A"`, `"1"`, `"!"`, etc. |
+
+### Reading Mouse Events
+
+Enable mouse tracking with `mouse_enable()`, then use `get_event()` to receive both keyboard and mouse events as tables:
+
+```plain
+set_raw_mode()
+mouse_enable()
+
+loop
+    var e = get_event()
+    if e.type == "key" and e.key == "q"
+        exit
+    if e.type == "mouse" and e.action == "press"
+        text_at(e.x, e.y, "*")     rem: draw a dot where clicked
+
+mouse_disable()
+set_cooked_mode()
+```
+
+Mouse events provide `action` (`"press"`, `"release"`, `"move"`), `button` (`"left"`, `"middle"`, `"right"`, `"none"`), and coordinates `x`, `y`.
+
+### Screen Management
+
+`screen_alt()` and `screen_main()` let your program take over the entire terminal and then restore it cleanly:
+
+```plain
+screen_alt()    rem: saves current terminal content
+clear()         rem: now you have a blank canvas
+rem: ... draw your UI ...
+screen_main()   rem: original terminal is fully restored
+```
+
+`screen_size()` returns `[cols, rows]` so you can adapt your layout to the actual terminal dimensions:
+
+```plain
+var sz = screen_size()
+var midX = sz[0] / 2
+var midY = sz[1] / 2
+text_at(midX - 5, midY, "Centered!")
+```
+
+### Text Attributes and Extended Color
+
+Beyond `text_color()`, you can apply **text attributes** (`text_bold()`, `text_italic()`, `text_underline()`, `text_reverse()`, etc.) and use the **256-color palette** or **24-bit true color**:
+
+```plain
+rem: Text attributes
+text_bold()
+text_underline()
+display("Bold underlined")
+text_reset()                rem: clears all attributes and colors
+
+rem: 256-color palette
+text_color_256(196)         rem: bright red
+display("256-color red")
+text_reset()
+
+rem: 24-bit true color
+text_color_rgb(255, 140, 0) rem: orange
+display("True-color orange")
+text_reset()
+```
+
+`text_reset()` clears all active attributes and colors in one call.
+
+### Example: Keyboard-Driven Menu
+
+```plain
+task DrawMenu with (options, selected)
+    var i = 0
+    loop item in options
+        cursor_pos(5, 4 + i)
+        if i == selected
+            text_reverse()
+            text_bold()
+            display(v"  {item}  ")
+            text_reset()
+        else
+            display(v"  {item}  ")
+        i += 1
+
+task Main()
+    var options = ["New File", "Open File", "Save", "Quit"]
+    var selected = 0
+
+    set_raw_mode()
+    screen_alt()
+    cursor_hide()
+    attempt
+        loop
+            clear()
+            text_color_rgb(100, 200, 255)
+            draw_box(2, 2, 30, len(options) + 4, "File Menu")
+            text_reset()
+            DrawMenu(options, selected)
+            text_dim()
+            text_at(2, len(options) + 7, "↑↓ navigate  Enter select  Q quit")
+            text_reset()
+
+            var key = get_key()
+            if key == "UP" and selected > 0
+                selected -= 1
+            if key == "DOWN" and selected < len(options) - 1
+                selected += 1
+            if key == "ENTER" or key == "q" or key == "Q"
+                exit
+    ensure
+        cursor_show()
+        screen_main()
+        set_cooked_mode()
+
+    display(v"Selected: {options[selected]}")
 ```
 
 ---

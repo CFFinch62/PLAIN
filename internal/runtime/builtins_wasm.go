@@ -14,3 +14,9 @@ func getNetBuiltins() map[string]*BuiltinValue {
 	return nil
 }
 
+// getTUIBuiltins returns nil in WASM builds — raw-mode terminal I/O is not
+// available in the browser. GetBuiltins() handles this gracefully.
+func getTUIBuiltins() map[string]*BuiltinValue {
+	return nil
+}
+

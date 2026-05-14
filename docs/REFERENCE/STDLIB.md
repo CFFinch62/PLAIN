@@ -27,6 +27,7 @@ For language syntax and semantics, see the [Language Reference](LANGUAGE-REFEREN
 15. [Timing and Events](#15-timing-and-events)
 16. [Serial Port I/O](#16-serial-port-io)
 17. [Network I/O](#17-network-io)
+18. [Advanced TUI](#18-advanced-tui)
 
 ---
 
@@ -2235,28 +2236,460 @@ display("Done.")
 
 ---
 
-## Quick Reference Table
+## 18. Advanced TUI
 
-| Category           | Functions                                                                                                                              |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **Console**        | `display`, `get`, `clear`, `text_at`, `text_color`, `draw_line`, `draw_box`                                                           |
-| **Types**          | `is_int`, `is_float`, `is_string`, `is_bool`, `is_list`, `is_table`, `is_null`, `type_of`                                              |
-| **Conversion**     | `to_int`, `to_float`, `to_string`, `to_bool`, `to_bin`, `to_hex`                                                                       |
-| **Strings**        | `len`, `upper`, `lower`, `trim`, `split`, `join`, `substring`, `replace`, `contains`, `starts_with`, `ends_with`                       |
-| **Math**           | `abs`, `sqrt`, `sqr`, `pow`, `round`, `floor`, `ceil`, `min`, `max`, `mod`                                                             |
-| **Trigonometry**   | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`                                                                                   |
-| **Logarithms**     | `log`, `log10`, `log2`, `exp`                                                                                                          |
-| **Random**         | `random`, `random_int`, `random_choice`                                                                                                |
-| **Lists**          | `len`, `append`, `insert`, `remove`, `pop`, `sort`, `reverse`, `contains`, `min`, `max`, `sum`                                         |
-| **Tables**         | `len`, `keys`, `values`, `has_key`, `remove`                                                                                           |
-| **Files (simple)** | `read_file`, `write_file`, `append_file`, `read_lines`, `write_lines`, `read_binary`, `write_binary`, `append_binary`                  |
-| **Files (handle)** | `open`, `close`, `read`, `read_line`, `read_bytes`, `write`, `write_line`                                                              |
-| **File system**    | `file_exists`, `delete_file`, `rename_file`, `copy_file`, `file_size`, `dir_exists`, `create_dir`, `delete_dir`, `list_dir`            |
-| **Paths**          | `join_path`, `split_path`, `get_extension`, `absolute_path`                                                                            |
-| **Timing**         | `sleep`, `create_timer`, `create_timeout`, `start_timer`, `stop_timer`, `cancel_timer`, `wait_for_events`, `run_events`, `stop_events` |
-| **Serial Port**    | `serial_ports`, `serial_open`, `serial_close`, `serial_write`, `serial_read`, `serial_read_line`, `serial_available`, `serial_set_timeout`, `serial_flush`, `serial_set_dtr`, `serial_set_rts`, `serial_get_signals` |
-| **Network I/O**    | `net_connect`, `net_close`, `net_write`, `net_read`, `net_read_line`, `net_set_timeout`, `net_listen`, `net_accept` |
+These functions extend PLAIN's terminal UI capabilities beyond basic text positioning and color. They enable full-screen applications, real-time keyboard input, mouse tracking, rich text attributes, and 256-color / true-color rendering.
+
+> **Desktop only.** All functions in this section are unavailable in the web playground and return a friendly error if called there. They require a real terminal that supports ANSI/VT100 escape sequences (Linux, macOS, Windows Terminal, and most modern terminal emulators).
 
 ---
 
-*This is the complete standard library reference for PLAIN version 1.0. For language syntax, see the [Language Reference](LANGUAGE-REFERENCE.md). For tutorial examples, see [TUTORIAL.md](TUTORIAL.md).*
+### Screen Control
+
+#### `screen_size()`
+
+Returns the current terminal dimensions as a two-element list `[cols, rows]`. If the terminal size cannot be detected (e.g., output is redirected to a file), returns `[80, 24]` as a safe default.
+
+```plain
+var sz = screen_size()
+display(v"Terminal is {sz[0]} columns wide and {sz[1]} rows tall")
+```
+
+**Returns:** list — `[integer, integer]`
+
+---
+
+#### `screen_alt()`
+
+Switches to the terminal's **alternate screen buffer**. This saves the current terminal contents so they can be restored when `screen_main()` is called. Use this at the start of a full-screen TUI application so the terminal is left clean when the program exits.
+
+```plain
+screen_alt()        rem: save terminal, enter full-screen mode
+clear()
+rem: ... draw your TUI here ...
+screen_main()       rem: restore original terminal contents
+```
+
+**Returns:** null
+
+---
+
+#### `screen_main()`
+
+Restores the **main screen buffer**, undoing `screen_alt()`. The terminal contents from before `screen_alt()` was called are restored. Always call this before exiting a full-screen program.
+
+**Returns:** null
+
+---
+
+### Cursor Control
+
+#### `cursor_show()`
+
+Makes the terminal cursor visible. Use after `cursor_hide()` to restore normal cursor display.
+
+```plain
+cursor_show()
+```
+
+**Returns:** null
+
+---
+
+#### `cursor_hide()`
+
+Hides the terminal cursor. Useful during TUI rendering loops to prevent the cursor from flickering across the screen as you draw.
+
+```plain
+cursor_hide()
+rem: ... draw frame ...
+cursor_show()
+```
+
+**Returns:** null
+
+---
+
+#### `cursor_pos(x, y)`
+
+Moves the cursor to the specified position **without printing any text**. This is a companion to `text_at()` — use `cursor_pos()` when you need to reposition without printing.
+
+```plain
+cursor_pos(1, 24)       rem: move to bottom-left without printing
+```
+
+**Arguments:**
+- `x` (integer) — Column (1-based, left edge is 1)
+- `y` (integer) — Row (1-based, top edge is 1)
+
+**Returns:** null
+
+---
+
+### Raw Mode
+
+Raw mode disables line buffering and echo so that keypresses are delivered immediately, one at a time, without waiting for Enter. It is required for `get_key()` and `get_event()` to work correctly.
+
+#### `set_raw_mode()`
+
+Puts the terminal into **raw input mode**:
+- Keypresses are delivered immediately (no Enter required)
+- Echo is disabled (keys are not printed automatically)
+- Special key sequences (arrow keys, F-keys, etc.) are readable
+- `Ctrl+C` and `Ctrl+Z` no longer send signals by default
+
+```plain
+set_raw_mode()
+rem: ... interactive loop using get_key() ...
+set_cooked_mode()
+```
+
+> **Important:** Always call `set_cooked_mode()` before your program exits. If the program terminates while in raw mode, the terminal will be left in an unusable state.
+
+**Returns:** null
+
+---
+
+#### `set_cooked_mode()`
+
+Restores normal (**cooked**) terminal input mode, undoing `set_raw_mode()`. Safe to call even if raw mode was never enabled.
+
+```plain
+attempt
+    set_raw_mode()
+    rem: ... TUI loop ...
+ensure
+    set_cooked_mode()   rem: always restore, even on error
+```
+
+**Returns:** null
+
+---
+
+### Keyboard Input
+
+These functions require `set_raw_mode()` to be active.
+
+#### `get_key()` → string
+
+Blocks until the user presses a key and returns its name as a string. Mouse events (if enabled) are silently discarded — use `get_event()` if you need both keyboard and mouse.
+
+```plain
+set_raw_mode()
+var key = get_key()
+display(v"You pressed: {key}")
+set_cooked_mode()
+```
+
+**Key name reference:**
+
+| Category | Returned string |
+|---|---|
+| Printable characters | `"a"`, `"A"`, `"1"`, `"!"`, etc. |
+| Space | `"SPACE"` |
+| Enter | `"ENTER"` |
+| Tab | `"TAB"` |
+| Shift+Tab | `"SHIFT_TAB"` |
+| Backspace | `"BACKSPACE"` |
+| Escape | `"ESCAPE"` |
+| Arrow keys | `"UP"`, `"DOWN"`, `"LEFT"`, `"RIGHT"` |
+| Navigation | `"HOME"`, `"END"`, `"PGUP"`, `"PGDN"`, `"INS"`, `"DEL"` |
+| Function keys | `"F1"` through `"F12"` |
+| Control keys | `"CTRL_A"` through `"CTRL_Z"` |
+
+**Returns:** string
+
+---
+
+#### `get_event()` → table
+
+Blocks until the next keyboard **or** mouse event and returns a table describing it. Use this instead of `get_key()` when you also want mouse events (requires `mouse_enable()`).
+
+```plain
+set_raw_mode()
+mouse_enable()
+loop
+    var e = get_event()
+    if e.type == "key"
+        if e.key == "q"
+            exit
+        display(v"Key: {e.key}")
+    if e.type == "mouse"
+        display(v"Mouse {e.action} at ({e.x},{e.y}) button={e.button}")
+mouse_disable()
+set_cooked_mode()
+```
+
+**Key event table:**
+
+| Field | Type | Value |
+|---|---|---|
+| `type` | string | `"key"` |
+| `key` | string | Key name (same as `get_key()`) |
+
+**Mouse event table:**
+
+| Field | Type | Value |
+|---|---|---|
+| `type` | string | `"mouse"` |
+| `action` | string | `"press"`, `"release"`, or `"move"` |
+| `button` | string | `"left"`, `"middle"`, `"right"`, or `"none"` |
+| `x` | integer | Column where the event occurred |
+| `y` | integer | Row where the event occurred |
+
+**Returns:** table
+
+---
+
+### Mouse
+
+#### `mouse_enable()`
+
+Enables terminal mouse event reporting. After calling this, mouse clicks, releases, and movements are captured and can be read with `get_event()`. Requires `set_raw_mode()` to also be active.
+
+```plain
+set_raw_mode()
+mouse_enable()
+```
+
+**Returns:** null
+
+---
+
+#### `mouse_disable()`
+
+Disables terminal mouse event reporting. Call this before `set_cooked_mode()` when exiting a program that used the mouse.
+
+```plain
+mouse_disable()
+set_cooked_mode()
+```
+
+**Returns:** null
+
+---
+
+### Text Attributes
+
+These functions set text rendering attributes for subsequent output. They stack with `text_color()` — call `text_reset()` to clear all attributes and colors at once.
+
+#### `text_reset()`
+
+Clears **all** text attributes and colors, restoring the terminal to its default appearance.
+
+```plain
+text_bold()
+text_color("red")
+display("Bold red text")
+text_reset()
+display("Back to normal")
+```
+
+**Returns:** null
+
+---
+
+#### `text_bold()`
+
+Enables bold (and typically brighter) text.
+
+```plain
+text_bold()
+display("This is bold")
+text_reset()
+```
+
+---
+
+#### `text_dim()`
+
+Enables dim (faint) text. The exact visual effect depends on the terminal.
+
+---
+
+#### `text_italic()`
+
+Enables italic text. Not all terminals support italic rendering.
+
+---
+
+#### `text_underline()`
+
+Enables underlined text.
+
+```plain
+text_underline()
+display("This is underlined")
+text_reset()
+```
+
+---
+
+#### `text_blink()`
+
+Enables blinking text. Support varies by terminal and is often disabled by user preference.
+
+---
+
+#### `text_reverse()`
+
+Swaps foreground and background colors (reverse video). Useful for highlighting selected items in menus.
+
+```plain
+text_reverse()
+display(" Selected item ")
+text_reset()
+```
+
+---
+
+#### `text_strike()`
+
+Enables strikethrough text.
+
+```plain
+text_strike()
+display("Removed feature")
+text_reset()
+```
+
+---
+
+### Extended Color
+
+These functions complement the basic 8-color `text_color()` with 256-color palette and 24-bit true color support. Most modern terminals (Linux, macOS Terminal, Windows Terminal) support both.
+
+#### `text_color_256(fg [, bg])`
+
+Sets colors using the **256-color ANSI palette**.
+
+```plain
+text_color_256(196)             rem: bright red foreground
+display("Bright red text")
+
+text_color_256(226, 20)         rem: yellow on dark blue
+display("Yellow on blue")
+text_reset()
+```
+
+**Color palette layout:**
+- `0–7` — Standard colors (same as `text_color()`)
+- `8–15` — Bright versions of the standard colors
+- `16–231` — 6×6×6 RGB color cube
+- `232–255` — Grayscale ramp (dark to light)
+
+**Arguments:**
+- `fg` (integer) — Foreground color index, 0–255
+- `bg` (integer, optional) — Background color index, 0–255
+
+**Returns:** null
+
+---
+
+#### `text_color_rgb(r, g, b [, br, bg, bb])`
+
+Sets colors using **24-bit true color** (16 million colors). This is the most expressive color option and is supported by all modern terminal emulators.
+
+```plain
+text_color_rgb(255, 100, 0)         rem: orange foreground
+display("Orange text")
+
+text_color_rgb(0, 200, 100, 20, 20, 60)    rem: green on dark navy
+display("Green on navy")
+text_reset()
+```
+
+**Arguments:**
+- `r`, `g`, `b` (integers) — Foreground RGB values, each 0–255
+- `br`, `bg`, `bb` (integers, optional) — Background RGB values, each 0–255
+
+**Returns:** null
+
+---
+
+### Complete Example: Interactive Menu
+
+```plain
+task Main()
+    set_raw_mode()
+    screen_alt()
+    cursor_hide()
+
+    var options = ["Start Program", "View Logs", "Settings", "Exit"]
+    var selected = 0
+
+    loop
+        clear()
+
+        rem: Draw header
+        text_color_rgb(0, 180, 255)
+        draw_box(5, 2, 50, 3, "Main Menu")
+        text_reset()
+
+        rem: Draw menu items
+        var i = 0
+        loop item in options
+            if i == selected
+                text_reverse()
+                text_bold()
+            text_at(8, 6 + i, v"  {item}  ")
+            text_reset()
+            i += 1
+
+        rem: Instructions
+        text_dim()
+        text_at(5, 12, "UP/DOWN to select, ENTER to confirm, Q to quit")
+        text_reset()
+
+        rem: Handle input
+        var key = get_key()
+        if key == "UP" and selected > 0
+            selected -= 1
+        if key == "DOWN" and selected < len(options) - 1
+            selected += 1
+        if key == "ENTER"
+            exit
+        if key == "q" or key == "Q"
+            selected = 3
+            exit
+
+    cursor_show()
+    screen_main()
+    set_cooked_mode()
+
+    display(v"You selected: {options[selected]}")
+```
+
+---
+
+## Quick Reference Table
+
+| Category              | Functions                                                                                                                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Console**           | `display`, `get`, `clear`, `set_float_precision`, `text_at`, `text_color`, `draw_line`, `draw_box`                                    |
+| **Types**             | `is_int`, `is_float`, `is_string`, `is_bool`, `is_list`, `is_table`, `is_null`, `type_of`                                             |
+| **Conversion**        | `to_int`, `to_float`, `to_string`, `to_bool`, `to_bin`, `to_hex`                                                                      |
+| **Strings**           | `len`, `upper`, `lower`, `trim`, `split`, `join`, `substring`, `replace`, `contains`, `starts_with`, `ends_with`                      |
+| **Math**              | `abs`, `sqrt`, `sqr`, `pow`, `round`, `floor`, `ceil`, `min`, `max`, `mod`                                                            |
+| **Trigonometry**      | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`                                                                                  |
+| **Logarithms**        | `log`, `log10`, `log2`, `exp`                                                                                                         |
+| **Random**            | `random`, `random_int`, `random_choice`                                                                                               |
+| **Lists**             | `len`, `append`, `insert`, `remove`, `pop`, `sort`, `reverse`, `contains`, `min`, `max`, `sum`                                        |
+| **Tables**            | `len`, `keys`, `values`, `has_key`, `remove`                                                                                          |
+| **Files (simple)**    | `read_file`, `write_file`, `append_file`, `read_lines`, `write_lines`, `read_binary`, `write_binary`, `append_binary`                 |
+| **Files (handle)**    | `open`, `close`, `read`, `read_line`, `read_bytes`, `write`, `write_line`                                                             |
+| **File system**       | `file_exists`, `delete_file`, `rename_file`, `copy_file`, `file_size`, `dir_exists`, `create_dir`, `delete_dir`, `list_dir`           |
+| **Paths**             | `join_path`, `split_path`, `get_extension`, `absolute_path`                                                                           |
+| **Timing**            | `sleep`, `create_timer`, `create_timeout`, `start_timer`, `stop_timer`, `cancel_timer`, `wait_for_events`, `run_events`, `stop_events` |
+| **Serial Port**       | `serial_ports`, `serial_open`, `serial_close`, `serial_write`, `serial_read`, `serial_read_line`, `serial_available`, `serial_set_timeout`, `serial_flush`, `serial_set_dtr`, `serial_set_rts`, `serial_get_signals` |
+| **Network I/O**       | `net_connect`, `net_close`, `net_write`, `net_read`, `net_read_line`, `net_set_timeout`, `net_listen`, `net_accept`                   |
+| **TUI — Screen**      | `screen_size`, `screen_alt`, `screen_main`                                                                                            |
+| **TUI — Cursor**      | `cursor_show`, `cursor_hide`, `cursor_pos`                                                                                            |
+| **TUI — Raw Mode**    | `set_raw_mode`, `set_cooked_mode`                                                                                                     |
+| **TUI — Input**       | `get_key`, `get_event`, `mouse_enable`, `mouse_disable`                                                                               |
+| **TUI — Attributes**  | `text_reset`, `text_bold`, `text_dim`, `text_italic`, `text_underline`, `text_blink`, `text_reverse`, `text_strike`                   |
+| **TUI — Color**       | `text_color_256`, `text_color_rgb`                                                                                                    |
+
+---
+
+*This is the complete standard library reference for PLAIN. For language syntax, see the [Language Reference](LANGUAGE-REFERENCE.md). For tutorial examples, see [TUTORIAL.md](TUTORIAL.md).*
