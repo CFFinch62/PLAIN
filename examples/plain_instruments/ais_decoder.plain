@@ -1,0 +1,160 @@
+rem: ─────────────────────────────────────────────────────────────────────────────
+rem: ais_decoder.plain — AIS Payload Decoder
+rem:
+rem: Decodes the 6-bit ASCII encoded payload from !AIVDM / !AIVDO sentences.
+rem: Handles message types 1/2/3 (Class A position) and 18 (Class B position).
+rem:
+rem: AIS 6-bit ASCII encoding (ITU-R M.1371-5):
+rem:   Each character encodes 6 bits, packed MSB-first.
+rem:   char_value = ASCII_code - 48; if char_value > 39 then char_value -= 8
+rem:
+rem: PLAIN has no bitwise operators, so bit extraction uses integer arithmetic:
+rem:   (value >> n)  ≡  value // (2 ** n)
+rem:   (value & mask) where mask = 2^n - 1  ≡  value % (2 ** n)
+rem:   (value << n)  ≡  value * (2 ** n)
+rem:
+rem: Exported task:
+rem:   AISDecodePayload(payload)  — returns a table or null
+rem: ─────────────────────────────────────────────────────────────────────────────
+
+rem: ── Bit extraction ────────────────────────────────────────────────────────
+
+rem: Decode one 6-bit ASCII character to its 6-bit integer value (0–63).
+task AISDecodeChar using (c)
+    var v = ord(c) - 48
+    if v > 39
+        v = v - 8
+    deliver v % 64
+
+rem: Extract bit_len bits starting at bit_pos from a 6-bit ASCII payload string.
+rem: Bits are numbered from the MSB of the first character (bit 0 = MSB of char 0).
+task AISGetBits using (payload, bit_pos, bit_len)
+    var result = 0
+    loop i from 0 to bit_len - 1
+        var char_idx = (bit_pos + i) // 6
+        var bit_idx  = 5 - ((bit_pos + i) % 6)
+        var c = substring(payload, char_idx, char_idx + 1)
+        var v = AISDecodeChar(c)
+        rem: Shift right by bit_idx places and take the lowest bit
+        var bit_val = (v // to_int(2 ** bit_idx)) % 2
+        result = result * 2 + bit_val
+    deliver result
+
+rem: Sign-extend a value that is bit_len bits wide.
+rem: If the sign bit (MSB) is set, fold the value into the negative range.
+task AISSignExtend using (value, bit_len)
+    var sign_bit = to_int(2 ** (bit_len - 1))
+    if value >= sign_bit
+        deliver value - sign_bit * 2
+    deliver value
+
+rem: ── AIS field extractors (message types 1 / 2 / 3) ─────────────────────
+
+rem: Message type: bits 0–5
+task AISMsgType using (payload)
+    deliver AISGetBits(payload, 0, 6)
+
+rem: MMSI: bits 8–37 (30 bits)
+task AISMMSI using (payload)
+    deliver AISGetBits(payload, 8, 30)
+
+rem: SOG × 10 knots: bits 50–59 (10 bits)
+task AISSog using (payload)
+    deliver AISGetBits(payload, 50, 10)
+
+rem: Longitude × 10000 minutes (signed 28 bits): bits 61–88
+task AISLon using (payload)
+    deliver AISSignExtend(AISGetBits(payload, 61, 28), 28)
+
+rem: Latitude × 10000 minutes (signed 27 bits): bits 89–115
+task AISLat using (payload)
+    deliver AISSignExtend(AISGetBits(payload, 89, 27), 27)
+
+rem: COG × 10 degrees: bits 116–127 (12 bits)
+task AISCog using (payload)
+    deliver AISGetBits(payload, 116, 12)
+
+rem: True heading: bits 128–136 (9 bits; 511 = not available)
+task AISHdg using (payload)
+    deliver AISGetBits(payload, 128, 9)
+
+rem: Navigation status: bits 38–41 (4 bits)
+task AISNavStatus using (payload)
+    deliver AISGetBits(payload, 38, 4)
+
+rem: ── Message decoders ─────────────────────────────────────────────────────
+
+rem: Decode a Class A position report (msg types 1, 2, 3).
+rem: Returns a table with keys: mmsi, sog, lat, lon, cog, hdg, status
+task AISDecodeClassA using (payload)
+    var mmsi   = AISMMSI(payload)
+    var sog_r  = AISSog(payload)
+    var lat_r  = AISLat(payload)
+    var lon_r  = AISLon(payload)
+    var cog_r  = AISCog(payload)
+    var hdg    = AISHdg(payload)
+    var status = AISNavStatus(payload)
+
+    rem: Convert raw AIS units to human-readable values
+    rem: SOG: raw unit is 1/10 knot
+    rem: LAT/LON: raw unit is 1/10000 minute; divide by 600000 for decimal degrees
+    rem: COG: raw unit is 1/10 degree
+    var sog_f = to_float(sog_r) / 10.0
+    var lat_f = to_float(lat_r) / 600000.0
+    var lon_f = to_float(lon_r) / 600000.0
+    var cog_f = to_float(cog_r) / 10.0
+
+    var result = {}
+    result["mmsi"]   = to_string(mmsi)
+    result["sog"]    = to_string(round(sog_f * 10.0) / 10.0)
+    result["lat"]    = to_string(round(lat_f * 10000.0) / 10000.0)
+    result["lon"]    = to_string(round(lon_f * 10000.0) / 10000.0)
+    result["cog"]    = to_string(round(cog_f * 10.0) / 10.0)
+    result["hdg"]    = to_string(hdg)
+    result["status"] = to_string(status)
+    deliver result
+
+rem: Decode a Class B position report (msg type 18).
+rem: Bit offsets differ from Class A.
+task AISDecodeClassB using (payload)
+    var mmsi   = AISMMSI(payload)
+    var sog_r  = AISGetBits(payload, 46, 10)
+    var lon_r  = AISSignExtend(AISGetBits(payload, 57, 28), 28)
+    var lat_r  = AISSignExtend(AISGetBits(payload, 85, 27), 27)
+    var cog_r  = AISGetBits(payload, 112, 12)
+
+    var sog_f = to_float(sog_r) / 10.0
+    var lat_f = to_float(lat_r) / 600000.0
+    var lon_f = to_float(lon_r) / 600000.0
+    var cog_f = to_float(cog_r) / 10.0
+
+    var result = {}
+    result["mmsi"]   = to_string(mmsi)
+    result["sog"]    = to_string(round(sog_f * 10.0) / 10.0)
+    result["lat"]    = to_string(round(lat_f * 10000.0) / 10000.0)
+    result["lon"]    = to_string(round(lon_f * 10000.0) / 10000.0)
+    result["cog"]    = to_string(round(cog_f * 10.0) / 10.0)
+    result["hdg"]    = "511"
+    result["status"] = "15"
+    deliver result
+
+rem: ── Public entry point ────────────────────────────────────────────────────
+
+rem: Decode an AIS VHF payload string.
+rem: Returns a table on success (keys: mmsi, sog, lat, lon, cog, hdg, status),
+rem: or null if the payload is empty or an unsupported message type.
+task AISDecodePayload using (payload)
+    if is_null(payload)
+        deliver null
+    if len(payload) == 0
+        deliver null
+
+    var mtype = AISMsgType(payload)
+
+    if mtype == 1 or mtype == 2 or mtype == 3
+        deliver AISDecodeClassA(payload)
+    else
+        if mtype == 18
+            deliver AISDecodeClassB(payload)
+
+    deliver null

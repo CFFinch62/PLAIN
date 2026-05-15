@@ -1,0 +1,430 @@
+rem: ─────────────────────────────────────────────────────────────────────────────
+rem: nmea_parser.plain — NMEA 0183 Sentence Decoder
+rem:
+rem: Parses raw NMEA sentences and returns structured data tables.
+rem: Sentence coverage:
+rem:   GGA  — position (priority 2), fix quality
+rem:   RMC  — position (priority 1 / highest), SOG, COG
+rem:   GLL  — position (priority 3 / fallback)
+rem:   DPT  — depth below transducer (priority 1)
+rem:   DBT  — depth below transducer (priority 2 / fallback)
+rem:   MWV  — apparent/true wind speed and angle
+rem:   VHW  — water speed (STW) and heading
+rem:   HDT  — true heading
+rem:   MTW  — water temperature
+rem:   VTG  — SOG / COG (supplemental)
+rem:   GSV  — satellites in view (PRN, elevation, azimuth, SNR)
+rem:   GSA  — fix quality, DOP values, satellites used
+rem:   ZDA  — UTC date and time
+rem:   XTE  — cross-track error
+rem:   RMB  — recommended minimum navigation (waypoint range/bearing/VMG)
+rem:   APB  — autopilot sentence B (heading to steer, XTE, destination)
+rem:   BOD  — bearing origin to destination
+rem:   VDM/VDO — AIS VHF data (payload forwarded for ais_decoder)
+rem:
+rem: Exported tasks:
+rem:   ParseSentence(raw)           — parse one sentence; returns table or null
+rem:   ParseResetPriority()         — reset position-source priority state
+rem:   NmeaToDecimal(val, dir)      — convert DDMM.mmmm + N/S/E/W to decimal °
+rem: ─────────────────────────────────────────────────────────────────────────────
+
+rem: ── Position-source priority state ───────────────────────────────────────
+rem: Priority levels: 3=RMC (highest), 2=GGA, 1=GLL, 0=none
+rem: A higher-priority source takes over immediately; a lower one must see
+rem: 5+ consecutive updates without the higher source before taking over.
+
+var pos_level = 0   rem: currently active priority level
+var rmc_miss  = 0   rem: GGA updates seen while waiting for RMC
+var gga_miss  = 0   rem: GLL updates seen while waiting for GGA/RMC
+
+rem: ── GSV multi-message accumulation ───────────────────────────────────────
+rem: GSV may span 2–4 messages per update cycle; we accumulate them here.
+
+var gsv_buf   = ""  rem: pipe-delimited "PRN:el:az:snr" entries
+var gsv_count = 0   rem: total satellites in view (from field 3)
+
+rem: ── Public tasks ─────────────────────────────────────────────────────────
+
+rem: Reset position-priority counters (call after clearing all data).
+task ParseResetPriority()
+    pos_level = 0
+    rmc_miss  = 0
+    gga_miss  = 0
+    gsv_buf   = ""
+    gsv_count = 0
+
+rem: Convert an NMEA DDMM.mmmm string plus a direction character to
+rem: decimal degrees.  e.g. ("4738.11", "N") → 47.6352
+task NmeaToDecimal using (nmea_val, dir)
+    var v   = to_float(nmea_val)
+    var deg = floor(v / 100.0)
+    var min = v - deg * 100.0
+    var dec = deg + min / 60.0
+    if dir == "S" or dir == "W"
+        dec = 0.0 - dec
+    deliver dec
+
+rem: ── Internal helpers ──────────────────────────────────────────────────────
+
+rem: Strip the NMEA checksum (*XX) and everything after it from a string.
+task StripCksum using (s)
+    loop i from 0 to len(s) - 1
+        if substring(s, i, i + 1) == "*"
+            deliver substring(s, 0, i)
+    deliver s
+
+rem: Return the 3-character sentence type from field 0.
+rem: e.g. "GPGGA" → "GGA",  "IIMWV" → "MWV"
+task SType using (field0)
+    var n = len(field0)
+    if n < 3
+        deliver ""
+    deliver substring(field0, n - 3, n)
+
+rem: Safely read a field by index from a split sentence.
+rem: Returns "" (empty string) if the index is out of range.
+task Fld using (fields, idx)
+    if idx < 0 or idx >= len(fields)
+        deliver ""
+    var f = trim(fields[idx])
+    rem: Strip trailing checksum that can appear on the last field
+    loop i from 0 to len(f) - 1
+        if substring(f, i, i + 1) == "*"
+            deliver substring(f, 0, i)
+    deliver f
+
+rem: ── Sentence handlers ─────────────────────────────────────────────────────
+
+task ParseGGA using (fields)
+    var lat   = Fld(fields, 2)
+    var lat_d = Fld(fields, 3)
+    var lon   = Fld(fields, 4)
+    var lon_d = Fld(fields, 5)
+    if len(lat) == 0
+        deliver null
+    rem: GGA takes over if no RMC, or if RMC has been silent for 5+ GGA updates
+    if pos_level == 3
+        rmc_miss = rmc_miss + 1
+        if rmc_miss <= 5
+            deliver null
+        pos_level = 2
+        rmc_miss  = 0
+    else
+        pos_level = 2
+        rmc_miss  = 0
+    var r = {}
+    r["type"]  = "position"
+    r["lat"]   = lat
+    r["lat_d"] = lat_d
+    r["lon"]   = lon
+    r["lon_d"] = lon_d
+    r["src"]   = "GGA"
+    deliver r
+
+task ParseRMC using (fields)
+    var lat   = Fld(fields, 3)
+    var lat_d = Fld(fields, 4)
+    var lon   = Fld(fields, 5)
+    var lon_d = Fld(fields, 6)
+    var sog   = Fld(fields, 7)
+    var cog   = Fld(fields, 8)
+    var was_rmc = false
+    if pos_level == 3
+        was_rmc = true
+    var r = {}
+    r["type"] = "rmc"
+    r["sog"]  = sog
+    r["cog"]  = cog
+    if len(lat) > 0
+        pos_level = 3
+        rmc_miss  = 0
+        gga_miss  = 0
+        r["lat"]   = lat
+        r["lat_d"] = lat_d
+        r["lon"]   = lon
+        r["lon_d"] = lon_d
+        if not was_rmc
+            r["src"] = "RMC"
+    deliver r
+
+task ParseGLL using (fields)
+    var status = Fld(fields, 6)
+    if status != "A"
+        deliver null
+    var lat   = Fld(fields, 1)
+    var lat_d = Fld(fields, 2)
+    var lon   = Fld(fields, 3)
+    var lon_d = Fld(fields, 4)
+    if len(lat) == 0
+        deliver null
+    if pos_level >= 2
+        gga_miss = gga_miss + 1
+        if gga_miss <= 5
+            deliver null
+        pos_level = 1
+        gga_miss  = 0
+    else
+        pos_level = 1
+        gga_miss  = 0
+    var r = {}
+    r["type"]  = "position"
+    r["lat"]   = lat
+    r["lat_d"] = lat_d
+    r["lon"]   = lon
+    r["lon_d"] = lon_d
+    r["src"]   = "GLL"
+    deliver r
+
+task ParseDPT using (fields)
+    var depth = Fld(fields, 1)
+    if len(depth) == 0
+        deliver null
+    var r = {}
+    r["type"]  = "depth"
+    r["depth"] = depth
+    deliver r
+
+task ParseDBT using (fields)
+    rem: DBT field 3 = depth in metres
+    var depth = Fld(fields, 3)
+    if len(depth) == 0
+        deliver null
+    var r = {}
+    r["type"]  = "depth"
+    r["depth"] = depth
+    deliver r
+
+task ParseMWV using (fields)
+    var valid = Fld(fields, 5)
+    if valid != "A"
+        deliver null
+    var r = {}
+    r["type"]  = "wind"
+    r["angle"] = Fld(fields, 1)
+    r["speed"] = Fld(fields, 3)
+    deliver r
+
+task ParseVHW using (fields)
+    rem: VHW field 5 = speed through water (knots)
+    var stw = Fld(fields, 5)
+    if len(stw) == 0
+        deliver null
+    var r = {}
+    r["type"] = "water_speed"
+    r["stw"]  = stw
+    deliver r
+
+task ParseHDT using (fields)
+    var hdg = Fld(fields, 1)
+    if len(hdg) == 0
+        deliver null
+    var r = {}
+    r["type"] = "heading"
+    r["hdg"]  = hdg
+    deliver r
+
+task ParseMTW using (fields)
+    var r = {}
+    r["type"] = "temp"
+    r["temp"] = Fld(fields, 1)
+    deliver r
+
+task ParseVTG using (fields)
+    rem: VTG field 5 = SOG in knots
+    var sog = Fld(fields, 5)
+    if len(sog) == 0
+        deliver null
+    var r = {}
+    r["type"] = "sog"
+    r["sog"]  = sog
+    deliver r
+
+task ParseGSV using (fields)
+    var total_msgs = to_int(Fld(fields, 1))
+    var msg_num    = to_int(Fld(fields, 2))
+    var total_sats = Fld(fields, 3)
+
+    rem: First message of a new cycle — reset accumulation buffer
+    if msg_num == 1
+        gsv_buf   = ""
+        gsv_count = to_int(total_sats)
+
+    rem: Each GSV message holds up to 4 satellite records (4 fields each)
+    loop s from 0 to 3
+        var base = 4 + s * 4
+        var prn  = Fld(fields, base)
+        if len(prn) == 0
+            exit
+        var el  = Fld(fields, base + 1)
+        var az  = Fld(fields, base + 2)
+        var snr = Fld(fields, base + 3)
+        if len(gsv_buf) > 0
+            gsv_buf = gsv_buf & "|"
+        gsv_buf = gsv_buf & prn & ":" & el & ":" & az & ":" & snr
+
+    rem: Emit a satellite update only when the last message of the cycle arrives
+    if msg_num >= total_msgs
+        var r = {}
+        r["type"]  = "satellite"
+        r["count"] = gsv_count
+        r["data"]  = gsv_buf
+        deliver r
+
+    deliver null
+
+task ParseGSA using (fields)
+    var fix_num = Fld(fields, 2)
+    var pdop    = Fld(fields, 15)
+    var hdop    = Fld(fields, 16)
+    var vdop    = Fld(fields, 17)
+    rem: Fields 3–14 contain PRNs of satellites used in the fix
+    var used = ""
+    loop i from 3 to 14
+        var prn = Fld(fields, i)
+        if len(prn) > 0
+            if len(used) > 0
+                used = used & "|"
+            used = used & prn
+    var r = {}
+    r["type"]    = "fix"
+    r["fix_num"] = fix_num
+    r["pdop"]    = pdop
+    r["hdop"]    = hdop
+    r["vdop"]    = vdop
+    r["used"]    = used
+    deliver r
+
+task ParseZDA using (fields)
+    var timestr = Fld(fields, 1)
+    var day     = Fld(fields, 2)
+    var month   = Fld(fields, 3)
+    var year    = Fld(fields, 4)
+    if len(timestr) < 6
+        deliver null
+    var hh = substring(timestr, 0, 2)
+    var mm = substring(timestr, 2, 4)
+    var ss = substring(timestr, 4, 6)
+    var r = {}
+    r["type"] = "time"
+    r["time"] = hh & ":" & mm & ":" & ss
+    r["date"] = day & "/" & month & "/" & year
+    deliver r
+
+task ParseXTE using (fields)
+    var warn = Fld(fields, 1)
+    if warn != "A"
+        deliver null
+    var r = {}
+    r["type"] = "xte"
+    r["mag"]  = Fld(fields, 3)
+    r["dir"]  = Fld(fields, 4)
+    deliver r
+
+task ParseRMB using (fields)
+    var status = Fld(fields, 1)
+    if status != "A"
+        deliver null
+    var r = {}
+    r["type"]    = "nav"
+    r["dest"]    = Fld(fields, 5)
+    r["dist"]    = Fld(fields, 10)
+    r["bearing"] = Fld(fields, 11)
+    r["vmg"]     = Fld(fields, 12)
+    r["arrived"] = Fld(fields, 13)
+    deliver r
+
+task ParseAPB using (fields)
+    var statusA = Fld(fields, 1)
+    if statusA != "A"
+        deliver null
+    var r = {}
+    r["type"]    = "autopilot"
+    r["xte"]     = Fld(fields, 3)
+    r["xte_dir"] = Fld(fields, 4)
+    r["dest"]    = Fld(fields, 10)
+    r["hts"]     = Fld(fields, 13)
+    deliver r
+
+task ParseBOD using (fields)
+    var r = {}
+    r["type"]      = "waypoint"
+    r["bearing_t"] = Fld(fields, 1)
+    r["bearing_m"] = Fld(fields, 3)
+    r["dest"]      = Fld(fields, 5)
+    r["origin"]    = Fld(fields, 6)
+    deliver r
+
+task ParseVDM using (fields)
+    var payload = Fld(fields, 5)
+    if len(payload) == 0
+        deliver null
+    var r = {}
+    r["type"]    = "ais"
+    r["payload"] = payload
+    deliver r
+
+rem: ── Main dispatcher ───────────────────────────────────────────────────────
+
+rem: Parse a raw NMEA sentence string.
+rem: Returns a table with a "type" key on success, or null on failure.
+task ParseSentence using (raw)
+    if is_null(raw)
+        deliver null
+    var s = trim(raw)
+    if len(s) == 0
+        deliver null
+
+    rem: Strip leading $ or ! (AIS sentences start with !)
+    if starts_with(s, "$") or starts_with(s, "!")
+        s = substring(s, 1, len(s))
+
+    rem: Strip checksum
+    s = StripCksum(s)
+
+    var fields = split(s, ",")
+    if len(fields) == 0
+        deliver null
+
+    var stype = SType(fields[0])
+
+    choose stype
+        choice "GGA"
+            deliver ParseGGA(fields)
+        choice "RMC"
+            deliver ParseRMC(fields)
+        choice "GLL"
+            deliver ParseGLL(fields)
+        choice "DPT"
+            deliver ParseDPT(fields)
+        choice "DBT"
+            deliver ParseDBT(fields)
+        choice "MWV"
+            deliver ParseMWV(fields)
+        choice "VHW"
+            deliver ParseVHW(fields)
+        choice "HDT"
+            deliver ParseHDT(fields)
+        choice "MTW"
+            deliver ParseMTW(fields)
+        choice "VTG"
+            deliver ParseVTG(fields)
+        choice "GSV"
+            deliver ParseGSV(fields)
+        choice "GSA"
+            deliver ParseGSA(fields)
+        choice "ZDA"
+            deliver ParseZDA(fields)
+        choice "XTE"
+            deliver ParseXTE(fields)
+        choice "RMB"
+            deliver ParseRMB(fields)
+        choice "APB"
+            deliver ParseAPB(fields)
+        choice "BOD"
+            deliver ParseBOD(fields)
+        choice "VDM"
+            deliver ParseVDM(fields)
+        choice "VDO"
+            deliver ParseVDM(fields)
+
+    deliver null

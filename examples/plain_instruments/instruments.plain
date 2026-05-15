@@ -1,0 +1,1026 @@
+rem: ─────────────────────────────────────────────────────────────────────────────
+rem: instruments.plain — PLAIN Marine Instruments Dashboard
+rem:
+rem: A full-featured marine electronics display that reads NMEA 0183 sentences
+rem: from a serial port (or built-in simulator) and presents them as a live
+rem: terminal dashboard.
+rem:
+rem: Requirements:
+rem:   Terminal width  ≥ 120 columns
+rem:   Terminal height ≥ 42 rows
+rem:
+rem: Usage:
+rem:   plain instruments.plain                     (starts in SIM mode)
+rem:   plain instruments.plain --port /dev/ttyUSB0 --baud 4800
+rem:
+rem: Keys (while running):
+rem:   s  — toggle SIM / LIVE mode
+rem:   p  — pause / resume data updates
+rem:   c  — clear all data
+rem:   1  — NMEA Log tab
+rem:   2  — Satellites tab
+rem:   3  — Voyage Data tab
+rem:   q  — quit
+rem: ─────────────────────────────────────────────────────────────────────────────
+
+use:
+    tasks:
+        nmea_sim.SimStart
+        nmea_sim.SimStop
+        nmea_sim.SimRunning
+        nmea_sim.SimTick
+        nmea_sim.SimGetAIS
+        nmea_parser.ParseSentence
+        nmea_parser.ParseResetPriority
+        nmea_parser.NmeaToDecimal
+        ais_decoder.AISDecodePayload
+
+rem: ── Layout constants ──────────────────────────────────────────────────────
+rem: All coordinates are 1-based (col, row) as required by PLAIN's TUI.
+
+var TITLE_X = 1
+var TITLE_Y = 1
+var TITLE_W = 120
+var TITLE_H = 3
+
+var P1_X = 1     rem: POSITION panel
+var P2_X = 25    rem: SPEED panel
+var P3_X = 48    rem: DEPTH / TEMP panel
+var P4_X = 71    rem: HEADING panel
+var P5_X = 96    rem: WIND panel
+var PANEL_Y = 4
+var PANEL_W1 = 24
+var PANEL_W2 = 23
+var PANEL_W3 = 23
+var PANEL_W4 = 25
+var PANEL_W5 = 25
+var PANEL_H = 9
+
+var TAB_Y  = 13  rem: row where tab selector buttons appear
+var SEP_Y  = 14  rem: separator line below tabs
+var CONT_X = 1
+var CONT_Y = 15  rem: tab content box top
+var CONT_W = 120
+var CONT_H = 18  rem: gives rows 15–32
+
+var AIS_X = 1
+var AIS_Y = 33
+var AIS_W = 120
+var AIS_H = 9    rem: gives rows 33–41
+
+var STAT_Y = 42  rem: status bar row
+
+rem: ── Instrument data state ─────────────────────────────────────────────────
+
+var g_lat_str      = "---"
+var g_lon_str      = "---"
+var g_lat_f        = 0.0
+var g_lon_f        = 0.0
+var g_sog_str      = "---"
+var g_cog_str      = "---"
+var g_hdg_str      = "---"
+var g_hdg_f        = 0.0
+var g_depth_str    = "---"
+var g_temp_str     = "---"
+var g_wind_ang_str = "---"
+var g_wind_spd_str = "---"
+var g_wind_ang_f   = 0.0
+var g_stw_str      = "---"  rem: speed through water
+
+var g_pos_source   = "---"
+var g_fix_type     = "---"
+var g_pdop         = "---"
+var g_hdop         = "---"
+var g_vdop         = "---"
+var g_sat_count    = 0
+var g_sat_data     = ""     rem: pipe-delimited "PRN:el:az:snr" entries
+var g_sat_used     = ""     rem: pipe-delimited used PRNs
+var g_sat_used_n   = 0
+
+var g_utc_time     = "--:--:--"
+var g_utc_date     = "--/--/----"
+var g_xte_mag      = "---"
+var g_xte_dir      = "-"
+var g_nav_dest     = "---"
+var g_nav_bearing  = "---"
+var g_nav_dist     = "---"
+var g_nav_vmg      = "---"
+var g_nav_arrived  = "V"
+var g_apb_hts      = "---"
+var g_apb_dest     = "---"
+var g_apb_xte      = "---"
+var g_apb_xte_dir  = "-"
+var g_bod_bearing_t = "---"
+var g_bod_bearing_m = "---"
+var g_bod_dest     = "---"
+var g_bod_origin   = "---"
+
+rem: ── AIS targets (list of tables) ─────────────────────────────────────────
+
+var g_ais_targets  = []
+var AIS_MAX        = 10
+
+rem: ── NMEA log (list of tables {sentence, color}) ─────────────────────────
+
+var g_nmea_log     = []
+var LOG_MAX        = 16
+
+rem: ── Application state ────────────────────────────────────────────────────
+
+var g_mode         = "SIM"    rem: "SIM" or "LIVE"
+var g_paused       = false
+var g_log_tab      = 0        rem: 0=NMEA LOG, 1=SATELLITES, 2=VOYAGE DATA
+var g_prev_tab     = -1       rem: tracks the last drawn tab so we erase on change
+var g_running      = true
+var g_configuring  = false    rem: true while serial config dialog is open
+var g_port         = null
+var g_port_name    = "/dev/ttyUSB0"
+var g_baud         = 4800
+
+rem: 120 spaces — used to blank a full-width row in the content area
+var BLANK_LINE = "                                                                                                                        "
+
+
+rem: ── Helper tasks ─────────────────────────────────────────────────────────
+
+rem: Return a compass point word for a heading in degrees.
+rem: Divides the circle into 16 sectors of 22.5° each.
+task CompassPoint using (deg_str)
+    if deg_str == "---"
+        deliver "---"
+    var d = to_float(deg_str) % 360.0
+    if d < 0.0
+        d = d + 360.0
+    var idx = to_int((d + 11.25) // 22.5) % 16
+    var pts = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
+    deliver pts[idx]
+
+rem: Return a Unicode arrow character for a heading in degrees (8 directions).
+task CompassArrow using (deg_str)
+    if deg_str == "---"
+        deliver "·"
+    var d = to_float(deg_str) % 360.0
+    if d < 0.0
+        d = d + 360.0
+    var idx = to_int((d + 22.5) // 45.0) % 8
+    var arrows = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"]
+    deliver arrows[idx]
+
+rem: Pad a string on the left to a fixed width.
+task PadLeft using (s, width)
+    var result = to_string(s)
+    loop len(result) < width
+        result = " " & result
+    deliver result
+
+rem: Format a float string to 1 decimal place.
+task F1 using (s)
+    if s == "---" or s == ""
+        deliver "---"
+    var v = to_float(s)
+    deliver to_string(round(v * 10.0) / 10.0)
+
+rem: Count pipe-delimited tokens in a string.
+task CountTokens using (s)
+    if len(s) == 0
+        deliver 0
+    var n = 1
+    loop i from 0 to len(s) - 1
+        if substring(s, i, i + 1) == "|"
+            n = n + 1
+    deliver n
+
+rem: ── Data update tasks ─────────────────────────────────────────────────────
+
+rem: Apply a parsed result table to the instrument state.
+task ApplyResult with (result, raw_sentence)
+    if is_null(result)
+        deliver null
+    var t = result["type"]
+
+    rem: Log the raw sentence with a color that matches its type
+    if not g_paused
+        var log_entry = {}
+        log_entry["sentence"] = raw_sentence
+        choose t
+            choice "position"
+                log_entry["color"] = "gga"
+            choice "rmc"
+                log_entry["color"] = "gga"
+            choice "depth"
+                log_entry["color"] = "dpt"
+            choice "wind"
+                log_entry["color"] = "mwv"
+            choice "heading"
+                log_entry["color"] = "hdt"
+            choice "temp"
+                log_entry["color"] = "mtw"
+            choice "ais"
+                log_entry["color"] = "ais"
+            default
+                log_entry["color"] = "other"
+        append(g_nmea_log, log_entry)
+        if len(g_nmea_log) > LOG_MAX
+            pop(g_nmea_log, 0)
+
+    if g_paused
+        deliver null
+
+    rem: Dispatch to appropriate state update
+    choose t
+        choice "position"
+            g_lat_str  = result["lat"] & " " & result["lat_d"]
+            g_lon_str  = result["lon"] & " " & result["lon_d"]
+            g_lat_f    = NmeaToDecimal(result["lat"], result["lat_d"])
+            g_lon_f    = NmeaToDecimal(result["lon"], result["lon_d"])
+            if has_key(result, "src")
+                g_pos_source = result["src"]
+        choice "rmc"
+            if has_key(result, "lat")
+                g_lat_str  = result["lat"] & " " & result["lat_d"]
+                g_lon_str  = result["lon"] & " " & result["lon_d"]
+                g_lat_f    = NmeaToDecimal(result["lat"], result["lat_d"])
+                g_lon_f    = NmeaToDecimal(result["lon"], result["lon_d"])
+            if has_key(result, "src")
+                g_pos_source = result["src"]
+            if len(result["sog"]) > 0
+                g_sog_str = F1(result["sog"])
+            if len(result["cog"]) > 0
+                g_cog_str = F1(result["cog"])
+        choice "depth"
+            g_depth_str = F1(result["depth"])
+        choice "wind"
+            g_wind_ang_str = F1(result["angle"])
+            g_wind_spd_str = F1(result["speed"])
+            g_wind_ang_f   = to_float(g_wind_ang_str)
+        choice "heading"
+            g_hdg_str = F1(result["hdg"])
+            g_hdg_f   = to_float(g_hdg_str)
+        choice "temp"
+            g_temp_str = F1(result["temp"])
+        choice "sog"
+            g_sog_str = F1(result["sog"])
+        choice "water_speed"
+            g_stw_str = F1(result["stw"])
+        choice "satellite"
+            g_sat_count = result["count"]
+            g_sat_data  = result["data"]
+        choice "fix"
+            var fn = to_int(result["fix_num"])
+            choose fn
+                choice 1
+                    g_fix_type = "No Fix"
+                choice 2
+                    g_fix_type = "2D"
+                choice 3
+                    g_fix_type = "3D"
+            g_pdop       = result["pdop"]
+            g_hdop       = result["hdop"]
+            g_vdop       = result["vdop"]
+            g_sat_used   = result["used"]
+            g_sat_used_n = CountTokens(result["used"])
+        choice "time"
+            g_utc_time = result["time"]
+            g_utc_date = result["date"]
+        choice "xte"
+            g_xte_mag = F1(result["mag"])
+            g_xte_dir = result["dir"]
+        choice "nav"
+            g_nav_dest     = result["dest"]
+            g_nav_bearing  = F1(result["bearing"])
+            g_nav_dist     = F1(result["dist"])
+            g_nav_vmg      = F1(result["vmg"])
+            g_nav_arrived  = result["arrived"]
+        choice "autopilot"
+            g_apb_xte      = F1(result["xte"])
+            g_apb_xte_dir  = result["xte_dir"]
+            g_apb_dest     = result["dest"]
+            g_apb_hts      = F1(result["hts"])
+        choice "waypoint"
+            g_bod_bearing_t = F1(result["bearing_t"])
+            g_bod_bearing_m = F1(result["bearing_m"])
+            g_bod_dest      = result["dest"]
+            g_bod_origin    = result["origin"]
+        choice "ais"
+            var ais_data = AISDecodePayload(result["payload"])
+            if not is_null(ais_data)
+                UpdateAISTarget(ais_data)
+
+rem: Upsert an AIS target into the ring buffer.
+rem: If the MMSI already exists, update it; otherwise add to the list
+rem: (dropping the oldest entry if the list is full).
+task UpdateAISTarget with (ais_data)
+    var new_mmsi = ais_data["mmsi"]
+    rem: Search for existing entry
+    loop i from 0 to len(g_ais_targets) - 1
+        var tgt = g_ais_targets[i]
+        if tgt["mmsi"] == new_mmsi
+            g_ais_targets[i] = ais_data
+            deliver null
+    rem: New MMSI — append (remove oldest if at capacity)
+    if len(g_ais_targets) >= AIS_MAX
+        pop(g_ais_targets, 0)
+    append(g_ais_targets, ais_data)
+
+rem: Apply a simulated AIS target string directly to the buffer.
+rem: Format: "MMSI|SOG|LAT|LON|COG|HDG|STATUS"
+task ApplySimAIS with (tgt_str)
+    if is_null(tgt_str) or len(tgt_str) == 0
+        deliver null
+    var parts = split(tgt_str, "|")
+    if len(parts) < 5
+        deliver null
+    var d = {}
+    d["mmsi"]   = parts[0]
+    d["sog"]    = parts[1]
+    d["lat"]    = parts[2]
+    d["lon"]    = parts[3]
+    d["cog"]    = parts[4]
+    d["hdg"]    = "511"
+    d["status"] = "0"
+    if len(parts) > 5
+        d["hdg"] = parts[5]
+    if len(parts) > 6
+        d["status"] = parts[6]
+    UpdateAISTarget(d)
+
+rem: Clear all received instrument data.
+task ClearAllData()
+    g_lat_str      = "---"
+    g_lon_str      = "---"
+    g_lat_f        = 0.0
+    g_lon_f        = 0.0
+    g_sog_str      = "---"
+    g_cog_str      = "---"
+    g_hdg_str      = "---"
+    g_hdg_f        = 0.0
+    g_depth_str    = "---"
+    g_temp_str     = "---"
+    g_wind_ang_str = "---"
+    g_wind_spd_str = "---"
+    g_wind_ang_f   = 0.0
+    g_stw_str      = "---"
+    g_pos_source   = "---"
+    g_fix_type     = "---"
+    g_pdop         = "---"
+    g_hdop         = "---"
+    g_vdop         = "---"
+    g_sat_count    = 0
+    g_sat_data     = ""
+    g_sat_used     = ""
+    g_sat_used_n   = 0
+    g_utc_time     = "--:--:--"
+    g_utc_date     = "--/--/----"
+    g_xte_mag      = "---"
+    g_xte_dir      = "-"
+    g_nav_dest     = "---"
+    g_nav_bearing  = "---"
+    g_nav_dist     = "---"
+    g_nav_vmg      = "---"
+    g_nav_arrived  = "V"
+    g_apb_hts      = "---"
+    g_apb_dest     = "---"
+    g_apb_xte      = "---"
+    g_apb_xte_dir  = "-"
+    g_bod_bearing_t = "---"
+    g_bod_bearing_m = "---"
+    g_bod_dest     = "---"
+    g_bod_origin   = "---"
+    g_ais_targets  = []
+    g_nmea_log     = []
+    ParseResetPriority()
+
+rem: ── Display tasks ─────────────────────────────────────────────────────────
+
+rem: Draw the title bar with mode and connection status.
+task DrawTitle()
+    text_color_rgb(255, 210, 55)
+    draw_box(TITLE_X, TITLE_Y, TITLE_W, TITLE_H, "PLAIN INSTRUMENTS")
+    text_color_rgb(180, 200, 255)
+    var status_line = "MODE: " & g_mode
+    if g_mode == "LIVE"
+        if not is_null(g_port)
+            status_line = status_line & "  |  PORT: " & g_port_name & " @ " & to_string(g_baud)
+        else
+            status_line = status_line & "  |  Not connected"
+    else
+        status_line = status_line & "  |  Simulated data"
+    status_line = status_line & "  |  FIX: " & g_fix_type
+    status_line = status_line & "  |  SATS: " & to_string(g_sat_used_n) & "/" & to_string(g_sat_count)
+    text_at(TITLE_X + 1, TITLE_Y + 1, status_line)
+    if g_paused
+        text_color_rgb(255, 80, 80)
+        text_at(TITLE_X + 90, TITLE_Y + 1, "** PAUSED **")
+    text_color("default")
+
+rem: Draw the POSITION panel.
+task DrawPosition()
+    text_color_rgb(80, 180, 255)
+    draw_box(P1_X, PANEL_Y, PANEL_W1, PANEL_H, "POSITION")
+    text_color_rgb(228, 244, 255)
+    text_at(P1_X + 2, PANEL_Y + 2, g_lat_str)
+    text_at(P1_X + 2, PANEL_Y + 3, g_lon_str)
+    text_color_rgb(100, 155, 220)
+    text_at(P1_X + 2, PANEL_Y + 5, "src: " & g_pos_source)
+    text_color("default")
+
+rem: Draw the SPEED panel (SOG + COG).
+task DrawSpeed()
+    text_color_rgb(100, 230, 130)
+    draw_box(P2_X, PANEL_Y, PANEL_W2, PANEL_H, "SPEED")
+    text_color_rgb(100, 155, 220)
+    text_at(P2_X + 2, PANEL_Y + 1, "SOG")
+    text_color_rgb(228, 244, 255)
+    text_at(P2_X + 2, PANEL_Y + 2, g_sog_str & " kts")
+    text_color_rgb(100, 155, 220)
+    text_at(P2_X + 2, PANEL_Y + 4, "COG")
+    text_color_rgb(228, 244, 255)
+    text_at(P2_X + 2, PANEL_Y + 5, g_cog_str & "° M")
+    text_color_rgb(100, 155, 220)
+    text_at(P2_X + 2, PANEL_Y + 7, "STW: " & g_stw_str & " kts")
+    text_color("default")
+
+rem: Draw the DEPTH / TEMP panel.
+task DrawDepthTemp()
+    text_color_rgb(80, 210, 210)
+    draw_box(P3_X, PANEL_Y, PANEL_W3, PANEL_H, "DEPTH/TEMP")
+    text_color_rgb(100, 155, 220)
+    text_at(P3_X + 2, PANEL_Y + 1, "Depth")
+    text_color_rgb(80, 210, 210)
+    text_at(P3_X + 2, PANEL_Y + 2, g_depth_str & " m")
+    text_color_rgb(100, 155, 220)
+    text_at(P3_X + 2, PANEL_Y + 4, "Water Temp")
+    text_color_rgb(255, 140, 80)
+    text_at(P3_X + 2, PANEL_Y + 5, g_temp_str & " °C")
+    text_color("default")
+
+rem: Draw the HEADING panel with compass arrow.
+task DrawHeading()
+    text_color_rgb(255, 210, 80)
+    draw_box(P4_X, PANEL_Y, PANEL_W4, PANEL_H, "HEADING")
+    var arrow = CompassArrow(g_hdg_str)
+    var point = CompassPoint(g_hdg_str)
+    text_color_rgb(255, 210, 80)
+    text_bold()
+    text_at(P4_X + 2, PANEL_Y + 2, arrow & " " & point)
+    text_reset()
+    text_color_rgb(228, 244, 255)
+    text_at(P4_X + 2, PANEL_Y + 4, g_hdg_str & "° M")
+    text_color_rgb(100, 155, 220)
+    text_at(P4_X + 2, PANEL_Y + 6, "HDOP: " & g_hdop)
+    text_color("default")
+
+rem: Draw the WIND panel with wind rose arrow.
+task DrawWind()
+    text_color_rgb(200, 160, 255)
+    draw_box(P5_X, PANEL_Y, PANEL_W5, PANEL_H, "WIND")
+    text_color_rgb(100, 155, 220)
+    text_at(P5_X + 2, PANEL_Y + 1, "Apparent")
+    var w_arrow = CompassArrow(g_wind_ang_str)
+    var w_point = CompassPoint(g_wind_ang_str)
+    text_color_rgb(200, 160, 255)
+    text_bold()
+    text_at(P5_X + 2, PANEL_Y + 3, w_arrow & " " & w_point & "  " & g_wind_ang_str & "°")
+    text_reset()
+    text_at(P5_X + 2, PANEL_Y + 5, g_wind_spd_str & " kts")
+    text_color("default")
+
+rem: Draw the tab selector row (three labelled buttons).
+task DrawTabSelector()
+    rem: Highlight the active tab in bright blue, others dimmed
+    var c0r = 30
+    var c1r = 30
+    var c2r = 30
+    choose g_log_tab
+        choice 0
+            c0r = 80
+        choice 1
+            c1r = 80
+        default
+            c2r = 80
+
+    text_color_rgb(c0r, 100, 170)
+    text_at(TAB_Y - 1, CONT_Y - 3, "")   rem: just set cursor position context
+    text_at(2, TAB_Y, "[1] NMEA LOG")
+    text_color_rgb(c1r, 100, 170)
+    text_at(18, TAB_Y, "[2] SATELLITES")
+    text_color_rgb(c2r, 100, 170)
+    text_at(35, TAB_Y, "[3] VOYAGE DATA")
+    text_color_rgb(50, 80, 130)
+    draw_line(1, SEP_Y, 120, "h")
+    text_color("default")
+
+rem: Draw the NMEA log tab content.
+task DrawNmeaLog()
+    text_color_rgb(30, 50, 90)
+    draw_box(CONT_X, CONT_Y, CONT_W, CONT_H, "NMEA LOG")
+    var row = CONT_Y + 1
+    loop entry in g_nmea_log
+        var col = entry["color"]
+        choose col
+            choice "gga"
+                text_color_rgb(80, 180, 255)
+            choice "dpt"
+                text_color_rgb(80, 210, 210)
+            choice "mwv"
+                text_color_rgb(200, 160, 255)
+            choice "hdt"
+                text_color_rgb(255, 210, 80)
+            choice "mtw"
+                text_color_rgb(255, 140, 80)
+            choice "ais"
+                text_color_rgb(255, 90, 90)
+            default
+                text_color_rgb(140, 155, 170)
+        var line = entry["sentence"]
+        loop len(line) < CONT_W - 4
+            line = line & " "
+        text_at(CONT_X + 2, row, line)
+        row = row + 1
+        if row >= CONT_Y + CONT_H - 1
+            exit
+    text_color("default")
+
+rem: Draw the Satellites tab content (SNR bars + detail table).
+task DrawSatellites()
+    text_color_rgb(30, 50, 90)
+    draw_box(CONT_X, CONT_Y, CONT_W, CONT_H, "SATELLITES")
+
+    rem: Fix quality summary
+    text_color_rgb(80, 220, 100)
+    text_at(CONT_X + 2, CONT_Y + 1, "FIX: " & g_fix_type)
+    text_color_rgb(180, 210, 180)
+    text_at(CONT_X + 18, CONT_Y + 1, "IN VIEW: " & to_string(g_sat_count))
+    text_at(CONT_X + 34, CONT_Y + 1, "USED: " & to_string(g_sat_used_n))
+    text_at(CONT_X + 50, CONT_Y + 1, "HDOP: " & g_hdop)
+    text_at(CONT_X + 68, CONT_Y + 1, "VDOP: " & g_vdop)
+    text_at(CONT_X + 86, CONT_Y + 1, "PDOP: " & g_pdop)
+    text_color_rgb(35, 75, 50)
+    draw_line(CONT_X + 1, CONT_Y + 2, CONT_W - 2, "h")
+
+    if len(g_sat_data) == 0
+        text_color_rgb(55, 90, 65)
+        text_at(CONT_X + 30, CONT_Y + 9, "No satellite data — awaiting GSV / GSA sentences")
+        text_color("default")
+        deliver null
+
+    var sats = split(g_sat_data, "|")
+    var ns   = len(sats)
+
+    rem: SNR bar chart — up to 12 satellites, each 9 columns wide
+    rem: Base of bars at row CONT_Y + 10; max bar height 6 rows (SNR 0–50)
+    var bar_base = CONT_Y + 10
+    var bar_hmax = 6
+    var slot_w   = 9
+    var bar_w    = 7
+
+    loop si from 0 to ns - 1
+        if si >= 12
+            exit
+        var flds = split(sats[si], ":")
+        var prn  = "?"
+        var snrv = 0
+        if len(flds) > 0
+            prn = flds[0]
+        if len(flds) > 3
+            snrv = to_int(flds[3])
+        var is_used = contains("|" & g_sat_used & "|", "|" & prn & "|")
+        var bx = CONT_X + 2 + si * slot_w
+        var bh = snrv * bar_hmax // 50
+        if bh < 1 and snrv > 0
+            bh = 1
+        rem: Draw vertical bar using block characters
+        if is_used
+            text_color_rgb(0, 190, 75)
+        else
+            text_color_rgb(50, 120, 90)
+        if bh > 0
+            draw_line(bx, bar_base - bh + 1, bh, "v", "█")
+        rem: SNR value above bar
+        text_color_rgb(200, 230, 200)
+        text_at(bx, bar_base - bh, to_string(snrv))
+        rem: PRN label below bar
+        text_color_rgb(160, 190, 165)
+        text_at(bx, bar_base + 1, prn)
+
+    text_color_rgb(35, 75, 50)
+    draw_line(CONT_X + 1, bar_base + 2, CONT_W - 2, "h")
+
+    rem: Satellite detail table (two columns, up to 12 sats)
+    var ty = bar_base + 3
+    text_color_rgb(100, 160, 110)
+    text_at(CONT_X + 2,  ty, "PRN")
+    text_at(CONT_X + 8,  ty, "ELEV")
+    text_at(CONT_X + 15, ty, "AZIM")
+    text_at(CONT_X + 22, ty, "SNR")
+    text_at(CONT_X + 28, ty, "USED")
+    text_at(CONT_X + 40, ty, "PRN")
+    text_at(CONT_X + 46, ty, "ELEV")
+    text_at(CONT_X + 53, ty, "AZIM")
+    text_at(CONT_X + 60, ty, "SNR")
+    text_at(CONT_X + 66, ty, "USED")
+    text_color_rgb(35, 70, 50)
+    draw_line(CONT_X + 1, ty + 1, CONT_W - 2, "h")
+
+    loop ri from 0 to ns - 1
+        if ri >= 12
+            exit
+        var flds2 = split(sats[ri], ":")
+        var prn2  = "?"
+        var el2   = "?"
+        var az2   = "?"
+        var snr2  = "?"
+        if len(flds2) > 0
+            prn2 = flds2[0]
+        if len(flds2) > 1
+            el2 = flds2[1]
+        if len(flds2) > 2
+            az2 = flds2[2]
+        if len(flds2) > 3
+            snr2 = flds2[3]
+        var is_u = contains("|" & g_sat_used & "|", "|" & prn2 & "|")
+        var col_x = CONT_X + 2
+        var row_y = ty + 2 + (ri % 6)
+        if ri >= 6
+            col_x = CONT_X + 40
+        if is_u
+            text_color_rgb(80, 240, 110)
+        else
+            text_color_rgb(190, 225, 195)
+        text_at(col_x,      row_y, prn2)
+        text_at(col_x + 6,  row_y, el2)
+        text_at(col_x + 13, row_y, az2)
+        text_at(col_x + 20, row_y, snr2)
+        if is_u
+            text_color_rgb(0, 220, 100)
+            text_at(col_x + 27, row_y, "YES")
+        else
+            text_color_rgb(70, 95, 75)
+            text_at(col_x + 27, row_y, "---")
+
+    text_color("default")
+
+rem: Draw the Voyage Data tab content.
+task DrawVoyage()
+    text_color_rgb(30, 50, 90)
+    draw_box(CONT_X, CONT_Y, CONT_W, CONT_H, "VOYAGE DATA")
+
+    rem: UTC clock
+    text_color_rgb(100, 155, 220)
+    text_at(CONT_X + 2, CONT_Y + 1, "UTC")
+    text_color_rgb(255, 225, 70)
+    text_bold()
+    text_at(CONT_X + 8, CONT_Y + 1, g_utc_time)
+    text_reset()
+    text_color_rgb(200, 175, 55)
+    text_at(CONT_X + 28, CONT_Y + 1, g_utc_date)
+    text_color_rgb(120, 175, 240)
+    text_at(CONT_X + 50, CONT_Y + 1, "POS SRC: " & g_pos_source)
+    text_color_rgb(38, 72, 130)
+    draw_line(CONT_X + 1, CONT_Y + 2, CONT_W - 2, "h")
+
+    rem: Water speed vs SOG
+    text_color_rgb(100, 155, 220)
+    text_at(CONT_X + 2,  CONT_Y + 3, "WATER SPD (STW):")
+    text_color_rgb(80, 210, 210)
+    text_at(CONT_X + 20, CONT_Y + 3, g_stw_str & " kts")
+    text_color_rgb(100, 155, 220)
+    text_at(CONT_X + 36, CONT_Y + 3, "SOG:")
+    text_color_rgb(100, 230, 130)
+    text_at(CONT_X + 42, CONT_Y + 3, g_sog_str & " kts")
+    text_color_rgb(38, 72, 130)
+    draw_line(CONT_X + 1, CONT_Y + 4, CONT_W - 2, "h")
+
+    rem: Cross-track error
+    text_color_rgb(100, 155, 220)
+    text_at(CONT_X + 2, CONT_Y + 5, "CROSS-TRACK ERROR:")
+    text_color_rgb(255, 155, 55)
+    text_at(CONT_X + 22, CONT_Y + 5, g_xte_mag & " nm")
+    if g_xte_dir == "L"
+        text_color_rgb(255, 200, 60)
+        text_at(CONT_X + 36, CONT_Y + 5, "STEER RIGHT")
+    else
+        if g_xte_dir == "R"
+            text_color_rgb(255, 200, 60)
+            text_at(CONT_X + 36, CONT_Y + 5, "STEER LEFT")
+    text_color_rgb(38, 72, 130)
+    draw_line(CONT_X + 1, CONT_Y + 6, CONT_W - 2, "h")
+
+    rem: Waypoint navigation (RMB)
+    text_color_rgb(100, 155, 220)
+    text_at(CONT_X + 2, CONT_Y + 7, "WAYPOINT NAV:")
+    text_color_rgb(155, 195, 235)
+    text_at(CONT_X + 2,  CONT_Y + 8, "DEST:")
+    text_color_rgb(255, 225, 70)
+    text_at(CONT_X + 9,  CONT_Y + 8, g_nav_dest)
+    text_color_rgb(155, 195, 235)
+    text_at(CONT_X + 24, CONT_Y + 8, "BRG:")
+    text_color_rgb(255, 225, 70)
+    text_at(CONT_X + 30, CONT_Y + 8, g_nav_bearing & "°")
+    text_color_rgb(155, 195, 235)
+    text_at(CONT_X + 44, CONT_Y + 8, "DIST:")
+    text_color_rgb(255, 225, 70)
+    text_at(CONT_X + 51, CONT_Y + 8, g_nav_dist & " nm")
+    text_color_rgb(155, 195, 235)
+    text_at(CONT_X + 64, CONT_Y + 8, "VMG:")
+    text_color_rgb(255, 225, 70)
+    text_at(CONT_X + 70, CONT_Y + 8, g_nav_vmg & " kts")
+    if g_nav_arrived == "A"
+        text_color_rgb(0, 255, 120)
+        text_at(CONT_X + 90, CONT_Y + 8, "ARRIVED")
+    text_color_rgb(155, 195, 235)
+    text_at(CONT_X + 2,  CONT_Y + 9, "ROUTE:")
+    text_color_rgb(200, 200, 200)
+    text_at(CONT_X + 10, CONT_Y + 9, g_bod_origin & " -> " & g_bod_dest)
+    text_color_rgb(175, 195, 215)
+    text_at(CONT_X + 40, CONT_Y + 9, "TRUE: " & g_bod_bearing_t & "°")
+    text_at(CONT_X + 60, CONT_Y + 9, "MAG: " & g_bod_bearing_m & "°")
+    text_color_rgb(38, 72, 130)
+    draw_line(CONT_X + 1, CONT_Y + 10, CONT_W - 2, "h")
+
+    rem: Autopilot (APB)
+    text_color_rgb(100, 155, 220)
+    text_at(CONT_X + 2, CONT_Y + 11, "AUTOPILOT (APB):")
+    text_color_rgb(155, 195, 235)
+    text_at(CONT_X + 2,  CONT_Y + 12, "STEER TO:")
+    text_color_rgb(255, 175, 35)
+    text_bold()
+    text_at(CONT_X + 13, CONT_Y + 12, g_apb_hts & "°")
+    text_reset()
+    text_color_rgb(155, 195, 235)
+    text_at(CONT_X + 28, CONT_Y + 12, "DEST:")
+    text_color_rgb(255, 225, 70)
+    text_at(CONT_X + 35, CONT_Y + 12, g_apb_dest)
+    text_color_rgb(155, 195, 235)
+    text_at(CONT_X + 54, CONT_Y + 12, "XTE:")
+    text_color_rgb(255, 155, 55)
+    text_at(CONT_X + 60, CONT_Y + 12, g_apb_xte & " nm " & g_apb_xte_dir)
+
+    if g_utc_time == "--:--:--" and g_nav_dest == "---" and g_apb_hts == "---"
+        text_color_rgb(50, 80, 110)
+        text_at(CONT_X + 15, CONT_Y + 15, "No voyage data received yet — awaiting ZDA / RMB / APB sentences")
+
+    text_color("default")
+
+rem: Draw the AIS targets section.
+task DrawAIS()
+    text_color_rgb(255, 90, 90)
+    draw_box(AIS_X, AIS_Y, AIS_W, AIS_H, "AIS TARGETS")
+
+    rem: Column headers
+    var hy = AIS_Y + 1
+    text_color_rgb(180, 80, 80)
+    text_at(AIS_X + 2,  hy, "MMSI")
+    text_at(AIS_X + 14, hy, "SOG")
+    text_at(AIS_X + 24, hy, "LAT")
+    text_at(AIS_X + 37, hy, "LON")
+    text_at(AIS_X + 51, hy, "COG")
+    text_at(AIS_X + 60, hy, "HDG")
+    text_at(AIS_X + 69, hy, "STATUS")
+    text_color_rgb(80, 30, 30)
+    draw_line(AIS_X + 1, AIS_Y + 2, AIS_W - 2, "h")
+
+    var max_rows = AIS_H - 4
+    if len(g_ais_targets) == 0
+        text_color_rgb(80, 50, 50)
+        text_at(AIS_X + 35, AIS_Y + 4, "No AIS targets received")
+    else
+        loop ti from 0 to len(g_ais_targets) - 1
+            if ti >= max_rows
+                exit
+            var tgt  = g_ais_targets[ti]
+            var row  = AIS_Y + 3 + ti
+            text_color_rgb(255, 90, 90)
+            text_at(AIS_X + 2,  row, tgt["mmsi"])
+            text_color_rgb(255, 140, 100)
+            text_at(AIS_X + 14, row, tgt["sog"] & " kts")
+            text_color_rgb(255, 90, 90)
+            text_at(AIS_X + 24, row, tgt["lat"])
+            text_at(AIS_X + 37, row, tgt["lon"])
+            text_color_rgb(255, 170, 90)
+            text_at(AIS_X + 51, row, tgt["cog"] & "°")
+            text_at(AIS_X + 60, row, tgt["hdg"] & "°")
+            text_color_rgb(200, 130, 80)
+            text_at(AIS_X + 69, row, tgt["status"])
+
+    text_color("default")
+
+rem: Draw the status bar with key hints.
+task DrawStatusBar()
+    text_color_rgb(50, 80, 130)
+    draw_line(1, STAT_Y - 1, 120, "h")
+    text_color_rgb(100, 120, 160)
+    text_at(2, STAT_Y, "[s/l] Connect  [p] Pause  [c] Clear  [1/2/3] Tabs  [q] Quit")
+    text_color("default")
+
+rem: Full screen redraw — called by the timer callback every 200 ms.
+rem: Does NOT call clear() — all drawing uses absolute text_at positions so each
+rem: frame overwrites the previous one in place with no blank-screen flash.
+rem: The tab content area is the only region that changes shape between frames;
+rem: we erase it with spaces only when the active tab changes.
+task DrawDisplay()
+    if g_log_tab != g_prev_tab
+        loop r from CONT_Y + 1 to CONT_Y + CONT_H - 2
+            text_at(CONT_X + 1, r, BLANK_LINE)
+        g_prev_tab = g_log_tab
+    DrawTitle()
+    DrawPosition()
+    DrawSpeed()
+    DrawDepthTemp()
+    DrawHeading()
+    DrawWind()
+    DrawTabSelector()
+    choose g_log_tab
+        choice 0
+            DrawNmeaLog()
+        choice 1
+            DrawSatellites()
+        default
+            DrawVoyage()
+    DrawAIS()
+    DrawStatusBar()
+
+rem: ── Data polling ─────────────────────────────────────────────────────────
+
+rem: Read and process one batch of data from whichever source is active.
+rem: Called every refresh cycle inside OnTick.
+task ReadData()
+    if g_mode == "SIM"
+        rem: Tick the simulator and process any emitted sentence
+        var sentence = SimTick()
+        if not is_null(sentence)
+            var result = ParseSentence(sentence)
+            ApplyResult(result, sentence)
+        rem: Tick AIS simulator separately
+        var ais_str = SimGetAIS()
+        if not is_null(ais_str)
+            ApplySimAIS(ais_str)
+    else
+        if not is_null(g_port)
+            rem: Drain up to 64 lines from the serial port in one cycle
+            var line_count = 0
+            loop line_count < 64
+                var line = serial_read_line(g_port)
+                if is_null(line) or len(line) == 0
+                    exit
+                var result = ParseSentence(line)
+                ApplyResult(result, line)
+                line_count = line_count + 1
+
+rem: ── Timer callback ────────────────────────────────────────────────────────
+
+rem: Fired by the 200 ms repeating timer.
+rem: Reads data and redraws the display.
+task OnTick()
+    if not g_running
+        stop_events()
+        deliver null
+    if g_configuring
+        deliver null
+    if not g_paused
+        ReadData()
+    DrawDisplay()
+
+rem: ── Startup / settings helpers ───────────────────────────────────────────
+
+rem: Show a serial-port configuration dialog, then attempt to connect.
+rem: Temporarily suspends the timer and drops to cooked mode for text input.
+task ConfigureSerial()
+    g_configuring = true
+    set_cooked_mode()
+    cursor_show()
+    clear()
+    display("┌─ Serial Port Configuration ──────────────────────────────────────────┐")
+    display(v"│  Current port: {g_port_name}   baud: {g_baud}")
+    display("│")
+    display("│  Common ports:  /dev/ttyUSB0   /dev/ttyACM0   /dev/ttyS0")
+    display("│  Common baud:   4800   9600   38400   115200")
+    display("│")
+    display("│  Press ENTER to keep the current value shown in [ ].")
+    display("│")
+    var np = get(v"│  Port [{g_port_name}]: ")
+    np = trim(np)
+    if len(np) > 0
+        g_port_name = np
+    var nb = get(v"│  Baud [{g_baud}]: ")
+    nb = trim(nb)
+    if len(nb) > 0
+        g_baud = to_int(nb)
+    display("│")
+    display("│  Connecting...")
+    var ok = ConnectSerial(g_port_name, g_baud)
+    if ok
+        display(v"│  Connected to {g_port_name} at {g_baud} baud.")
+    else
+        display(v"│  Could not open {g_port_name} — returning to SIM mode.")
+        SimStart()
+        g_mode = "SIM"
+    display("│")
+    display("└──────────────────────────────────────────────────────────────────────┘")
+    cursor_hide()
+    set_raw_mode()
+    clear()
+    g_configuring = false
+
+rem: Open a serial port and switch to LIVE mode.
+task ConnectSerial using (port_name, baud)
+    SimStop()
+    attempt
+        g_port = serial_open(port_name, baud)
+        serial_set_timeout(g_port, 0)   rem: non-blocking reads
+        g_port_name = port_name
+        g_baud      = baud
+        g_mode      = "LIVE"
+        deliver true
+    handle
+        g_port = null
+        deliver false
+
+rem: Close the serial port and return to stand-by.
+task DisconnectSerial()
+    if not is_null(g_port)
+        serial_close(g_port)
+        g_port = null
+    g_mode = "LIVE"
+
+rem: ── Main ─────────────────────────────────────────────────────────────────
+
+task Main()
+    rem: ── Parse command-line arguments ──────────────────────────────────────
+    rem: Supported flags:  --port <device>   --baud <rate>   --live
+    var want_live = false
+    var cli = []
+    rem: (PLAIN does not expose process args; serial port is set via 's' key)
+
+    rem: ── Terminal size check ─────────────────────────────────────────────
+    var sz = screen_size()
+    if sz[0] < 120 or sz[1] < 42
+        display("PLAIN Instruments requires a terminal at least 120 × 42 characters.")
+        display(v"Current size: {sz[0]} × {sz[1]}")
+        display("Please resize your terminal and try again.")
+        deliver null
+
+    rem: ── Setup ──────────────────────────────────────────────────────────
+    screen_alt()
+    cursor_hide()
+
+    rem: Start in SIM mode by default
+    SimStart()
+
+    rem: Launch the 200 ms refresh timer
+    var tick_timer = create_timer(200, OnTick)
+    start_timer(tick_timer)
+
+    rem: Switch stdin to raw mode so each keypress is received immediately
+    set_raw_mode()
+
+    rem: ── Key input loop (main thread) ───────────────────────────────────
+    rem: OnTick runs concurrently in its goroutine; this loop handles keys.
+    attempt
+        loop g_running
+            var key = get_key()
+
+            if key == "q" or key == "ESCAPE"
+                g_running = false
+            else
+                choose key
+                    choice "p"
+                        if g_paused
+                            g_paused = false
+                        else
+                            g_paused = true
+                    choice "c"
+                        ClearAllData()
+                        if g_mode == "SIM"
+                            SimStart()
+                    choice "1"
+                        g_log_tab = 0
+                    choice "2"
+                        g_log_tab = 1
+                    choice "3"
+                        g_log_tab = 2
+                    choice "s"
+                        if g_mode == "SIM"
+                            ConfigureSerial()
+                        else
+                            DisconnectSerial()
+                            ClearAllData()
+                            SimStart()
+                            g_mode = "SIM"
+                    choice "l"
+                        ConfigureSerial()
+
+        cancel_timer(tick_timer)
+
+    handle
+        cancel_timer(tick_timer)
+
+    rem: ── Cleanup ─────────────────────────────────────────────────────────
+    set_cooked_mode()
+    cursor_show()
+    screen_main()
+    if not is_null(g_port)
+        serial_close(g_port)
+    display("")
+    display("PLAIN Instruments closed.")
+    display("")
