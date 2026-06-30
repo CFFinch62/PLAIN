@@ -288,6 +288,19 @@ class PlainToPythonConverter:
     def _convert_assign(self, stmt: AssignStatement, prefix: str) -> str:
         """Convert assignment statement."""
         target = self._convert_expr(stmt.name)
+        # Compound assignment: emit x += val instead of x = x + val
+        if stmt.compound_op:
+            py_op = {"+" : "+=", "-": "-=", "*": "*=", "/": "/=", "%": "%="}.get(
+                stmt.compound_op, f"{stmt.compound_op}="
+            )
+            # The value was desugared to InfixExpression(target, op, rhs) by the parser.
+            # Extract the rhs operand for a clean compound assignment.
+            from plain_converter.converter.plain_parser import InfixExpression
+            if isinstance(stmt.value, InfixExpression) and stmt.value.right is not None:
+                rhs = self._convert_expr(stmt.value.right)
+            else:
+                rhs = self._convert_expr(stmt.value)
+            return f"{prefix}{target} {py_op} {rhs}"
         val = self._convert_expr(stmt.value)
         return f"{prefix}{target} = {val}"
 

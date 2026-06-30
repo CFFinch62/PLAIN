@@ -362,6 +362,14 @@ class PlainIDEMainWindow(QMainWindow):
         convert_action.triggered.connect(self.convert_current_file)
         tools_menu.addAction(convert_action)
 
+        tools_menu.addSeparator()
+
+        format_action = QAction("Format Code", self)
+        format_action.setShortcut("Ctrl+Shift+F")
+        format_action.setToolTip("Normalize indentation, convert tabs to spaces, and trim whitespace")
+        format_action.triggered.connect(self.format_current_file)
+        tools_menu.addAction(format_action)
+
         # Help menu
         help_menu = menubar.addMenu("&Help")
 
@@ -1125,6 +1133,62 @@ class PlainIDEMainWindow(QMainWindow):
 
         except Exception as exc:
             QMessageBox.critical(self, "Conversion Error", str(exc))
+
+    def format_current_file(self):
+        """Format the current file: normalize indentation, tabs→spaces, trim whitespace."""
+        editor = self.tab_widget.currentWidget()
+        if not isinstance(editor, CodeEditor):
+            QMessageBox.warning(self, "No File", "No file is open to format.")
+            return
+
+        source = editor.toPlainText()
+        if not source.strip():
+            self.statusbar.showMessage("Nothing to format", 3000)
+            return
+
+        # Get indent size from settings
+        indent_size = 4
+        if self.settings and self.settings.settings.editor:
+            indent_size = self.settings.settings.editor.tab_width
+
+        try:
+            from plain_ide.app.formatter import format_plain_code
+            formatted = format_plain_code(source, indent_size=indent_size)
+
+            if formatted == source:
+                self.statusbar.showMessage("Code is already formatted", 3000)
+                return
+
+            # Preserve cursor position as best we can
+            cursor = editor.textCursor()
+            cursor_line = cursor.blockNumber()
+            cursor_col = cursor.columnNumber()
+
+            # Replace content in a single undo group
+            cursor.beginEditBlock()
+            # Select all text
+            cursor.movePosition(cursor.MoveOperation.Start)
+            cursor.movePosition(cursor.MoveOperation.End, cursor.MoveMode.KeepAnchor)
+            cursor.insertText(formatted)
+            cursor.endEditBlock()
+
+            # Try to restore cursor position
+            block = editor.document().findBlockByLineNumber(
+                min(cursor_line, editor.document().blockCount() - 1)
+            )
+            restored = editor.textCursor()
+            restored.setPosition(block.position())
+            restored.movePosition(
+                restored.MoveOperation.Right,
+                restored.MoveMode.MoveAnchor,
+                min(cursor_col, block.length() - 1)
+            )
+            editor.setTextCursor(restored)
+
+            self.statusbar.showMessage("Code formatted ✓", 3000)
+
+        except Exception as exc:
+            QMessageBox.critical(self, "Format Error", str(exc))
 
     def _show_quick_reference(self):
         """Show the PLAIN quick reference help viewer"""

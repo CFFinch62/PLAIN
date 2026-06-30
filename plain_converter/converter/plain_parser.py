@@ -118,6 +118,11 @@ class TokenType(Enum):
 
     # Assignment
     ASSIGN = auto()   # =
+    PLUS_ASSIGN = auto()    # +=
+    MINUS_ASSIGN = auto()   # -=
+    STAR_ASSIGN = auto()    # *=
+    SLASH_ASSIGN = auto()   # /=
+    MOD_ASSIGN = auto()     # %=
 
     # Delimiters
     LPAREN = auto()   # (
@@ -277,6 +282,7 @@ class FxdStatement(Statement):
 class AssignStatement(Statement):
     name: Expression | None = None  # can be identifier or index expr
     value: Expression | None = None
+    compound_op: str | None = None  # '+', '-', '*', '/', '%' for compound assignments
 
 @dataclass
 class ExpressionStatement(Statement):
@@ -413,6 +419,9 @@ class Lexer:
         for line_num, raw_line in enumerate(self.lines, start=1):
             last_line = line_num
 
+            # Normalize tabs to 4 spaces (matches Go interpreter behavior)
+            raw_line = raw_line.replace('\t', '    ')
+
             # Skip completely empty lines
             if raw_line.strip() == "":
                 continue
@@ -535,6 +544,27 @@ class Lexer:
                     continue
                 if two == ">=":
                     self.tokens.append(Token(TokenType.GT_EQ, ">=", line_num, col))
+                    i += 2
+                    continue
+                # Compound assignment operators
+                if two == "+=":
+                    self.tokens.append(Token(TokenType.PLUS_ASSIGN, "+=", line_num, col))
+                    i += 2
+                    continue
+                if two == "-=":
+                    self.tokens.append(Token(TokenType.MINUS_ASSIGN, "-=", line_num, col))
+                    i += 2
+                    continue
+                if two == "*=":
+                    self.tokens.append(Token(TokenType.STAR_ASSIGN, "*=", line_num, col))
+                    i += 2
+                    continue
+                if two == "/=":
+                    self.tokens.append(Token(TokenType.SLASH_ASSIGN, "/=", line_num, col))
+                    i += 2
+                    continue
+                if two == "%=":
+                    self.tokens.append(Token(TokenType.MOD_ASSIGN, "%=", line_num, col))
                     i += 2
                     continue
 
@@ -709,10 +739,17 @@ class Parser:
         program = Program()
         self.skip_newlines()
         while self.cur.type != TokenType.EOF:
+            start_pos = self.pos
             stmt = self.parse_statement()
             if stmt is not None:
                 program.statements.append(stmt)
             self.skip_newlines()
+            if self.pos == start_pos:
+                # Safety: skip any token that no rule consumed to prevent infinite loops
+                self.errors.append(
+                    f"Line {self.cur.line}: skipping unexpected {self.cur.type.name} ('{self.cur.literal}')"
+                )
+                self.advance()
         return program
 
     # ---- Statement Parsing ----
@@ -767,6 +804,7 @@ class Parser:
             self.advance()
             return None
         if tt == TokenType.DEDENT:
+            self.advance()  # consume the DEDENT so we don't loop forever
             return None
 
         # Could be assignment or expression statement
@@ -1180,6 +1218,15 @@ class Parser:
             self.advance()
         return block
 
+    # Map compound assignment token types to their arithmetic operator
+    COMPOUND_ASSIGN_OPS: dict[TokenType, str] = {
+        TokenType.PLUS_ASSIGN: "+",
+        TokenType.MINUS_ASSIGN: "-",
+        TokenType.STAR_ASSIGN: "*",
+        TokenType.SLASH_ASSIGN: "/",
+        TokenType.MOD_ASSIGN: "%",
+    }
+
     def parse_expression_or_assignment(self) -> Statement:
         """Parse an expression statement or assignment."""
         expr = self.parse_expression(Precedence.LOWEST.value)
@@ -1189,6 +1236,15 @@ class Parser:
             value = self.parse_expression(Precedence.LOWEST.value)
             self.skip_newlines()
             return AssignStatement(name=expr, value=value)
+        # Check for compound assignment: x += expr, x -= expr, etc.
+        if self.cur.type in self.COMPOUND_ASSIGN_OPS:
+            op = self.COMPOUND_ASSIGN_OPS[self.cur.type]
+            self.advance()
+            rhs = self.parse_expression(Precedence.LOWEST.value)
+            # Desugar: x += expr → x = x + expr (stored with compound_op for converters)
+            value = InfixExpression(left=expr, operator=op, right=rhs)
+            self.skip_newlines()
+            return AssignStatement(name=expr, value=value, compound_op=op)
         self.skip_newlines()
         return ExpressionStatement(expression=expr)
 
