@@ -122,6 +122,14 @@ python3 -m plain_converter --gui
 
 The converter handles variables, functions/tasks, control flow, error handling, records/dataclasses, standard library mapping, type annotations, imports/modules, and comments. It is also integrated into the IDE via **Tools → Convert File** (`Ctrl+Shift+C`).
 
+## 🚢 Real-World Example Applications
+
+PLAIN includes example applications that demonstrate real-world capability beyond teaching exercises. The NMEA 0183 Marine Instruments app parses live serial data from marine electronics and displays navigation instruments including compass heading, GPS position, speed, and wind data.
+
+![NMEA 0183 Marine Instruments — Built with PLAIN](images/Plain_Instruments_Screenshot.png)
+
+---
+
 ## Design Philosophy
 
 1. **Readability First** - Code should be easily understandable at a glance
