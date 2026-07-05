@@ -250,6 +250,28 @@ go run ./cmd/plain-ide/
 - **Session persistence** — remembers open files and layout
 - **Bookmarks** for quick navigation within files
 - **Project root configuration** — set a base directory for module imports (see [Configuring Project Root](#configuring-project-root-for-modules))
+- **Nested scope coloring** — BlueJ-style colored backgrounds showing block nesting at a glance (see [Nested Scope Coloring](#nested-scope-coloring))
+
+### Nested Scope Coloring
+
+The editor can paint nested, colored backgrounds behind each block of code — similar to BlueJ — so you can see where a `task`, `loop`, `if`, `attempt`, etc. body starts and ends just by looking at the background, instead of only inferring it from indentation. Each level of nesting gets its own color, drawn behind the syntax-highlighted text.
+
+Scope ranges are recomputed automatically a moment after you stop typing, so the boxes stay accurate as you edit — even while a block is mid-edit and not yet valid syntax.
+
+**To toggle it on or off:**
+
+- **View** menu → **Show Nested Scope Coloring**, or
+- **Settings → Preferences** (`Ctrl+,`) → **Editor** tab → **"Show nested scope boxes"**
+
+Both controls stay in sync with each other.
+
+**To customize the colors:**
+
+1. Open **Settings → Preferences** (`Ctrl+,`) → **Editor** tab
+2. Under **Nested Scope Coloring**, click a depth's color swatch to open a color picker and choose a custom color for that nesting level
+3. Click **Reset to Theme Defaults** at any time to go back to the colors defined by your current UI theme
+
+If you never customize the colors, they automatically follow whichever UI theme you have selected (**View → Theme → UI Theme**), so switching themes keeps the scope colors looking coherent with the rest of the IDE.
 
 ### Configuring Project Root for Modules
 
@@ -1228,4 +1250,4 @@ The converter handles the most common Python constructs. Complex or advanced fea
 - **[STDLIB.md](STDLIB.md)** — Every built-in function documented
 - **[CURRICULUM.md](CURRICULUM.md)** — Educator's guide for teaching PLAIN
 
-Happy coding with PLAIN! 🎉
+Happy coding with PLAIN! 🎉sc

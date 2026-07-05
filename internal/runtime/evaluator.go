@@ -866,7 +866,7 @@ func (e *Evaluator) evalAbortStatement(stmt *ast.AbortStatement, env *Environmen
 		return msg
 	}
 
-	return NewError(msg.String())
+	return NewError("%s", msg.String())
 }
 
 // evalAttemptStatement handles attempt/handle/ensure

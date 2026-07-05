@@ -7,6 +7,13 @@ Based on the Steps IDE architecture
 import sys
 import os
 
+# Allow running this file directly (`python3 main.py` from inside this
+# folder) by putting this package's parent directory on sys.path, so the
+# `from plain_ide...` imports below can resolve. Without this, "plain_ide"
+# is only importable when Python is started from one directory up (e.g.
+# `python3 -m plain_ide.main`).
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIcon
