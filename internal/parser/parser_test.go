@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"plain/internal/ast"
 	"plain/internal/lexer"
 	"testing"
 )
@@ -286,6 +287,99 @@ ensure
 
 			if len(program.Statements) != 1 {
 				t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+			}
+		})
+	}
+}
+
+func TestHandleClauseErrorNameVsPattern(t *testing.T) {
+	// Regression test: a bare identifier after `handle` (no `as TYPE`)
+	// must become an ErrorName binding, not an inert Pattern the
+	// evaluator never checks -- see
+	// dev-docs/defects_found_during_tutorial_creation.md Defect 3, and
+	// internal/runtime/evaluator.go's evalAttemptStatement. A string
+	// literal pattern must still become a real Pattern, unaffected.
+	tests := []struct {
+		name        string
+		input       string
+		wantErrName string // "" if ErrorName should be nil
+		wantPattern bool   // true if Pattern should be non-nil
+	}{
+		{
+			name: "bare identifier binds ErrorName",
+			input: `attempt
+    abort "x"
+handle err
+    display(err)`,
+			wantErrName: "err",
+			wantPattern: false,
+		},
+		{
+			name: "identifier with 'as string' binds ErrorName",
+			input: `attempt
+    abort "x"
+handle err as string
+    display(err)`,
+			wantErrName: "err",
+			wantPattern: false,
+		},
+		{
+			name: "string literal stays a Pattern",
+			input: `attempt
+    abort "x"
+handle "not found"
+    display("missing")`,
+			wantErrName: "",
+			wantPattern: true,
+		},
+		{
+			name: "bare handle with no expression is a catch-all",
+			input: `attempt
+    abort "x"
+handle
+    display("caught")`,
+			wantErrName: "",
+			wantPattern: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := lexer.New(tt.input)
+			p := New(l)
+			program := p.ParseProgram()
+			checkParserErrors(t, p)
+
+			if len(program.Statements) != 1 {
+				t.Fatalf("expected 1 statement, got=%d", len(program.Statements))
+			}
+			attempt, ok := program.Statements[0].(*ast.AttemptStatement)
+			if !ok {
+				t.Fatalf("expected *ast.AttemptStatement, got %T", program.Statements[0])
+			}
+			if len(attempt.Handlers) != 1 {
+				t.Fatalf("expected 1 handler, got=%d", len(attempt.Handlers))
+			}
+			handler := attempt.Handlers[0]
+
+			if tt.wantErrName == "" {
+				if handler.ErrorName != nil {
+					t.Errorf("ErrorName = %q, want nil", handler.ErrorName.Value)
+				}
+			} else {
+				if handler.ErrorName == nil {
+					t.Fatalf("ErrorName = nil, want %q", tt.wantErrName)
+				}
+				if handler.ErrorName.Value != tt.wantErrName {
+					t.Errorf("ErrorName = %q, want %q", handler.ErrorName.Value, tt.wantErrName)
+				}
+			}
+
+			if tt.wantPattern && handler.Pattern == nil {
+				t.Errorf("Pattern = nil, want non-nil")
+			}
+			if !tt.wantPattern && handler.Pattern != nil {
+				t.Errorf("Pattern = %v, want nil", handler.Pattern)
 			}
 		})
 	}

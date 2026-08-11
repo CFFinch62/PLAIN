@@ -280,6 +280,22 @@ func (p *Parser) parseAttemptStatement() ast.Statement {
 					p.addError("Expected type name after 'as' in handle clause")
 					return nil
 				}
+			} else if ident, ok := handler.Pattern.(*ast.Identifier); ok {
+				// A bare identifier with no 'as TYPE' -- LANGUAGE-REFERENCE.md
+				// §10.2 only documents string-literal patterns and a bare
+				// (no expression at all) catch-all handler; a bare
+				// identifier has no defined pattern-matching semantics of
+				// its own (the evaluator has nothing meaningful to compare
+				// it against). Treat it as binding the error message
+				// directly, the same as 'as string' already does
+				// explicitly, so `handle err` and `handle err as string`
+				// behave identically. Previously `handle err` (no 'as')
+				// left this as an inert Pattern the evaluator never
+				// checked, so `err` stayed undefined inside the handler --
+				// see dev-docs/defects_found_during_tutorial_creation.md
+				// Defect 3.
+				handler.ErrorName = ident
+				handler.Pattern = nil
 			}
 		}
 

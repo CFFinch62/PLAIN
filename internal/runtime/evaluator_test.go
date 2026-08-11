@@ -667,6 +667,151 @@ ensure
 	}
 }
 
+func TestHandleErrBareBindsErrorMessage(t *testing.T) {
+	// Regression test: `handle err` (no `as TYPE`) previously left the
+	// identifier as an inert Pattern the evaluator never checked, so
+	// `err` stayed undefined inside the handler body. See
+	// dev-docs/defects_found_during_tutorial_creation.md Defect 3.
+	input := `var caught = ""
+
+attempt
+    abort "something bad"
+handle err
+    caught = err`
+
+	eval := New()
+	env := NewEnvironment()
+	l := lexer.New(input)
+	p := parser.New(l)
+	program := p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		t.Fatalf("parser errors: %v", p.Errors())
+	}
+
+	eval.Eval(program, env)
+
+	val, ok := env.Get("caught")
+	if !ok {
+		t.Fatalf("variable 'caught' not defined")
+	}
+	strVal, ok := val.(*StringValue)
+	if !ok {
+		t.Fatalf("expected string, got %T", val)
+	}
+	if strVal.Val != "something bad" {
+		t.Errorf("caught = %q, want %q", strVal.Val, "something bad")
+	}
+}
+
+func TestHandlePatternMatchingRunsFirstMatchingClauseInOrder(t *testing.T) {
+	// Regression test: the evaluator previously always ran
+	// stmt.Handlers[0] unconditionally, regardless of whether its
+	// pattern actually matched the error message -- multi-clause
+	// pattern matching (LANGUAGE-REFERENCE.md §10.2) was entirely
+	// unimplemented despite being documented and grammar-legal.
+	input := `var which = ""
+
+attempt
+    abort "permission denied"
+handle "file not found"
+    which = "file"
+handle "permission denied"
+    which = "permission"
+handle
+    which = "other"`
+
+	eval := New()
+	env := NewEnvironment()
+	l := lexer.New(input)
+	p := parser.New(l)
+	program := p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		t.Fatalf("parser errors: %v", p.Errors())
+	}
+
+	eval.Eval(program, env)
+
+	val, ok := env.Get("which")
+	if !ok {
+		t.Fatalf("variable 'which' not defined")
+	}
+	strVal, ok := val.(*StringValue)
+	if !ok {
+		t.Fatalf("expected string, got %T", val)
+	}
+	if strVal.Val != "permission" {
+		t.Errorf("which = %q, want %q (the matching clause, not the first one)", strVal.Val, "permission")
+	}
+}
+
+func TestHandleCatchAllRunsWhenNoEarlierPatternMatches(t *testing.T) {
+	input := `var which = ""
+
+attempt
+    abort "network timeout"
+handle "file not found"
+    which = "file"
+handle "permission denied"
+    which = "permission"
+handle
+    which = "other"`
+
+	eval := New()
+	env := NewEnvironment()
+	l := lexer.New(input)
+	p := parser.New(l)
+	program := p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		t.Fatalf("parser errors: %v", p.Errors())
+	}
+
+	eval.Eval(program, env)
+
+	val, ok := env.Get("which")
+	if !ok {
+		t.Fatalf("variable 'which' not defined")
+	}
+	strVal, ok := val.(*StringValue)
+	if !ok {
+		t.Fatalf("expected string, got %T", val)
+	}
+	if strVal.Val != "other" {
+		t.Errorf("which = %q, want %q (the catch-all)", strVal.Val, "other")
+	}
+}
+
+func TestHandleUnmatchedPatternPropagatesTheError(t *testing.T) {
+	// Regression test: an attempt block whose only handlers are
+	// specific patterns that don't match the actual error must not
+	// silently swallow it -- previously the final "don't return error
+	// if it was handled" check was unconditional, so even a fully
+	// unmatched error (or an attempt/ensure with zero handle clauses at
+	// all) vanished into NULL.
+	input := `attempt
+    abort "network timeout"
+handle "file not found"
+    var x = 1`
+
+	eval := New()
+	env := NewEnvironment()
+	l := lexer.New(input)
+	p := parser.New(l)
+	program := p.ParseProgram()
+
+	if len(p.Errors()) > 0 {
+		t.Fatalf("parser errors: %v", p.Errors())
+	}
+
+	result := eval.Eval(program, env)
+
+	if !IsError(result) {
+		t.Fatalf("expected the unmatched error to propagate, got %T (%v)", result, result)
+	}
+}
+
 func TestAbortStatement(t *testing.T) {
 	input := `task MightFail using (shouldFail)
     if shouldFail

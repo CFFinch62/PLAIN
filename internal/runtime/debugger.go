@@ -253,7 +253,7 @@ func collectAllVariables(env *Environment, vars map[string]interface{}) {
 	}
 
 	// Then add/override with current scope variables
-	for name, val := range env.store {
+	for name, val := range env.snapshot() {
 		vars[name] = map[string]interface{}{
 			"value": val.String(),
 			"type":  getTypeName(val),
@@ -1002,7 +1002,7 @@ func (d *Debugger) GetAllVariables() map[string]map[string]interface{} {
 
 	// Get local variables
 	localVars := make(map[string]interface{})
-	for name, val := range d.env.store {
+	for name, val := range d.env.snapshot() {
 		localVars[name] = map[string]interface{}{
 			"value": val.String(),
 			"type":  getTypeName(val),
@@ -1013,7 +1013,7 @@ func (d *Debugger) GetAllVariables() map[string]map[string]interface{} {
 	// Get global variables (from parent scopes)
 	if d.env.parent != nil {
 		globalVars := make(map[string]interface{})
-		collectOuterVars(d.env.parent, globalVars, d.env.store)
+		collectOuterVars(d.env.parent, globalVars, d.env.snapshot())
 		if len(globalVars) > 0 {
 			result["Global"] = globalVars
 		}
@@ -1026,7 +1026,7 @@ func collectOuterVars(env *Environment, vars map[string]interface{}, exclude map
 	if env == nil {
 		return
 	}
-	for name, val := range env.store {
+	for name, val := range env.snapshot() {
 		if _, exists := exclude[name]; !exists {
 			if _, alreadyAdded := vars[name]; !alreadyAdded {
 				vars[name] = map[string]interface{}{

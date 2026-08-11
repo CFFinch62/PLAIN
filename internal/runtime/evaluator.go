@@ -8,6 +8,7 @@ import (
 	"plain/internal/lexer"
 	"plain/internal/parser"
 	"plain/internal/token"
+	"strings"
 )
 
 // Evaluator executes PLAIN programs
@@ -873,15 +874,46 @@ func (e *Evaluator) evalAbortStatement(stmt *ast.AbortStatement, env *Environmen
 func (e *Evaluator) evalAttemptStatement(stmt *ast.AttemptStatement, env *Environment) Value {
 	result := e.evalBlockStatement(stmt.Body, NewEnclosedEnvironment(env))
 
-	// If error occurred, try handlers
+	// If error occurred, find the first handler whose pattern actually
+	// matches, in declared order -- see LANGUAGE-REFERENCE.md §10.2
+	// (Pattern Matching Handlers). A handler with a string Pattern
+	// matches if the error message contains it; a bare `handle` (no
+	// Pattern, no ErrorName) is a catch-all and always matches;
+	// `handle err` (an ErrorName binding, no Pattern -- see
+	// parseAttemptStatement in internal/parser/statements.go) also
+	// always matches, since there's no pattern text to test, only a
+	// variable to bind the message into.
+	//
+	// This previously always ran stmt.Handlers[0] unconditionally,
+	// regardless of its pattern (see git history) -- multi-clause
+	// pattern matching was entirely unimplemented at the evaluator
+	// level despite being documented and grammar-legal. Confirmed via
+	// the language reference's own §10.2 example: a "permission denied"
+	// error against `handle "file not found"` / `handle "permission
+	// denied"` / bare `handle` used to print the *first* clause's
+	// message regardless of which pattern actually matched.
+	handled := false
 	if errVal, isErr := result.(*ErrorValue); isErr && len(stmt.Handlers) > 0 {
-		// Execute first matching handler (simple handler without pattern matching)
-		handler := stmt.Handlers[0]
-		handlerEnv := NewEnclosedEnvironment(env)
-		if handler.ErrorName != nil {
-			handlerEnv.Define(handler.ErrorName.Value, NewString(errVal.Message))
+		for _, handler := range stmt.Handlers {
+			matched := true
+			if handler.Pattern != nil {
+				patVal := e.Eval(handler.Pattern, env)
+				if IsError(patVal) {
+					matched = false
+				} else {
+					matched = strings.Contains(errVal.Message, patVal.String())
+				}
+			}
+			if matched {
+				handlerEnv := NewEnclosedEnvironment(env)
+				if handler.ErrorName != nil {
+					handlerEnv.Define(handler.ErrorName.Value, NewString(errVal.Message))
+				}
+				result = e.evalBlockStatement(handler.Body, handlerEnv)
+				handled = true
+				break
+			}
 		}
-		result = e.evalBlockStatement(handler.Body, handlerEnv)
 	}
 
 	// Always run ensure block
@@ -889,8 +921,14 @@ func (e *Evaluator) evalAttemptStatement(stmt *ast.AttemptStatement, env *Enviro
 		e.evalBlockStatement(stmt.Ensure, NewEnclosedEnvironment(env))
 	}
 
-	// Don't return error if it was handled
-	if _, isErr := result.(*ErrorValue); isErr {
+	// Don't return error if it was handled -- but if no handler's
+	// pattern matched (an attempt block whose handlers are all specific
+	// patterns, none of which match this error), the original error
+	// must propagate rather than silently vanish. Previously this check
+	// was unconditional, so even an attempt block with zero handle
+	// clauses at all (attempt/ensure, no handle) silently swallowed
+	// every error -- also fixed by gating on `handled`.
+	if _, isErr := result.(*ErrorValue); isErr && handled {
 		return NULL
 	}
 
@@ -1421,7 +1459,7 @@ func (e *Evaluator) loadModule(modulePath []string, env *Environment) Value {
 
 	// Create namespace table with all module exports
 	exports := NewTable(make(map[string]Value))
-	for name, val := range moduleEnv.store {
+	for name, val := range moduleEnv.snapshot() {
 		exports.Pairs[name] = val
 	}
 
