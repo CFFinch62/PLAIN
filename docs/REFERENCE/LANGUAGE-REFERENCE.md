@@ -1116,7 +1116,41 @@ handle
 - A bare `handle` (no pattern) matches any error — use it as a catch-all
 - Place specific handlers before general ones
 
-### 10.3 The `ensure` Clause
+### 10.3 Capturing the Error Message
+
+Bind the error message to a variable with `handle <name>` (an `as string` type
+annotation is accepted too, but not required — both forms are equivalent):
+
+```plain
+attempt
+    riskyOperation()
+handle err
+    display("Something went wrong: " & err)
+```
+
+```plain
+attempt
+    riskyOperation()
+handle err as string
+    display("Something went wrong: " & err)
+```
+
+`err` (or whatever name you choose) is a plain `string` containing the error's
+message, scoped to that handler's block. Like a bare catch-all `handle`, a
+name-binding handler always matches any error — there's no pattern text to
+test against, so place it last if it's mixed with pattern handlers from
+§10.2:
+
+```plain
+attempt
+    riskyOperation()
+handle "file not found"
+    display("The file doesn't exist")
+handle err
+    display("Unexpected error: " & err)
+```
+
+### 10.4 The `ensure` Clause
 
 The `ensure` block always runs, whether or not an error occurred:
 
@@ -1133,7 +1167,7 @@ ensure
 
 `ensure` is optional. When present, it runs after either the `attempt` body completes normally or after a `handle` block executes.
 
-### 10.4 The `abort` Statement
+### 10.5 The `abort` Statement
 
 `abort` raises an error with a message string:
 
@@ -1147,7 +1181,7 @@ task ValidateAge with (age)
 
 The error propagates up the call stack until caught by an `attempt/handle` block. If uncaught, the program terminates with an error message.
 
-### 10.5 Nesting
+### 10.6 Nesting
 
 `attempt/handle` blocks can be nested:
 
