@@ -22,6 +22,9 @@
 | 8 | ~~**Medium**~~ **FIXED** | Analyzer | Type-prefixed variables can't be assigned from function return values |
 | 9 | ~~**Low**~~ **FIXED** | Parser | `if ... then ...` single-line form doesn't parse despite `then` being a keyword |
 | 10 | ~~**Low**~~ **FIXED** | Parser | Multi-line literals (lists, records, function calls spanning lines) cause parse errors |
+| 11 | ~~**Critical**~~ **FIXED** | Runtime/Evaluator | `attempt/handle` never actually pattern-matched — always ran the first `handle` clause regardless of whether its pattern matched the error |
+
+> **Note on Defect 3**: verified 2026-08-11 against a fresh build before starting new work (per this project's own standing practice of not trusting a "FIXED" label without re-checking) — `handle err as string` did capture the message correctly, but a **bare** `handle err` (no `as`) was still silently broken, exactly as originally reported: the identifier was left as an inert `Pattern` the evaluator never consulted, so `err` stayed undefined. Root-caused together with Defect 11 below (the same `evalAttemptStatement`/`parseAttemptStatement` code paths) and fixed in the same change. See Defect 11's write-up for the full fix.
 
 ---
 
@@ -567,6 +570,92 @@ var student = Student(name: "Alice", age: 20, grade: "A")
 
 This is low priority for short programs but becomes a readability issue for
 longer lists or records with many fields.
+
+---
+
+## Defect 11 — `attempt/handle` Pattern Matching Never Actually Ran
+
+**Severity**: Critical
+**Component**: `internal/runtime/evaluator.go`, `evalAttemptStatement()`
+**Affects**: Any `attempt` block with more than one `handle` clause
+
+**Found**: 2026-08-11, not during the original tutorial-creation pass — found while
+re-verifying Defect 3's "FIXED" label against a fresh build (see the note under the
+Summary table above) and reading the surrounding evaluator code to understand why a
+bare `handle err` still didn't work.
+
+### Description
+
+`docs/REFERENCE/LANGUAGE-REFERENCE.md` §10.2 ("Pattern Matching Handlers") documents
+multiple `handle "specific text"` clauses, matched in order against the error message,
+with a bare `handle` as a catch-all. The evaluator never implemented this — it always
+ran `stmt.Handlers[0]`, unconditionally, regardless of what that handler's pattern was
+or whether it matched. The code's own comment gave it away:
+
+```go
+// Execute first matching handler (simple handler without pattern matching)
+handler := stmt.Handlers[0]
+```
+
+### Reproduction
+
+The exact example from LANGUAGE-REFERENCE.md §10.2:
+
+```plain
+task Main()
+    attempt
+        abort "permission denied"
+    handle "file not found"
+        display("The file doesn't exist")
+    handle "permission denied"
+        display("Access not allowed")
+    handle
+        display("Some other error occurred")
+```
+
+**Expected output**: `Access not allowed`
+**Actual output** (before fix): `The file doesn't exist` — the first clause always ran.
+
+A second, related bug: even when no handler's pattern matched at all (and there was no
+catch-all), the error was still silently swallowed rather than propagating — the final
+"don't return the error if it was handled" check was unconditional, not gated on
+whether a handler had actually run.
+
+### Root Cause
+
+Two independent gaps, same function:
+
+1. `handler.Pattern` was parsed (see Defect 3's original root cause) but never
+   evaluated or compared against the error message at runtime.
+2. The post-handler check `if _, isErr := result.(*ErrorValue); isErr { return NULL }`
+   ran unconditionally, with no concept of "was this actually handled."
+
+### Fix Applied (2026-08-11)
+
+**Files modified**: `internal/parser/statements.go` (`parseAttemptStatement`),
+`internal/runtime/evaluator.go` (`evalAttemptStatement`).
+
+- **Parser**: a bare identifier after `handle` with no `as TYPE` now becomes an
+  `ErrorName` binding directly (previously it stayed an inert `Pattern` unless `as
+  TYPE` followed) — fixes Defect 3's remaining half. `handle err` and
+  `handle err as string` are now equivalent; a string-literal pattern is unaffected.
+- **Evaluator**: `evalAttemptStatement` now iterates `stmt.Handlers` in declared order,
+  evaluates each `Pattern` (if present) and checks whether the error message
+  **contains** it (per §10.2's documented rule), and runs the first handler that
+  matches — a bare catch-all or an `ErrorName`-binding handler (no `Pattern` at all)
+  always matches. If no handler matches, the original error now propagates instead of
+  being silently swallowed.
+
+**Tests added**: `internal/parser/parser_test.go` —
+`TestHandleClauseErrorNameVsPattern` (4 subtests: bare identifier, `as string`, string
+pattern, bare catch-all). `internal/runtime/evaluator_test.go` —
+`TestHandleErrBareBindsErrorMessage`, `TestHandlePatternMatchingRunsFirstMatchingClauseInOrder`,
+`TestHandleCatchAllRunsWhenNoEarlierPatternMatches`, `TestHandleUnmatchedPatternPropagatesTheError`.
+
+**Verified against real usage**: only 2 of 100 `plain_euler` solutions even mention the
+word "attempt" (both in prose comments, not actual `attempt` blocks) — this fix has no
+effect on any existing Project Euler solution's behavior, verified by grep before and
+after.
 
 ---
 

@@ -1239,3 +1239,64 @@ If you lose context completely, restore from these:
 
 **Last Updated:** February 15, 2026
 **By:** Phase 4 - Advanced Features Complete
+
+---
+
+### Interpreter-Level Performance Investigation + attempt/handle Defects
+
+**Date:** August 11, 2026
+**Goal:** `plain_euler/LANGUAGE_LIMITATIONS.md` (PROJECT_EULER repo) had already closed
+out a full solution-code algorithm review with an explicit verdict that real
+interpreter-level work was needed next, not more solution-code tuning. This session
+picked that up: verify the existing defect catalog is still accurate, fix what wasn't,
+then profile the interpreter for real (not solution code).
+
+**Completed:**
+- [x] **Re-verified all 10 defects in `defects_found_during_tutorial_creation.md`
+  against a fresh build** rather than trusting the "FIXED" labels — 9 were genuinely
+  fixed. Defect 3 was only half-fixed: `handle err as string` worked, but bare
+  `handle err` (no `as`) still silently left `err` undefined.
+- [x] **Found a bigger, related bug while investigating**: `attempt/handle`'s pattern
+  matching (LANGUAGE-REFERENCE.md §10.2 — multiple `handle "text"` clauses matched in
+  order) was entirely unimplemented at the evaluator level — always ran the first
+  `handle` clause regardless of its pattern. New Defect 11, fixed together with the
+  rest of Defect 3 in the same change (same function). See
+  `defects_found_during_tutorial_creation.md` for full root cause and fix detail.
+- [x] **Profiled the interpreter for real** (Go's `runtime/pprof`, not assumption) on
+  both a synthetic loop+if isolation case and the real `plain_euler/solution10.plain`.
+  Found `Environment.Get`/map-chain-walk dominating CPU time (~30-33% cumulative) — the
+  same map-keyed-environment-chain anti-pattern already diagnosed in FORGE, now
+  confirmed in PLAIN with real numbers.
+- [x] **Landed a low-risk mitigation**: replaced `Environment`'s `map[string]Value`
+  with a lazily-allocated linear-scan slice (public API unchanged). ~24% faster on both
+  test cases, all tests pass, IDE debugger's live variables panel still works (adapted
+  via a new `Environment.snapshot()` helper).
+- [x] **Scoped, but did not implement, the full fix**: compile-time slot resolution
+  (mirroring Quick's own Phase 5), which the remaining ~16% `Environment.Get`/`Set`
+  cost after the mitigation is exactly the target for. Full plan, including the
+  REPL/debugger-specific complications Quick never had to solve, written up in
+  `dev-docs/IMPL-PLAN-interpreter-resolver.md` for a future session — deliberately not
+  attempted in the same session as the mitigation, per the owner's explicit call to
+  stop and document rather than push straight into a large architectural change.
+
+**Files Modified:**
+- `internal/parser/statements.go` — `handle <ident>` binds `ErrorName` without
+  requiring `as TYPE`
+- `internal/runtime/evaluator.go` — real pattern matching in `evalAttemptStatement`;
+  `+strings` import
+- `internal/runtime/environment.go` — rewritten: slice-backed, lazy allocation
+- `internal/runtime/debugger.go` — 3 call sites adapted to `Environment.snapshot()`
+- `internal/parser/parser_test.go`, `internal/runtime/evaluator_test.go` — new
+  regression tests for both the defect fix and (implicitly, via the full suite passing
+  unchanged) the environment rewrite
+- `dev-docs/defects_found_during_tutorial_creation.md` — Defect 11 added, Defect 3's
+  summary-table note corrected
+- `dev-docs/IMPL-PLAN-interpreter-resolver.md` — new, the full future-work plan
+- `dev-docs/ToDo.md` — pointer added under Current Language Issues
+
+**Not done this session, by explicit owner decision:** the full slot-resolution
+rewrite itself (§3 of the new IMPL-PLAN doc) — scoped and documented, not implemented.
+Nothing in this session has been committed yet.
+
+**Last Updated:** August 11, 2026
+**By:** Interpreter performance investigation session

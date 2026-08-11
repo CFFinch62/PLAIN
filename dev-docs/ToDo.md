@@ -4,6 +4,14 @@
 
 ### All platforms
 
+- **Interpreter performance: variable access is still name-based (slow).** A cheap
+  mitigation landed 2026-08-11 (~24% faster, see `session_log.md`'s entry for that
+  date), but the interpreter still resolves every variable read/write by walking a
+  parent-chain of scopes doing linear-scan name comparisons at runtime, rather than
+  compile-time-resolved slot indices. Real profiling data, root cause, and a full
+  phased implementation plan (including the REPL/IDE-debugger complications specific
+  to PLAIN) are in `dev-docs/IMPL-PLAN-interpreter-resolver.md` — scoped, not started.
+
 ### Linux
 
 ### Mac
