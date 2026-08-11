@@ -20,12 +20,15 @@ task Main()
     display("")
 
     rem: Error handling - division by zero
+    rem: `handle err` captures the actual error message into a variable,
+    rem: instead of just a generic "something went wrong" -- use this
+    rem: whenever the message itself is useful to the person seeing it.
     display("=== Division by Zero ===")
     attempt
         var bad = 10 / 0
         display("  This won't print")
-    handle
-        display("  Caught a division error!")
+    handle err
+        display("  Caught an error: " & err)
     display("")
 
     rem: Using abort to signal errors
@@ -33,22 +36,34 @@ task Main()
     attempt
         var age1 = ValidateAge(25)
         display("  Valid age: " & age1)
-    handle
-        display("  Age was rejected!")
+    handle err
+        display("  Age was rejected: " & err)
     display("")
 
     attempt
         var age2 = ValidateAge(-5)
         display("  This won't print")
-    handle
-        display("  Negative age was rejected!")
+    handle err
+        display("  Age was rejected: " & err)
     display("")
 
     attempt
         var age3 = ValidateAge(200)
         display("  This won't print")
-    handle
-        display("  Unrealistic age was rejected!")
+    handle err
+        display("  Age was rejected: " & err)
+    display("")
+
+    rem: Multiple handle clauses can match specific error messages --
+    rem: handlers are tried in order, and a name-binding handler (no
+    rem: pattern to match against) always matches, so it belongs last.
+    display("=== Pattern Matching Handlers ===")
+    attempt
+        ValidateAge(300)
+    handle "unrealistic"
+        display("  That age is out of range on the high end.")
+    handle err
+        display("  Rejected for a different reason: " & err)
     display("")
 
     rem: Ensure block always runs, even after an error
@@ -56,8 +71,8 @@ task Main()
     attempt
         display("  Working...")
         abort "Something went wrong"
-    handle
-        display("  Error was caught!")
+    handle err
+        display("  Error was caught: " & err)
     ensure
         display("  Cleanup complete (always runs).")
     display("")

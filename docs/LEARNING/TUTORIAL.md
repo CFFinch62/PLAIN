@@ -830,18 +830,35 @@ attempt
 handle
     display("Caught a division error!")
 
+rem: Capturing the actual error message with handle <name>
+attempt
+    var result = 10 / 0
+handle err
+    display("Caught an error: " & err)
+
 rem: Using abort to signal errors
 task ValidateAge using (age)
     if age < 0
         abort "Age cannot be negative"
+    if age > 150
+        abort "Age seems unrealistic"
     deliver age
+
+rem: Multiple handle clauses match specific error messages, in order --
+rem: a name-binding handler (no pattern) always matches, so put it last
+attempt
+    ValidateAge(300)
+handle "unrealistic"
+    display("Out of range on the high end.")
+handle err
+    display("Rejected: " & err)
 
 rem: Ensure block always runs (cleanup)
 attempt
     display("Working...")
     abort "Something went wrong"
-handle
-    display("Error was caught!")
+handle err
+    display("Error was caught: " & err)
 ensure
     display("Cleanup complete (always runs).")
 ```
@@ -850,18 +867,23 @@ ensure
 
 - `attempt` — Try running this code; if an error occurs, jump to `handle`
 - `handle` — Code that runs when an error is caught
+- `handle <name>` (or `handle <name> as string`) — Catches any error and binds its message to `<name>`, so you can display or act on the actual text instead of a generic message
+- `handle "some text"` — Only matches if the error message **contains** that text; multiple pattern handlers are tried in order, first match wins, so put the name-binding or bare catch-all handler last
 - `ensure` — Code that **always** runs, whether an error occurred or not (great for cleanup)
 - `abort "message"` — Signal an error with a custom message
 
 ### Try It
 
-1. Write a "safe calculator" that catches division by zero errors
-2. Write a validation function that aborts if a string is empty
+1. Write a "safe calculator" that catches division by zero errors and displays the real error message
+2. Write a validation function that aborts if a string is empty, and display the captured message
 3. Use `ensure` to always display "Program complete!" at the end of a risky operation
+4. Add a second `handle` clause with a specific string pattern, and a catch-all after it
 
 ### Key Takeaways
 
 ✓ `attempt/handle` catches errors so your program doesn't crash
+✓ `handle <name>` captures the real error message instead of a generic one
+✓ Multiple `handle "text"` clauses match specific errors, tried in order
 ✓ `ensure` runs cleanup code regardless of whether an error occurred
 ✓ `abort "message"` signals a custom error
 ✓ Error handling makes programs robust and user-friendly
