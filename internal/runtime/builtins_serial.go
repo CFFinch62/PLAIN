@@ -4,6 +4,8 @@ package runtime
 
 import (
 	"bufio"
+	"errors"
+	"io"
 	"strings"
 	"time"
 
@@ -215,6 +217,14 @@ func getSerialBuiltins() map[string]*BuiltinValue {
 				reader := sp.Reader.(*bufio.Reader)
 				line, err := reader.ReadString('\n')
 				if err != nil {
+					if errors.Is(err, io.ErrNoProgress) {
+						// The underlying port timed out repeatedly with no
+						// data available (normal for a non-blocking read
+						// during a lull in traffic) rather than a real I/O
+						// failure. Report it the same way as "no full line
+						// yet" so callers polling in a loop can just retry.
+						return NULL
+					}
 					return NewError("serial_read_line() failed: %s", err.Error())
 				}
 				// Trim trailing \r\n or \n

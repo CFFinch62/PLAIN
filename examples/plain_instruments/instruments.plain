@@ -173,6 +173,14 @@ task PadLeft using (s, width)
         result = " " & result
     deliver result
 
+rem: Pad a string on the right to a fixed width (so a shorter value fully
+rem: overwrites a longer one drawn in the same spot on a previous frame).
+task PadRight using (s, width)
+    var result = to_string(s)
+    loop len(result) < width
+        result = result & " "
+    deliver result
+
 rem: Format a float string to 1 decimal place.
 task F1 using (s)
     if s == "---" or s == ""
@@ -388,6 +396,9 @@ task ClearAllData()
     g_bod_origin   = "---"
     g_ais_targets  = []
     g_nmea_log     = []
+    rem: Force DrawDisplay() to blank the tab content area on the next frame,
+    rem: even though the active tab hasn't changed.
+    g_prev_tab     = -1
     ParseResetPriority()
 
 rem: ── Display tasks ─────────────────────────────────────────────────────────
@@ -411,6 +422,9 @@ task DrawTitle()
     if g_paused
         text_color_rgb(255, 80, 80)
         text_at(TITLE_X + 90, TITLE_Y + 1, "** PAUSED **")
+    else
+        text_color("default")
+        text_at(TITLE_X + 90, TITLE_Y + 1, "            ")
     text_color("default")
 
 rem: Draw the POSITION panel.
@@ -781,27 +795,35 @@ task DrawAIS()
     draw_line(AIS_X + 1, AIS_Y + 2, AIS_W - 2, "h")
 
     var max_rows = AIS_H - 4
-    if len(g_ais_targets) == 0
+    var blank_row = substring(BLANK_LINE, 0, AIS_W - 4)
+    var n_targets = len(g_ais_targets)
+
+    rem: Draw (or blank) every row slot every frame so a target that
+    rem: disappears — or is replaced by a shorter value — never leaves
+    rem: stale text behind from a previous frame.
+    loop ti from 0 to max_rows - 1
+        var row = AIS_Y + 3 + ti
+        if ti < n_targets
+            var tgt = g_ais_targets[ti]
+            text_color_rgb(255, 90, 90)
+            text_at(AIS_X + 2,  row, PadRight(tgt["mmsi"], 12))
+            text_color_rgb(255, 140, 100)
+            text_at(AIS_X + 14, row, PadRight(tgt["sog"] & " kts", 10))
+            text_color_rgb(255, 90, 90)
+            text_at(AIS_X + 24, row, PadRight(tgt["lat"], 13))
+            text_at(AIS_X + 37, row, PadRight(tgt["lon"], 14))
+            text_color_rgb(255, 170, 90)
+            text_at(AIS_X + 51, row, PadRight(tgt["cog"] & "°", 9))
+            text_at(AIS_X + 60, row, PadRight(tgt["hdg"] & "°", 9))
+            text_color_rgb(200, 130, 80)
+            text_at(AIS_X + 69, row, PadRight(tgt["status"], 8))
+        else
+            text_color("default")
+            text_at(AIS_X + 2, row, blank_row)
+
+    if n_targets == 0
         text_color_rgb(80, 50, 50)
         text_at(AIS_X + 35, AIS_Y + 4, "No AIS targets received")
-    else
-        loop ti from 0 to len(g_ais_targets) - 1
-            if ti >= max_rows
-                exit
-            var tgt  = g_ais_targets[ti]
-            var row  = AIS_Y + 3 + ti
-            text_color_rgb(255, 90, 90)
-            text_at(AIS_X + 2,  row, tgt["mmsi"])
-            text_color_rgb(255, 140, 100)
-            text_at(AIS_X + 14, row, tgt["sog"] & " kts")
-            text_color_rgb(255, 90, 90)
-            text_at(AIS_X + 24, row, tgt["lat"])
-            text_at(AIS_X + 37, row, tgt["lon"])
-            text_color_rgb(255, 170, 90)
-            text_at(AIS_X + 51, row, tgt["cog"] & "°")
-            text_at(AIS_X + 60, row, tgt["hdg"] & "°")
-            text_color_rgb(200, 130, 80)
-            text_at(AIS_X + 69, row, tgt["status"])
 
     text_color("default")
 

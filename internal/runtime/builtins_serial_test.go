@@ -1,8 +1,34 @@
 package runtime
 
 import (
+	"bufio"
 	"testing"
 )
+
+// stallReader always reports "no data yet" without ever erroring, mimicking
+// a serial port with a short read timeout during a lull in traffic.
+type stallReader struct{}
+
+func (stallReader) Read(p []byte) (int, error) { return 0, nil }
+
+func TestSerialReadLineNoDataIsNotError(t *testing.T) {
+	builtins := GetBuiltins()
+	fn := builtins["serial_read_line"].Fn
+
+	sp := &SerialPortValue{
+		PortName: "test",
+		IsOpen:   true,
+		Reader:   bufio.NewReader(stallReader{}),
+	}
+
+	result := fn(sp)
+	if _, isErr := result.(*ErrorValue); isErr {
+		t.Fatalf("serial_read_line() on a stalled-but-live port should not error, got: %s", result.String())
+	}
+	if result != NULL {
+		t.Errorf("serial_read_line() with no data available should return NULL, got %T: %s", result, result.String())
+	}
+}
 
 // ============================================================
 // Serial Port — Argument Validation Tests
