@@ -1,0 +1,72 @@
+PLAIN Programming Language - Proprietary License
+================================================
+
+Copyright (c) 2026 Chuck Finch / Fragillidae Software. All rights reserved.
+
+This software and associated documentation files (the "Software") are the
+proprietary and confidential information of Chuck Finch / Fragillidae Software.
+
+BETA EVALUATION LICENSE
+
+This beta version is provided for evaluation purposes only.
+
+GRANT OF LICENSE:
+Subject to the terms of this agreement, you are granted a limited, non-exclusive,
+non-transferable license to:
+
+  1. Install and use the Software for evaluation and testing purposes
+  2. Provide feedback and bug reports to the developer
+  3. Use the Software for educational or personal non-commercial purposes during
+     the beta period
+
+RESTRICTIONS:
+You may NOT, without explicit written permission:
+
+  1. Distribute, sell, lease, rent, or sublicense the Software
+  2. Modify, adapt, translate, or create derivative works based on the Software
+  3. Reverse engineer, decompile, or disassemble the Software
+  4. Remove or alter any copyright, trademark, or proprietary notices
+  5. Use the Software for commercial purposes or in production environments
+  6. Share your access credentials or beta invitation with others
+
+CONFIDENTIALITY:
+The Software is confidential and proprietary. You agree to:
+
+  1. Keep the Software and its features confidential
+  2. Not disclose, discuss, or publish information about the Software without
+     prior written consent
+  3. Not publicly compare the Software with other products in published benchmarks
+
+FUTURE LICENSING:
+This evaluation license will expire upon official release. Commercial use will
+require a separate commercial license. Pricing and terms will be announced prior
+to the end of the beta period.
+
+WARRANTY DISCLAIMER:
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING
+FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE.
+
+LIMITATION OF LIABILITY:
+IN NO EVENT SHALL FRAGILLIDAE SOFTWARE OR CHUCK FINCH BE LIABLE FOR ANY SPECIAL,
+INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES WHATSOEVER ARISING OUT OF OR
+RELATED TO YOUR USE OR INABILITY TO USE THE SOFTWARE.
+
+TERMINATION:
+This license is effective until terminated. Your rights will terminate immediately
+without notice if you fail to comply with any term of this agreement. Upon
+termination, you must destroy all copies of the Software.
+
+CONTACT:
+For licensing inquiries, bug reports, or questions:
+Email: info@fragillidaesoftware.com
+GitHub: https://github.com/CFFinch62/plain-language (private beta)
+
+---
+
+By using this software, you acknowledge that you have read this agreement,
+understand it, and agree to be bound by its terms.
+
+Last updated: February 9, 2026

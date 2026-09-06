@@ -34,6 +34,21 @@ A programming language designed to be approachable without sacrificing competenc
 - **Comprehensive standard library** - 93+ built-in functions for real-world tasks
 - **Python ↔ PLAIN converter** - Bidirectional code translation with CLI, GUI, and IDE integration
 
+## VS Code
+
+[`editors/vscode/`](editors/vscode/) is a VS Code extension for `.plain` files:
+syntax highlighting (including `note:` block comments and `v"…{expr}…"`
+interpolation), auto-indent and indentation folding, `Ctrl+/` `rem:` commenting,
+20 snippets, a file icon, and ▶ Run File (`Ctrl+F5`), Analyze File and Start REPL
+commands that shell out to the `plain` binary. Parser and semantic errors can be
+surfaced as editor squiggles in the Problems panel. No build step — symlink it
+into `~/.vscode/extensions/` for development, or `npx @vscode/vsce package` for a
+shareable `.vsix`. See [its README](editors/vscode/README.md).
+
+Its keyword and builtin lists are hand-mirrored from `internal/token/token.go`
+and `internal/runtime/builtins*.go`; changing either means updating
+`editors/vscode/syntaxes/plain.tmLanguage.json` to match.
+
 ## Quick Example
 
 ```plain

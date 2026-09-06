@@ -1,0 +1,44 @@
+{
+  "comments": {
+    "lineComment": "rem:"
+  },
+  "brackets": [
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"]
+  ],
+  "autoClosingPairs": [
+    { "open": "(", "close": ")" },
+    { "open": "[", "close": "]" },
+    { "open": "{", "close": "}" },
+    { "open": "\"", "close": "\"", "notIn": ["string", "comment"] }
+  ],
+  "surroundingPairs": [
+    ["(", ")"],
+    ["[", "]"],
+    ["{", "}"],
+    ["\"", "\""]
+  ],
+  "autoCloseBefore": ")]},\t\n ",
+  "wordPattern": "[A-Za-z_][A-Za-z0-9_]*",
+
+  "_comment": "PLAIN blocks open on a leading keyword with no trailing marker (no ':' the way Quick and Python have one), so these key off the first word of the line. PLAIN keywords are case-sensitive, so unlike Quick these need no character-class spelling.",
+
+  "indentationRules": {
+    "increaseIndentPattern": "^\\s*(task|if|else|choose|choice|default|loop|attempt|handle|ensure|record)\\b.*$",
+    "decreaseIndentPattern": "^\\s*(else|choice|default|handle|ensure)\\b.*$"
+  },
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*(task|if|else|choose|choice|default|loop|attempt|handle|ensure|record)\\b.*$",
+      "action": { "indent": "indent" }
+    },
+    {
+      "beforeText": "^\\s*(deliver|exit|continue|abort)\\b.*$",
+      "action": { "indent": "outdent" }
+    }
+  ],
+  "folding": {
+    "offSide": true
+  }
+}

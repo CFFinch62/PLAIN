@@ -1,0 +1,11 @@
+<!-- PLAIN file icon, light themes. Drawn as geometry rather than a text glyph
+     so it does not depend on a font being present, and sized on a 16x16
+     viewBox because that is the size the explorer actually renders. The
+     project logo (the word PLAIN in a bordered box) is unreadable at 16px,
+     so the file icon is a bare letterform instead. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="none" stroke="#1b4f9c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 4.7 2.7 V 13.4"/>
+    <path d="M 4.7 2.7 H 8.5 A 3 3 0 0 1 8.5 8.7 H 4.7"/>
+  </g>
+</svg>

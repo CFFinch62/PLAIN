@@ -1,0 +1,358 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "PLAIN",
+  "scopeName": "source.plain",
+  "fileTypes": [
+    "plain"
+  ],
+  "_comment": "Keywords mirror the `keywords` map in internal/token/token.go; builtins mirror the map literals in internal/runtime/builtins*.go. PLAIN looks keywords up in a Go map with an exact string match, so unlike Quick everything here is case-SENSITIVE.",
+  "patterns": [
+    {
+      "include": "#note-comment"
+    },
+    {
+      "include": "#line-comment"
+    },
+    {
+      "include": "#interpolated-string"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#module-keywords"
+    },
+    {
+      "include": "#task-declaration"
+    },
+    {
+      "include": "#parameter-list"
+    },
+    {
+      "include": "#declaration"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#builtins"
+    },
+    {
+      "include": "#function-call"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#punctuation"
+    }
+  ],
+  "repository": {
+    "note-comment": {
+      "name": "comment.block.note.plain",
+      "begin": "^([ \\t]*)(note:)",
+      "beginCaptures": {
+        "2": {
+          "name": "punctuation.definition.comment.plain"
+        }
+      },
+      "while": "^(?:\\1[ \\t]+\\S|[ \\t]*$)"
+    },
+    "line-comment": {
+      "name": "comment.line.rem.plain",
+      "match": "\\b(rem:).*$",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.comment.plain"
+        }
+      }
+    },
+    "string-escapes": {
+      "name": "constant.character.escape.plain",
+      "match": "\\\\[ntr\\\\\\\"']"
+    },
+    "interpolation": {
+      "name": "meta.interpolation.plain",
+      "begin": "\\{",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.interpolation.begin.plain"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.interpolation.end.plain"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#builtins"
+        },
+        {
+          "include": "#function-call"
+        },
+        {
+          "include": "#constants"
+        },
+        {
+          "include": "#numbers"
+        },
+        {
+          "include": "#operators"
+        },
+        {
+          "include": "#punctuation"
+        }
+      ]
+    },
+    "interpolated-string": {
+      "name": "string.quoted.double.interpolated.plain",
+      "begin": "\\b(v)(\")",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.modifier.interpolation.plain"
+        },
+        "2": {
+          "name": "punctuation.definition.string.begin.plain"
+        }
+      },
+      "end": "\"|(\\n)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.plain"
+        },
+        "1": {
+          "name": "invalid.illegal.newline.plain"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#string-escapes"
+        },
+        {
+          "include": "#interpolation"
+        }
+      ]
+    },
+    "string": {
+      "name": "string.quoted.double.plain",
+      "begin": "\"",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.plain"
+        }
+      },
+      "end": "\"|(\\n)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.plain"
+        },
+        "1": {
+          "name": "invalid.illegal.newline.plain"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#string-escapes"
+        }
+      ]
+    },
+    "module-keywords": {
+      "name": "keyword.control.import.plain",
+      "match": "\\b(use|assemblies|modules|tasks):"
+    },
+    "task-declaration": {
+      "match": "\\b(task)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "storage.type.function.plain"
+        },
+        "2": {
+          "name": "entity.name.function.plain"
+        }
+      }
+    },
+    "parameter-list": {
+      "begin": "\\b(using|with)\\s*(\\()",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.plain"
+        },
+        "2": {
+          "name": "punctuation.definition.parameters.begin.plain"
+        }
+      },
+      "end": "\\)",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.parameters.end.plain"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#line-comment"
+        },
+        {
+          "include": "#types"
+        },
+        {
+          "match": "\\b(as|of)\\b",
+          "name": "keyword.other.plain"
+        },
+        {
+          "match": "[A-Za-z_][A-Za-z0-9_]*",
+          "name": "variable.parameter.plain"
+        },
+        {
+          "match": ",",
+          "name": "punctuation.separator.parameter.plain"
+        }
+      ]
+    },
+    "declaration": {
+      "match": "\\b(var|fxd)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "storage.type.plain"
+        },
+        "2": {
+          "name": "variable.other.declaration.plain"
+        }
+      }
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.conditional.plain",
+          "match": "\\b(default|choice|choose|else|then|if)\\b"
+        },
+        {
+          "name": "keyword.control.loop.plain",
+          "match": "\\b(continue|exit|from|loop|step|in|to)\\b"
+        },
+        {
+          "name": "keyword.control.exception.plain",
+          "match": "\\b(attempt|ensure|handle)\\b"
+        },
+        {
+          "name": "keyword.control.flow.plain",
+          "match": "\\b(deliver|abort|swap)\\b"
+        },
+        {
+          "name": "storage.type.function.plain",
+          "match": "\\b(task)\\b"
+        },
+        {
+          "name": "storage.type.plain",
+          "match": "\\b(record|fxd|var)\\b"
+        },
+        {
+          "name": "keyword.other.plain",
+          "match": "\\b(based|using|with|as|of|on)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.plain",
+          "match": "\\b(and|not|or)\\b"
+        }
+      ]
+    },
+    "types": {
+      "name": "support.type.plain",
+      "match": "\\b(boolean|integer|string|float|table|list|bln|flt|int|lst|str|tbl)\\b"
+    },
+    "constants": {
+      "name": "constant.language.plain",
+      "match": "\\b(true|false|null)\\b"
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.plain",
+          "match": "\\b[0-9]+(\\.[0-9]+)?[eE][+-]?[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.plain",
+          "match": "\\b[0-9]+\\.[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.plain",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "builtins": {
+      "name": "support.function.builtin.plain",
+      "match": "\\b(set_float_precision|serial_get_signals|serial_set_timeout|serial_available|serial_read_line|net_set_timeout|set_cooked_mode|wait_for_events|create_timeout|serial_set_dtr|serial_set_rts|text_color_256|text_color_rgb|text_underline|absolute_path|append_binary|get_extension|mouse_disable|net_read_line|random_choice|cancel_timer|create_timer|mouse_enable|serial_close|serial_flush|serial_ports|serial_write|set_raw_mode|text_reverse|write_binary|append_file|cursor_hide|cursor_show|delete_file|file_exists|net_connect|read_binary|rename_file|screen_main|screen_size|serial_open|serial_read|start_timer|starts_with|stop_events|text_italic|text_strike|write_lines|create_dir|cursor_pos|delete_dir|dir_exists|net_accept|net_listen|random_int|read_bytes|read_lines|run_events|screen_alt|script_dir|split_path|stop_timer|text_blink|text_color|text_reset|write_file|write_line|copy_file|draw_line|ends_with|file_size|get_event|is_string|join_path|net_close|net_write|read_file|read_line|substring|text_bold|to_string|contains|draw_box|is_float|is_table|list_dir|net_read|text_dim|to_float|display|get_key|has_key|is_bool|is_list|is_null|replace|reverse|text_at|to_bool|type_of|append|insert|is_int|random|remove|to_bin|to_hex|to_int|values|atan2|clear|close|floor|log10|lower|round|sleep|split|upper|write|acos|asin|atan|ceil|date|join|keys|log2|open|read|sort|sqrt|time|trim|abs|chr|cos|exp|get|len|log|max|min|mod|ord|pop|pow|sin|sqr|sum|tan)\\b(?=\\s*\\()"
+    },
+    "function-call": {
+      "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\b(?=\\s*\\()",
+      "captures": {
+        "1": {
+          "name": "entity.name.function.call.plain"
+        }
+      }
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.assignment.compound.plain",
+          "match": "(\\+=|-=|\\*=|/=|%=|&=)"
+        },
+        {
+          "name": "keyword.operator.comparison.plain",
+          "match": "(==|!=|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.arithmetic.plain",
+          "match": "(\\*\\*|//|\\+|-|\\*|/|%)"
+        },
+        {
+          "name": "keyword.operator.concat.plain",
+          "match": "&"
+        },
+        {
+          "name": "keyword.operator.assignment.plain",
+          "match": "="
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.comma.plain",
+          "match": ","
+        },
+        {
+          "name": "punctuation.separator.colon.plain",
+          "match": ":"
+        },
+        {
+          "name": "punctuation.accessor.plain",
+          "match": "\\."
+        },
+        {
+          "name": "meta.brace.square.plain",
+          "match": "[\\[\\]]"
+        },
+        {
+          "name": "meta.brace.curly.plain",
+          "match": "[{}]"
+        },
+        {
+          "name": "meta.brace.round.plain",
+          "match": "[()]"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "name": "plain-language",
+  "displayName": "PLAIN Language",
+  "description": "Syntax highlighting, snippets, and one-key running for the PLAIN programming language (.plain files).",
+  "version": "0.1.0",
+  "publisher": "fragillidae",
+  "icon": "images/icon.png",
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Programming Languages", "Snippets"],
+  "keywords": ["plain", "fragillidae", "teaching language"],
+  "main": "./extension.js",
+  "activationEvents": ["onLanguage:plain"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "plain",
+        "aliases": ["PLAIN", "plain"],
+        "extensions": [".plain"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/file-icon-light.svg",
+          "dark": "./images/file-icon-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "plain",
+        "scopeName": "source.plain",
+        "path": "./syntaxes/plain.tmLanguage.json"
+      }
+    ],
+    "snippets": [{ "language": "plain", "path": "./snippets/plain.json" }],
+    "commands": [
+      { "command": "plain.runFile", "title": "PLAIN: Run File", "icon": "$(play)" },
+      { "command": "plain.analyzeFile", "title": "PLAIN: Analyze File (semantic check)", "icon": "$(check)" },
+      { "command": "plain.startRepl", "title": "PLAIN: Start REPL", "icon": "$(terminal)" }
+    ],
+    "menus": {
+      "editor/title/run": [
+        { "command": "plain.runFile", "when": "resourceLangId == plain", "group": "navigation@1" },
+        { "command": "plain.analyzeFile", "when": "resourceLangId == plain", "group": "navigation@2" }
+      ],
+      "editor/context": [
+        { "command": "plain.runFile", "when": "resourceLangId == plain", "group": "z_commands" }
+      ],
+      "commandPalette": [
+        { "command": "plain.runFile", "when": "resourceLangId == plain" },
+        { "command": "plain.analyzeFile", "when": "resourceLangId == plain" },
+        { "command": "plain.startRepl" }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "plain.runFile",
+        "key": "ctrl+f5",
+        "mac": "cmd+f5",
+        "when": "resourceLangId == plain && editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "PLAIN",
+      "properties": {
+        "plain.interpreterPath": {
+          "type": "string",
+          "default": "plain",
+          "markdownDescription": "Path to the `plain` interpreter. Use an absolute path if it is not on your `PATH`."
+        },
+        "plain.saveBeforeRun": {
+          "type": "boolean",
+          "default": true,
+          "description": "Save the file automatically before running it."
+        },
+        "plain.runInTerminal": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Run in an integrated terminal. Leave this on for programs that read input (`read_line`, `get_key`) or draw a TUI. Turn it off to capture output in an Output channel and populate the Problems panel instead."
+        },
+        "plain.projectRoot": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Passed to the interpreter as `--project-root`, which lets a program import modules relative to a project root rather than the file's own directory. Leave empty to omit the flag. `${workspaceFolder}` is substituted."
+        }
+      }
+    },
+    "problemMatchers": [
+      {
+        "name": "plain-parser",
+        "owner": "plain",
+        "source": "plain",
+        "fileLocation": "autoDetect",
+        "pattern": [
+          { "regexp": "^Parser errors for: (.*)$", "file": 1 },
+          { "regexp": "^=+$" },
+          {
+            "regexp": "^ERROR: (.*) \\(line (\\d+), column (\\d+)\\)$",
+            "message": 1,
+            "line": 2,
+            "column": 3,
+            "loop": true
+          }
+        ]
+      },
+      {
+        "name": "plain-semantic",
+        "owner": "plain",
+        "source": "plain",
+        "fileLocation": "autoDetect",
+        "pattern": [
+          { "regexp": "^Semantic errors for: (.*)$", "file": 1 },
+          { "regexp": "^=+$" },
+          {
+            "regexp": "^ERROR: line (\\d+), column (\\d+): (.*)$",
+            "line": 1,
+            "column": 2,
+            "message": 3,
+            "loop": true
+          }
+        ]
+      }
+    ]
+  }
+}

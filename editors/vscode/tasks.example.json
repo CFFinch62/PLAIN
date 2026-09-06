@@ -1,0 +1,26 @@
+// Copy into your project's .vscode/tasks.json to run PLAIN files as tasks.
+// This needs no extension installed. Note that PLAIN prints its diagnostics to
+// stdout rather than stderr, and that the file a diagnostic belongs to appears
+// only on the header line above it, so these matchers are multi-line.
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "PLAIN: run current file",
+      "type": "shell",
+      "command": "plain",
+      "args": ["${file}"],
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$plain-parser", "$plain-semantic"]
+    },
+    {
+      "label": "PLAIN: analyze current file",
+      "type": "shell",
+      "command": "plain",
+      "args": ["-analyze", "${file}"],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": ["$plain-parser", "$plain-semantic"]
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "Task with parameters": {
+    "prefix": "task",
+    "body": [
+      "task ${1:Name} using (${2:arg})",
+      "    ${0:deliver ${2:arg}}"
+    ],
+    "description": "A task that takes parameters"
+  },
+  "Task without parameters": {
+    "prefix": "task0",
+    "body": [
+      "task ${1:Name}()",
+      "    ${0}"
+    ],
+    "description": "A task that takes no parameters"
+  },
+  "Main task": {
+    "prefix": "main",
+    "body": [
+      "task Main()",
+      "    ${0}"
+    ],
+    "description": "A Main task (the interpreter calls it automatically)"
+  },
+  "If": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition}",
+      "    ${0}"
+    ],
+    "description": "An if block"
+  },
+  "If / else": {
+    "prefix": "ifelse",
+    "body": [
+      "if ${1:condition}",
+      "    ${2}",
+      "else",
+      "    ${0}"
+    ],
+    "description": "An if / else block"
+  },
+  "Loop from / to": {
+    "prefix": "loop",
+    "body": [
+      "loop ${1:i} from ${2:0} to ${3:10}",
+      "    ${0}"
+    ],
+    "description": "A counting loop"
+  },
+  "Loop from / to / step": {
+    "prefix": "loopstep",
+    "body": [
+      "loop ${1:i} from ${2:0} to ${3:10} step ${4:2}",
+      "    ${0}"
+    ],
+    "description": "A counting loop with an explicit step"
+  },
+  "Loop over a collection": {
+    "prefix": "loopin",
+    "body": [
+      "loop ${1:item} in ${2:items}",
+      "    ${0}"
+    ],
+    "description": "Iterate over a list or table"
+  },
+  "Loop while": {
+    "prefix": "loopwhile",
+    "body": [
+      "loop ${1:condition}",
+      "    ${0}"
+    ],
+    "description": "Loop while a condition holds"
+  },
+  "Choose": {
+    "prefix": "choose",
+    "body": [
+      "choose ${1:value}",
+      "    choice ${2:\"a\"}",
+      "        ${3}",
+      "    default",
+      "        ${0}"
+    ],
+    "description": "A choose / choice / default block"
+  },
+  "Attempt / handle": {
+    "prefix": "attempt",
+    "body": [
+      "attempt",
+      "    ${1}",
+      "handle ${2:err}",
+      "    ${0}"
+    ],
+    "description": "Error handling"
+  },
+  "Attempt / handle / ensure": {
+    "prefix": "attemptensure",
+    "body": [
+      "attempt",
+      "    ${1}",
+      "handle ${2:err}",
+      "    ${3}",
+      "ensure",
+      "    ${0}"
+    ],
+    "description": "Error handling with a cleanup block"
+  },
+  "Var": {
+    "prefix": "var",
+    "body": [
+      "var ${1:name} = ${0:value}"
+    ],
+    "description": "Declare a variable"
+  },
+  "Fixed": {
+    "prefix": "fxd",
+    "body": [
+      "fxd ${1:Name} = ${0:value}"
+    ],
+    "description": "Declare a fixed (immutable) value"
+  },
+  "Record": {
+    "prefix": "record",
+    "body": [
+      "record ${1:Name}",
+      "    ${0}"
+    ],
+    "description": "Declare a record"
+  },
+  "Use module": {
+    "prefix": "use",
+    "body": [
+      "use: ${0:module}"
+    ],
+    "description": "Import a module"
+  },
+  "Display": {
+    "prefix": "display",
+    "body": [
+      "display(${0})"
+    ],
+    "description": "Write a value to the console"
+  },
+  "Interpolated string": {
+    "prefix": "vstr",
+    "body": [
+      "v\"${1:text} {${2:expr}}\""
+    ],
+    "description": "An interpolated string"
+  },
+  "Comment": {
+    "prefix": "rem",
+    "body": [
+      "rem: ${0}"
+    ],
+    "description": "A line comment"
+  },
+  "Block comment": {
+    "prefix": "note",
+    "body": [
+      "note: ${1:summary}",
+      "    ${0:details}"
+    ],
+    "description": "An indentation-scoped block comment"
+  }
+}
