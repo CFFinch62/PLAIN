@@ -4,7 +4,17 @@
   "description": "Syntax highlighting, snippets, and one-key running for the PLAIN programming language (.plain files).",
   "version": "0.1.0",
   "publisher": "fragillidae",
+  "license": "MIT",
   "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CFFinch62/plain-language.git"
+  },
+  "homepage": "https://github.com/CFFinch62/plain-language#readme",
+  "bugs": {
+    "url": "https://github.com/CFFinch62/plain-language/issues"
+  },
+  "qna": "https://github.com/CFFinch62/plain-language/issues",
   "engines": { "vscode": "^1.75.0" },
   "categories": ["Programming Languages", "Snippets"],
   "keywords": ["plain", "fragillidae", "teaching language"],

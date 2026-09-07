@@ -1,7 +1,25 @@
 # PLAIN Language — VS Code extension
 
 Syntax highlighting, editor behaviours, snippets and one-key running for
-[PLAIN](../../README.md) (`.plain` files).
+[PLAIN](https://github.com/CFFinch62/plain-language) (`.plain` files).
+
+## Getting PLAIN
+
+This extension highlights and runs `.plain` files — it does not bundle the
+interpreter. Get the language itself from GitHub:
+
+**<https://github.com/CFFinch62/plain-language>**
+
+PLAIN is free and open source under the **MIT License**, as is this extension.
+
+```sh
+git clone https://github.com/CFFinch62/plain-language.git
+cd plain-language
+go build -o plain cmd/plain/main.go
+```
+
+Put the resulting `plain` binary on your `PATH`, or point
+`plain.interpreterPath` (below) at it with an absolute path.
 
 ## What it does
 
@@ -36,10 +54,16 @@ Then run **Developer: Reload Window**.
 **Packaged:**
 
 ```sh
-npx @vscode/vsce package --allow-missing-repository \
-    --baseContentUrl . --baseImagesUrl .          # -> plain-language-0.1.0.vsix
+npx @vscode/vsce package \
+    --baseContentUrl  https://github.com/CFFinch62/plain-language/blob/main/editors/vscode/ \
+    --baseImagesUrl   https://raw.githubusercontent.com/CFFinch62/plain-language/main/editors/vscode/
+# -> plain-language-0.1.0.vsix
 code --install-extension plain-language-0.1.0.vsix
 ```
+
+The two `baseUrl` flags make this README's relative links resolve against the
+repository. They are needed because the extension lives in a subfolder of the
+repo, while `vsce` resolves relative links against the repository root.
 
 To uninstall: `code --uninstall-extension fragillidae.plain-language`.
 
@@ -124,3 +148,10 @@ Details worth knowing before editing:
 
 To inspect what the grammar produced, run **Developer: Inspect Editor Tokens and
 Scopes** with the cursor in a `.plain` file.
+
+## License and source
+
+MIT. Both the extension and the PLAIN language are maintained at
+<https://github.com/CFFinch62/plain-language>; issues and pull requests are
+welcome there. More Fragillidae Software languages and tools:
+<https://github.com/CFFinch62>.

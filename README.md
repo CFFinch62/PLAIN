@@ -70,6 +70,15 @@ task Main()
         display(v"Fibonacci({i}) = {result}")
 ```
 
+## Getting PLAIN
+
+```sh
+git clone https://github.com/CFFinch62/PLAIN.git
+cd PLAIN
+```
+
+Go is the only prerequisite — see [Building](#building) below.
+
 ## Building
 
 ```bash
