@@ -8,7 +8,7 @@ A programming language designed to be approachable without sacrificing competenc
 
 ## Status
 
-🔒 **Private Beta** - All Core Features Complete
+🔒 All Core Features Complete
 
 - ✅ Lexer with full tokenization support
 - ✅ Parser with complete AST construction
