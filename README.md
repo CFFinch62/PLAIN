@@ -165,12 +165,7 @@ PLAIN includes example applications that demonstrate real-world capability beyon
 Go - chosen for its simplicity, performance, and excellent tooling.
 
 ## License
-
-**Proprietary - Private Beta**
-
-This is confidential beta software. See [LICENSE](LICENSE) for terms.
-
-For licensing inquiries: info@fragillidaesoftware.com
+MIT License - see license file for detials.
 
 ## Author
 
